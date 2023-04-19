@@ -1,0 +1,16 @@
+name: Spark CI
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  ash-ci:
+    uses: ash-project/ash/.github/workflows/ash-ci.yml@main
+    secrets:
+      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+    with:
+      spark-formatter: false
