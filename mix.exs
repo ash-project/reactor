@@ -17,7 +17,12 @@ defmodule Reactor.MixProject do
       aliases: aliases(),
       source_url: "https://github.com/ash-project/reactor",
       homepage_url: "https://github.com/ash-project/reactor",
-      dialyzer: [plt_add_apps: [:mix]]
+      dialyzer: [plt_add_apps: [:mix]],
+      docs: [
+        main: "readme",
+        extras: ["README.md"],
+        formatters: ["html"]
+      ]
     ]
   end
 
@@ -28,32 +33,42 @@ defmodule Reactor.MixProject do
       licenses: ["MIT"],
       links: %{
         GitHub: "https://github.com/ash-project/reactor"
-      }
+      },
+      maintainers: [
+        "James Harton <james@harton.nz>",
+        "Zach Daniel <zach@zachdaniel.dev>"
+      ],
+      source_url: "https://github.com/ash-project/reactor"
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {Reactor.Application, []}
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:spark, "~> 1.0"},
+      {:libgraph, "~> 0.16"},
+
       # Dev/Test dependencies
-      {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
-      {:ex_check, "~> 0.12.0", only: [:dev, :test]},
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
-      {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
+      {:ex_check, "~> 0.12.0", only: [:dev, :test]},
       {:git_ops, "~> 2.4.4", only: [:dev, :test]},
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:mimic, "~> 1.7", only: :test},
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false}
     ]
   end
 
-  defp elixirc_paths(:test) do
+  defp elixirc_paths(env) when env in ~w[dev test]a do
     elixirc_paths(:prod) ++ ["test/support"]
   end
 
@@ -62,7 +77,8 @@ defmodule Reactor.MixProject do
   defp aliases do
     [
       sobelow: "sobelow --skip",
-      credo: "credo --strict"
+      credo: "credo --strict",
+      "spark.formatter": "spark.formatter --extensions Reactor.Dsl"
     ]
   end
 end
