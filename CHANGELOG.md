@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.0](https://github.com/ash-project/reactor/compare/v0.1.0...v0.2.0) (2023-05-10)
+
+
+
+
+### Features:
+
+* implement basic reactor behaviour. (#1)
+
 ## [v0.1.0](https://github.com/ash-project/reactor/compare/v0.1.0...v0.1.0) (2023-04-19)
 
 
