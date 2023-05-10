@@ -1,4 +1,4 @@
-name: Spark CI
+name: Reactor CI
 
 on:
   push:
@@ -13,4 +13,5 @@ jobs:
     secrets:
       HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
     with:
-      spark-formatter: false
+      spark-formatter: true
+      postgres: false

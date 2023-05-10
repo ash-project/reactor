@@ -12,4 +12,6 @@ if Mix.env() == :dev do
     # Pass in `true` to use `"README.md"` or a string to customize
     manage_readme_version: true,
     version_tag_prefix: "v"
+
+  config :spark, :formatter, remove_parens?: true
 end

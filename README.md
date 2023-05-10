@@ -1,152 +1,61 @@
 # Reactor
 
-# Initial discussion notes
+![Elixir CI](https://github.com/ash-project/reactor/actions/workflows/elixir.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Hex version badge](https://img.shields.io/hexpm/v/reactor.svg)](https://hex.pm/packages/reactor)
 
-- Ash.Engine has `actor`/`authorize?` built in
-  - in `Reactor` this should be replaced with something potentially like "context" or "globals"
-- Don't need to support "run the chain in a transaction", that would be done by passing a specific 
-- Potentially provide some kind of protocol for taking chain context and putting it onto errors, 
-  that `def_ash_exception` can implement automatically?
-- provide a custom template handler so that `Ash.Flow` can enable `expr` to be used i.e `branch expr(is_nil(result(:get_organization)))`
-  or it should just take a function probably? It should definitely take a function, but is that 
-- this needs to be made streaming friendly, unlike Ash.Engine
-- this includes streaming out results
-- Stream native?
-- Requests (a.k.a Link.t()) do not have a lifecycle. They just have a single field to be resolved.
-- Requests have a unique path that can be any elixir term
-- Requests should have a configurable `async?` option.
-- use libgraph or something to handle the dependency management?
+Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
+
+Woah. That's a lot. Let's break it down:
+
+- **Saga orchestrator** A [saga][saga pattern] is a way of providing
+  transaction-like semantics across multiple distinct resources.
+- **Dependency resolving** reactor allows you to describe the dependencies
+  between your saga steps using _arguments_ which are converted into a
+  [DAG][dag] and used to compute execution order.
+- **Concurrent** unless otherwise specified reactor will run as many steps as
+  possible concurrently whilst taking into account the results of the dependency
+  resolution.
+- **Dynamic** whilst you can define a reactor statically using our awesome DSL,
+  you can also build workflows dynamically - and even add steps while the
+  reactor is running.
+
+[saga pattern](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/saga/saga)
+
+## Installation
+
+The package can be installed by adding `reactor` to your list of dependencies in `mix.exs`:
 
 ```elixir
-defmacro expr(expression) do
-  quote
-    fn expression, context -> 
-      Expr.eval(expression, context)
-    end
-  end
-end
-
-# Returns a streamable, but internally tracks state in a way that it supports more operations
-# like splitting a stream
-defmodule StreamingChain do
-  input :users
-
-  return :do_for_each_user
-
-  map :do_for_each_user, input(:users) do
-    ..
-    split &predicate/1 do
-      ...
-    end
-  end
-end
-
-defmodule CreateUserAndOrg do
-  use Reactor.Chain
-
-  input :username
-  input :password
-  input :organization_name
-  #input :foo do
-  #  cast_input &cast_input/1
-  #end
-
-  def compensate(failure) do
-
-  end
-
-  link :get_organization, GetOrganization do
-    argument :organization_name, input(:organization_name)
-  end
-
-  branch :get_or_create_organization do
-    condition :check_if_organization_created, &(&1.organization) do
-      argument :organization, result(:organization)
-    end
-
-    argument :organization, result(:get_organization)
-    condition &(not is_nil(&1.organization))
-    
-    on_true do
-      output result(:create_organization)
-      link :create_organization, CreateOrganization do
-        argument :organization_name, input(:organization_name)
-      end
-    end
-
-    on_false do
-      output result(:get_organization)
-    end
-  end
-
-  composite_link :transaction, Transaction do
-
-  end
-
-  link :create_user, CreateUser do
-    argument :username, input(:username) # {:chain_input, :username}
-    argument :password, input(:password) # {:chain_input, :password}
-    argument :organization, result(:get_or_create_organization) # {:chain_result, :get_or_create_organization}
-  end
+def deps do
+  [
+    {:reactor, "~> 0.1.0"}
+  ]
 end
 ```
 
-```elixir
-defmodule GetOrganization do
-  use Reactor.Link
+## Documentation
 
-  def run(arguments, context) do
-    {:ok, %Organization{}} | {:error, term()}
-  end
+Documentation for the latest release will be [available on
+hexdocs](https://hexdocs.pm/reactor) and for the [`main`
+branch](https://ash-project.github.io/reactor).
 
-  def compensate(result, arguments, context) do
-    # ?
-  end
-end
+## Contributing
 
-transaction :transaction do
-  context %{in_transaction?: true}
+- To contribute updates, fixes or new features please fork and open a
+  pull-request against `main`.
+- Please use [conventional
+  commits](https://www.conventionalcommits.org/en/v1.0.0/) - this allows us to
+  dynamically generate the changelog.
+- Feel free to ask any questions on the `#reactor` channel on the [Ash
+  Discord](https://discord.gg/D7FNG2q).
 
-  link Link
-  # and in that link
-  def compensate(result, arguments, context) do
-    if context[:in_transaction?] do
-      
-    else
-      
-    end
-  end
-end
+## Licence
 
-# map/reduce should be native, not implemented as a composite link
-# defmodule Map do
-#  def run(arguments, context, links) do
-#    arguments[:elements]
-#    |> Stream.map()
-#  end
-# end
+`reactor` is licensed under the terms of the [MIT
+license](https://opensource.org/licenses/MIT). See the [`LICENSE` file in this
+repository](https://github.com/ash-project/reactor/blob/main/LICENSE)
+for details.
 
-defmodule Transaction do
-  use Reactor.CompositeLink
-
-  @spec run(map(), context :: map(), [Reactor.Link.t()]) :: compensation_result()
-  def run(arguments, context, links) do
-    Repo.transaction(fn -> 
-      {:ok, Reactor.run(links, Map.put(context, :in_transaction?, true))}
-    end)
-    |> case do
-    {:ok, _} ->
-      {:ok, [], context}
-    {:error, error} ->
-      {:error, error}
-    end
-    # if this wasn't a transaction, you could just return the links/modify them
-    # i.e {:ok, links, context}
-  end
-
-  @spec compensate([Reactor.Link.t()], arguments, context) :: compensation_result()
-  def compensate(links, arguments, context) do
-    # Reactor.Link.compensate(links)
-  end
-end
-```
+[saga pattern](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/saga/saga)
+[dag]: https://en.wikipedia.org/wiki/Directed_acyclic_graph
