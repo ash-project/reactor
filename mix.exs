@@ -20,8 +20,22 @@ defmodule Reactor.MixProject do
       dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
-        extras: ["README.md"],
-        formatters: ["html"]
+        extras: extra_documentation(),
+        groups_for_extras: extra_documentation_groups(),
+        extra_section: "GUIDES",
+        formatters: ["html"],
+        filter_modules: ~r/^Elixir.Reactor/,
+        source_url_pattern: "https://github.com/ash-project/reactor/blob/main/%{path}/#L%{line}",
+        spark: [
+          extensions: [
+            %{
+              module: Reactor,
+              name: "Reactor",
+              target: "Reactor",
+              type: "Reactor"
+            }
+          ]
+        ]
       ]
     ]
   end
@@ -80,5 +94,41 @@ defmodule Reactor.MixProject do
       credo: "credo --strict",
       "spark.formatter": "spark.formatter --extensions Reactor.Dsl"
     ]
+  end
+
+  defp extra_documentation do
+    ["README.md"]
+    |> Enum.concat(Path.wildcard("documentation/**/*.md"))
+    |> Enum.map(fn
+      "README.md" ->
+        {:"README.md", title: "Read Me", ash_hq?: false}
+
+      "documentation/tutorials/" <> _ = path ->
+        {String.to_atom(path), []}
+
+      "documentation/topics/" <> _ = path ->
+        {String.to_atom(path), []}
+    end)
+  end
+
+  defp extra_documentation_groups do
+    "documentation/*"
+    |> Path.wildcard()
+    |> Enum.filter(&File.dir?/1)
+    |> Enum.map(fn dir ->
+      name =
+        dir
+        |> Path.basename()
+        |> String.split(~r/_+/)
+        |> Enum.join(" ")
+        |> String.capitalize()
+
+      contents =
+        dir
+        |> Path.join("**")
+        |> Path.wildcard()
+
+      {name, contents}
+    end)
   end
 end
