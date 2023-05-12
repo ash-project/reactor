@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.1](https://github.com/ash-project/reactor/compare/v0.2.0...v0.2.1) (2023-05-12)
+
+
+
+
+### Improvements:
+
+* Reactor.Step: remove `can?/1` and replace with optional callbacks. (#6)
+
 ## [v0.2.0](https://github.com/ash-project/reactor/compare/v0.1.0...v0.2.0) (2023-05-10)
 
 
