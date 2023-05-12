@@ -5,8 +5,6 @@ defmodule Example.ComplexReactor do
   defmodule Noop do
     use Reactor.Step
 
-    def can?(_), do: false
-
     @moduledoc false
     def run(_, _, _), do: {:ok, :noop}
   end

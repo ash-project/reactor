@@ -11,11 +11,6 @@ defmodule Reactor.Step.Transform do
 
   @doc false
   @impl true
-  @spec can?(any) :: false
-  def can?(_), do: false
-
-  @doc false
-  @impl true
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
   def run(arguments, _context, options) do
     case Map.fetch(arguments, :value) do

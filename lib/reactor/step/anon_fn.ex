@@ -10,11 +10,6 @@ defmodule Reactor.Step.AnonFn do
 
   @doc false
   @impl true
-  @spec can?(any) :: false
-  def can?(_), do: false
-
-  @doc false
-  @impl true
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
   def run(arguments, context, options) do
     case Keyword.pop(options, :fun) do
