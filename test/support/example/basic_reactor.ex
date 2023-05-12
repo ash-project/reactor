@@ -6,8 +6,6 @@ defmodule Example.BasicReactor do
     @moduledoc false
     use Reactor.Step
 
-    def can?(_), do: false
-
     def run(arguments, _context, _options) when arguments.age >= 18 and arguments.country == :nz,
       do: {:ok, true}
 

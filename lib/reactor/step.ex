@@ -42,14 +42,6 @@ defmodule Reactor.Step do
   @type undo_result :: :ok | :retry | {:error, any}
 
   @doc """
-  Capability discovery callback.
-
-  Return true for the capabilities that your step supports.  See
-  `t:capability` for a list of all capabilities.
-  """
-  @callback can?(capability) :: boolean
-
-  @doc """
   Execute the step.
 
   This is the function that implements the behaviour you wish to execute.  You
@@ -82,6 +74,8 @@ defmodule Reactor.Step do
 
   @doc """
   Compensate for the failure of the step.
+
+  > Do not implement this callback if your step doesn't support compensation.
 
   If `run/3` returned an error then this callback will be called the error
   reason and the original arguments.
@@ -117,6 +111,8 @@ defmodule Reactor.Step do
   @doc """
   Undo a previously successful execution of the step.
 
+  > Do not implement this callback if your step doesn't support undoing.
+
   This callback is called when the reactor encounters an unhandled error later
   in it's execution run and must undo the work previously done.
 
@@ -146,17 +142,22 @@ defmodule Reactor.Step do
               options :: keyword
             ) :: undo_result
 
+  @optional_callbacks compensate: 4, undo: 4
+
   @doc """
   Find out of a step has a capability.
   """
-  @spec can?(Step.t(), capability()) :: boolean
+  @spec can?(module | Step.t(), capability()) :: boolean
   def can?(%Step{impl: {module, _opts}}, capability)
-      when is_atom(module),
-      do: module.can?(capability)
+      when is_atom(module) and capability in ~w[undo compensate]a,
+      do: function_exported?(module, capability, 4)
 
   def can?(%Step{impl: module}, capability)
-      when is_atom(module),
-      do: module.can?(capability)
+      when is_atom(module) and capability in ~w[undo compensate]a,
+      do: function_exported?(module, capability, 4)
+
+  def can?(module, capability) when is_atom(module) and capability in ~w[undo compensate]a,
+    do: function_exported?(module, capability, 4)
 
   def can?(_step, _capability), do: false
 
@@ -199,10 +200,6 @@ defmodule Reactor.Step do
   defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
-
-      def compensate(_, _, _, _), do: :ok
-      def undo(_, _, _, _), do: :ok
-      defoverridable compensate: 4, undo: 4
     end
   end
 end

@@ -144,9 +144,6 @@ defmodule Reactor.ExecutorTest do
         @moduledoc false
         use Reactor.Step
 
-        def can?(:undo), do: true
-        def can?(_), do: false
-
         def run(%{agent: agent}, _, opts) do
           if Keyword.get(opts, :fail, false) do
             {:error, "I fail"}
@@ -202,8 +199,6 @@ defmodule Reactor.ExecutorTest do
       defmodule CountDown do
         @moduledoc false
         use Reactor.Step
-
-        def can?(_), do: false
 
         def run(%{from: from}, _, _) do
           {:ok, step} =

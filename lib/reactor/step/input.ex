@@ -7,11 +7,6 @@ defmodule Reactor.Step.Input do
 
   @doc false
   @impl true
-  @spec can?(any) :: false
-  def can?(_), do: false
-
-  @doc false
-  @impl true
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
   def run(_arguments, context, options) do
     case Keyword.fetch(options, :name) do

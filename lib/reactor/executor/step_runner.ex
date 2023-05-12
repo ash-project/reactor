@@ -59,7 +59,7 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp maybe_compensate(module, reason, arguments, context, options) do
-    if module.can?(:compensate) do
+    if Step.can?(module, :compensate) do
       compensate(module, reason, arguments, context, options)
     else
       {:error, reason}
