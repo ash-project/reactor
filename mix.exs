@@ -22,6 +22,11 @@ defmodule Reactor.MixProject do
         main: "readme",
         extras: extra_documentation(),
         groups_for_extras: extra_documentation_groups(),
+        groups_for_modules: [
+          DSL: ~r/^Reactor\.Dsl$/,
+          Steps: ~r/^Reactor\.Step.*/,
+          Internals: ~r/^Reactor\..*/
+        ],
         extra_section: "GUIDES",
         formatters: ["html"],
         filter_modules: ~r/^Elixir.Reactor/,

@@ -1,6 +1,8 @@
 defmodule Reactor.Step do
   @moduledoc """
-  The struct used to store steps.
+  The Step behaviour and struct.
+
+  Implement this behaviour to make steps for your Reactor.
   """
 
   defstruct arguments: [], async?: true, impl: nil, name: nil, max_retries: :infinite, ref: nil

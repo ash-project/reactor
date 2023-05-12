@@ -1,5 +1,7 @@
 defmodule Reactor do
-  @moduledoc ~S"""
+  alias Reactor.{Dsl, Executor, Info, Planner, Step}
+
+  @moduledoc """
   Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
 
   ## Usage
@@ -33,6 +35,19 @@ defmodule Reactor do
       ...> Reactor.run(reactor, %{whom: nil})
       {:ok, "Hello, World!"}
 
+  <!--- ash-hq-hide-start --> <!--- -->
+
+  ## DSL Documentation
+
+  ### Index
+
+  #{Spark.Dsl.Extension.doc_index(Dsl.sections())}
+
+  ### Docs
+
+  #{Spark.Dsl.Extension.doc(Dsl.sections())}
+
+  <!--- ash-hq-hide-stop --> <!--- -->
   """
 
   defstruct context: %{},
@@ -43,8 +58,6 @@ defmodule Reactor do
             return: nil,
             state: :pending,
             steps: []
-
-  alias Reactor.{Dsl, Executor, Info, Planner, Step}
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
 
