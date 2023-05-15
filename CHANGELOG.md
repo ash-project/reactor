@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.2](https://github.com/ash-project/reactor/compare/v0.2.1...v0.2.2) (2023-05-15)
+
+
+
+
+### Bug Fixes:
+
+* Reactor.Argument: Remove spurious `is_atom` constraint on `Argument.from_input/2..3`.
+
 ## [v0.2.1](https://github.com/ash-project/reactor/compare/v0.2.0...v0.2.1) (2023-05-12)
 
 
