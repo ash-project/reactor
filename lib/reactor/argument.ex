@@ -31,7 +31,7 @@ defmodule Reactor.Argument do
   """
   @spec from_input(atom, atom, nil | (any -> any)) :: Argument.t()
   def from_input(name, input_name, transform \\ nil)
-      when is_atom(name) and is_atom(input_name) and maybe_transform(transform),
+      when is_atom(name) and maybe_transform(transform),
       do: %Argument{name: name, source: %Template.Input{name: input_name}, transform: transform}
 
   @doc """
