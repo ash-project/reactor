@@ -34,8 +34,8 @@ defmodule Reactor.MixProject do
         spark: [
           extensions: [
             %{
-              module: Reactor,
-              name: "Reactor",
+              module: Reactor.Dsl,
+              name: "Reactor.Dsl",
               target: "Reactor",
               type: "Reactor"
             }
