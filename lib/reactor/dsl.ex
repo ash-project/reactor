@@ -12,6 +12,25 @@ defmodule Reactor.Dsl do
 
   @input %Entity{
     name: :input,
+    describe: """
+    Specifies an input to the Reactor.
+
+    An input is a value passed in to the Reactor when executing.
+    If a Reactor were a function, these would be it's arguments.
+
+    Inputs can be transformed with an arbitrary function before being passed
+    to any steps.
+    """,
+    examples: [
+      """
+      input :name
+      """,
+      """
+      input :age do
+        transform &String.to_integer/1
+      end
+      """
+    ],
     args: [:name],
     target: Input,
     schema: [
@@ -34,6 +53,27 @@ defmodule Reactor.Dsl do
 
   @argument %Entity{
     name: :argument,
+    describe: """
+    Specifies an argument to a Reactor step.
+
+    Each argument is a value which is either the result of another step, or an input value.
+
+    Individual arguments can be transformed with an arbitrary function before
+    being passed to any steps.
+    """,
+    examples: [
+      """
+      argument :name, input(:name)
+      """,
+      """
+      argument :user, result(:create_user)
+      """,
+      """
+      argument :user_id, result(:create_user) do
+        transform & &1.id
+      end
+      """
+    ],
     args: [:name, {:optional, :source}],
     target: Argument,
     imports: [Argument.Templates],
@@ -65,6 +105,32 @@ defmodule Reactor.Dsl do
 
   @step %Entity{
     name: :step,
+    describe: """
+    Specifies a Reactor step.
+
+    Steps are the unit of work in a Reactor.  Reactor will calculate the
+    dependencies graph between the steps and execute as many as it can in each
+    iteration.
+
+    See the `Reactor.Step` behaviour for more information.
+    """,
+    examples: [
+      """
+      step :create_user, MyApp.Steps.CreateUser do
+        argument :username, input(:username)
+        argument :password_hash, result(:hash_password)
+      end
+      """,
+      """
+      step :hash_password do
+        argument :password, input(:password)
+
+        impl fn %{password: password}, _ ->
+          {:ok, Bcrypt.hash_pwd_salt(password)}
+        end
+      end
+      """
+    ],
     args: [:name, {:optional, :impl}],
     target: Step,
     no_depend_modules: [:impl],
@@ -120,10 +186,6 @@ defmodule Reactor.Dsl do
           doc: """
           An optional transformation function which can be used to modify the
           entire argument map before it is passed to the step.
-
-          Note that due to the fact that step arguments must be a map, and this
-          function can return any value it's result will be placed in the
-          `:input` key in the step's argument map.
           """
         )
     ]
