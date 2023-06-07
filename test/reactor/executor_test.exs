@@ -234,4 +234,67 @@ defmodule Reactor.ExecutorTest do
                Reactor.Executor.run(reactor, %{from: 7}, %{}, max_iterations: 100)
     end
   end
+
+  describe "argument transformation" do
+    defmodule ArgumentTransformReactor do
+      @moduledoc false
+      use Reactor
+
+      input :whom
+      input :when
+
+      step :blame do
+        argument :whom, input(:whom) do
+          transform &"#{&1.first_name} #{&1.last_name}"
+        end
+
+        argument :when, input(:when) do
+          transform & &1.year
+        end
+
+        impl(fn args, _, _ ->
+          {:ok, "#{args.whom} in #{args.when}"}
+        end)
+      end
+
+      return :blame
+    end
+
+    test "it correctly transforms the arguments" do
+      assert {:ok, "Marty McFly in 1985"} =
+               Reactor.run(ArgumentTransformReactor, %{
+                 whom: %{first_name: "Marty", last_name: "McFly"},
+                 when: ~N[1985-10-26 01:22:00]
+               })
+    end
+
+    defmodule AllArgumentsTransformReactor do
+      @moduledoc false
+      use Reactor
+
+      input :whom
+      input :when
+
+      step :blame do
+        argument :whom, input(:whom)
+        argument :when, input(:when)
+
+        transform &%{whom: "#{&1.whom.first_name} #{&1.whom.last_name}", when: &1.when.year}
+
+        impl(fn args, _, _ ->
+          {:ok, "#{args.whom} in #{args.when}"}
+        end)
+      end
+
+      return :blame
+    end
+
+    test "it correctly transforms all the arguments" do
+      assert {:ok, "Marty McFly in 1985"} =
+               Reactor.run(AllArgumentsTransformReactor, %{
+                 whom: %{first_name: "Marty", last_name: "McFly"},
+                 when: ~N[1985-10-26 01:22:00]
+               })
+    end
+  end
 end

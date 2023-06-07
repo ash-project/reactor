@@ -5,17 +5,26 @@ defmodule Reactor.Step do
   Implement this behaviour to make steps for your Reactor.
   """
 
-  defstruct arguments: [], async?: true, impl: nil, name: nil, max_retries: :infinite, ref: nil
+  defstruct arguments: [],
+            async?: true,
+            context: %{},
+            impl: nil,
+            name: nil,
+            max_retries: :infinite,
+            ref: nil,
+            transform: nil
 
   alias Reactor.{Argument, Step}
 
   @type t :: %Step{
           arguments: [Argument.t()],
           async?: boolean,
+          context: %{optional(atom) => any},
           impl: module | {module, keyword},
           name: any,
           max_retries: non_neg_integer() | :infinity,
-          ref: nil | reference()
+          ref: nil | reference(),
+          transform: nil | (any -> any) | {module, keyword} | mfa
         }
 
   @typedoc """
