@@ -21,14 +21,25 @@ defmodule Reactor.Builder do
   alias Reactor.{Argument, Step, Template}
   import Argument, only: :macros
   import Reactor, only: :macros
+  import Reactor.Utils
 
-  @type step_options :: [async? | max_retries()]
+  defguardp is_mfa(mfa)
+            when tuple_size(mfa) == 2 and is_atom(elem(mfa, 0)) and
+                   is_list(elem(mfa, 1))
+
+  @type step_options :: [async? | max_retries() | arguments_transform | context]
 
   @typedoc "Should the step be run asynchronously?"
   @type async? :: {:async?, boolean}
 
   @typedoc "How many times is the step allowed to retry?"
   @type max_retries :: {:max_retries, :infinity | non_neg_integer()}
+
+  @typedoc "Optionally transform all the arguments into new arguments"
+  @type arguments_transform :: {:transform, nil | (any -> map) | {module | keyword} | mfa}
+
+  @typedoc "Optional context which will be merged with the reactor context when calling this step."
+  @type context :: Reactor.context()
 
   @type step_argument :: Argument.t() | {atom, {:input | :result, any}}
   @type impl :: module | {module, keyword}
@@ -115,19 +126,33 @@ defmodule Reactor.Builder do
   def add_step(reactor, name, impl, arguments, options) do
     with {:ok, arguments} <- assert_all_are_arguments(arguments),
          :ok <- assert_is_step_impl(impl),
-         {:ok, arguments, transform_steps} <- build_transforms_steps(arguments, name) do
+         {:ok, arguments, argument_transform_steps} <-
+           build_argument_transform_steps(arguments, name),
+         {:ok, arguments, step_transform_step} <-
+           maybe_build_step_transform_step(arguments, name, options[:transform]) do
+      context =
+        if step_transform_step do
+          options
+          |> Keyword.get(:context, %{})
+          |> deep_merge(%{private: %{replace_arguments: :value}})
+        else
+          Keyword.get(options, :context, %{})
+        end
+
       steps =
         [
           %Step{
             arguments: arguments,
             async?: Keyword.get(options, :async?, true),
+            context: context,
             impl: impl,
             name: name,
             max_retries: Keyword.get(options, :max_retries, 100),
             ref: make_ref()
           }
         ]
-        |> Enum.concat(transform_steps)
+        |> Enum.concat(argument_transform_steps)
+        |> maybe_append(step_transform_step)
         |> Enum.concat(reactor.steps)
 
       {:ok, %{reactor | steps: steps}}
@@ -157,6 +182,7 @@ defmodule Reactor.Builder do
       step = %Step{
         arguments: arguments,
         async?: Keyword.get(options, :async?, true),
+        context: Keyword.get(options, :context, %{}),
         impl: impl,
         name: name,
         max_retries: Keyword.get(options, :max_retries, 100),
@@ -196,8 +222,12 @@ defmodule Reactor.Builder do
       {name, {:result, source}}, {:ok, arguments} ->
         {:cont, {:ok, [Argument.from_result(name, source) | arguments]}}
 
-      not_argument, :ok ->
-        {:halt, {:error, "Value `#{inspect(not_argument)}` is not an Argument struct."}}
+      not_argument, _ ->
+        {:halt,
+         {:error,
+          ArgumentError.exception(
+            "Value `#{inspect(not_argument)}` is not a `Reactor.Argument` struct."
+          )}}
     end)
   end
 
@@ -207,11 +237,14 @@ defmodule Reactor.Builder do
     if Spark.implements_behaviour?(impl, Step) do
       :ok
     else
-      {:error, {"Module `#{inspect(impl)}` does not implement the `Step` behaviour."}}
+      {:error,
+       ArgumentError.exception(
+         "Module `#{inspect(impl)}` does not implement the `Reactor.Step` behaviour."
+       )}
     end
   end
 
-  defp build_transforms_steps(arguments, step_name) do
+  defp build_argument_transform_steps(arguments, step_name) do
     arguments
     |> Enum.reduce_while({:ok, [], []}, fn
       argument, {:ok, arguments, steps}
@@ -228,13 +261,13 @@ defmodule Reactor.Builder do
           source: %Template.Result{name: {:transform, argument.name, :for, step_name}}
         }
 
-        {:cont, {:ok, [argument | arguments], [step | steps]}}
+        {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
 
       argument, {:ok, arguments, steps}
       when is_from_result(argument) and has_transform(argument) ->
         step =
           build_transform_step(
-            argument.source,
+            argument.source.name,
             {:transform, argument.name, :for, step_name},
             argument.transform
           )
@@ -244,7 +277,7 @@ defmodule Reactor.Builder do
           source: %Template.Result{name: {:transform, argument.name, :for, step_name}}
         }
 
-        {:cont, {:ok, [argument | arguments], [step | steps]}}
+        {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
 
       argument, {:ok, arguments, steps} when is_from_input(argument) ->
         argument = %{argument | source: %Template.Result{name: {:input, argument.source.name}}}
@@ -256,16 +289,33 @@ defmodule Reactor.Builder do
     end)
   end
 
+  defp maybe_build_step_transform_step(arguments, _name, nil), do: {:ok, arguments, nil}
+
+  defp maybe_build_step_transform_step(arguments, name, transform)
+       when is_function(transform, 1),
+       do: maybe_build_step_transform_step(arguments, name, {Step.TransformAll, fun: transform})
+
+  defp maybe_build_step_transform_step(arguments, name, transform) do
+    step = %Step{
+      arguments: arguments,
+      async?: true,
+      impl: transform,
+      name: {:transform, :for, name},
+      max_retries: 0,
+      ref: make_ref()
+    }
+
+    {:ok, [Argument.from_result(:value, step.name)], step}
+  end
+
   defp build_transform_step(input_name, step_name, transform) when is_function(transform, 1),
     do: build_transform_step(input_name, step_name, {Step.Transform, fun: transform})
 
-  defp build_transform_step(input_name, step_name, transform)
-       when tuple_size(transform) == 2 and is_atom(elem(transform, 0)) and
-              is_list(elem(transform, 1)) do
+  defp build_transform_step(input_name, step_name, transform) when is_mfa(transform) do
     %Step{
       arguments: [
         %Argument{
-          name: :input,
+          name: :value,
           source: %Template.Result{name: input_name}
         }
       ],

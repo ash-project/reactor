@@ -30,7 +30,8 @@ defmodule Reactor.Info do
       step, {:ok, reactor} when is_struct(step, Step) ->
         case Builder.add_step(reactor, step.name, step.impl, step.arguments,
                async?: step.async?,
-               max_retries: step.max_retries
+               max_retries: step.max_retries,
+               transform: step.transform
              ) do
           {:ok, reactor} -> {:cont, {:ok, reactor}}
           {:error, reason} -> {:halt, {:error, reason}}

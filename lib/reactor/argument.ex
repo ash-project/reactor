@@ -10,13 +10,18 @@ defmodule Reactor.Argument do
   @type t :: %Argument{
           name: atom,
           source: Template.t(),
-          transform: nil | (any -> any)
+          transform: nil | (any -> any) | {module, keyword} | mfa
         }
 
+  defguardp is_spark_fun_behaviour(fun)
+            when tuple_size(fun) == 2 and is_atom(elem(fun, 0)) and is_list(elem(fun, 1))
+
+  defguardp is_mfa(fun)
+            when tuple_size(fun) == 3 and is_atom(elem(fun, 0)) and is_atom(elem(fun, 1)) and
+                   is_list(elem(fun, 2))
+
   defguardp is_transform(fun)
-            when is_function(fun, 1) or
-                   (tuple_size(fun) == 3 and is_atom(elem(fun, 0)) and is_atom(elem(fun, 1)) and
-                      is_list(elem(fun, 2)))
+            when is_function(fun, 1) or is_spark_fun_behaviour(fun) or is_mfa(fun)
 
   defguardp maybe_transform(fun) when is_nil(fun) or is_transform(fun)
 

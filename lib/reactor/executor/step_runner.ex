@@ -3,6 +3,7 @@ defmodule Reactor.Executor.StepRunner do
   Run an individual step, including compensation if possible.
   """
   alias Reactor.{Step, Template}
+  import Reactor.Utils
   require Logger
 
   @max_undo_count 5
@@ -13,8 +14,10 @@ defmodule Reactor.Executor.StepRunner do
   @spec run(Reactor.t(), Step.t()) :: {:ok, any, [Step.t()]} | :retry | {:error | :halt, any}
   def run(reactor, step) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
-         {module, options} <- module_and_opts(step) do
-      do_run(module, options, arguments, reactor.context)
+         {module, options} <- module_and_opts(step),
+         {:ok, context} <- build_context(reactor, step),
+         {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
+      do_run(module, options, arguments, context)
     end
   end
 
@@ -24,8 +27,10 @@ defmodule Reactor.Executor.StepRunner do
   @spec undo(Reactor.t(), Step.t(), any) :: :ok | {:error, any}
   def undo(reactor, step, value) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
-         {module, options} <- module_and_opts(step) do
-      do_undo(value, module, options, arguments, reactor.context)
+         {module, options} <- module_and_opts(step),
+         {:ok, context} <- build_context(reactor, step),
+         {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
+      do_undo(value, module, options, arguments, context)
     end
   end
 
@@ -100,4 +105,15 @@ defmodule Reactor.Executor.StepRunner do
       end
     end)
   end
+
+  defp build_context(reactor, step), do: {:ok, deep_merge(step.context, reactor.context)}
+
+  defp maybe_replace_arguments(arguments, context) when is_nil(context.private.replace_arguments),
+    do: {:ok, arguments}
+
+  defp maybe_replace_arguments(arguments, context)
+       when is_map_key(arguments, context.private.replace_arguments),
+       do: {:ok, Map.get(arguments, context.private.replace_arguments)}
+
+  defp maybe_replace_arguments(arguments, _context), do: {:ok, arguments}
 end
