@@ -120,7 +120,7 @@ defmodule Reactor.BuilderTest do
                arguments: [
                  %Argument{
                    name: :mentor,
-                   source: %Template.Result{name: {:transform, :mentor, :for, :marty}}
+                   source: %Template.Result{name: {:__reactor__, :transform, :mentor, :marty}}
                  }
                ]
              } = steps[:marty]
@@ -128,7 +128,7 @@ defmodule Reactor.BuilderTest do
       assert %Step{
                arguments: [%Argument{name: :value, source: %Template.Result{name: :find_mentor}}],
                impl: {Step.Transform, [fun: _]}
-             } = steps[{:transform, :mentor, :for, :marty}]
+             } = steps[{:__reactor__, :transform, :mentor, :marty}]
     end
 
     test "when the step has an argument transformation function, it adds the collect and transformation step to the reactor" do
@@ -149,7 +149,9 @@ defmodule Reactor.BuilderTest do
                arguments: [
                  %Argument{
                    name: :value,
-                   source: %Template.Result{name: {:transform, :for, :add_user_to_org}}
+                   source: %Template.Result{
+                     name: {:__reactor__, :transform, :add_user_to_org}
+                   }
                  }
                ]
              } = steps[:add_user_to_org]
@@ -160,7 +162,7 @@ defmodule Reactor.BuilderTest do
                  %Argument{name: :org, source: %Template.Result{name: :create_org}}
                ],
                impl: {Step.TransformAll, [fun: _]}
-             } = steps[{:transform, :for, :add_user_to_org}]
+             } = steps[{:__reactor__, :transform, :add_user_to_org}]
     end
   end
 end

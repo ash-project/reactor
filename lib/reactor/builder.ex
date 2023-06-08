@@ -36,7 +36,9 @@ defmodule Reactor.Builder do
   @type max_retries :: {:max_retries, :infinity | non_neg_integer()}
 
   @typedoc "Optionally transform all the arguments into new arguments"
-  @type arguments_transform :: {:transform, nil | (any -> map) | {module | keyword} | mfa}
+  @type arguments_transform ::
+          {:transform,
+           nil | (%{optional(atom) => any} -> %{optional(atom) => any}) | {module | keyword} | mfa}
 
   @typedoc "Optional context which will be merged with the reactor context when calling this step."
   @type context :: Reactor.context()
@@ -249,32 +251,36 @@ defmodule Reactor.Builder do
     |> Enum.reduce_while({:ok, [], []}, fn
       argument, {:ok, arguments, steps}
       when is_from_input(argument) and has_transform(argument) ->
+        transform_step_name = {:__reactor__, :transform, argument.name, step_name}
+
         step =
           build_transform_step(
             {:input, argument.source.name},
-            {:transform, argument.name, :for, step_name},
+            transform_step_name,
             argument.transform
           )
 
         argument = %Argument{
           name: argument.name,
-          source: %Template.Result{name: {:transform, argument.name, :for, step_name}}
+          source: %Template.Result{name: transform_step_name}
         }
 
         {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
 
       argument, {:ok, arguments, steps}
       when is_from_result(argument) and has_transform(argument) ->
+        transform_step_name = {:__reactor__, :transform, argument.name, step_name}
+
         step =
           build_transform_step(
             argument.source.name,
-            {:transform, argument.name, :for, step_name},
+            transform_step_name,
             argument.transform
           )
 
         argument = %Argument{
           name: argument.name,
-          source: %Template.Result{name: {:transform, argument.name, :for, step_name}}
+          source: %Template.Result{name: transform_step_name}
         }
 
         {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
@@ -300,7 +306,7 @@ defmodule Reactor.Builder do
       arguments: arguments,
       async?: true,
       impl: transform,
-      name: {:transform, :for, name},
+      name: {:__reactor__, :transform, name},
       max_retries: 0,
       ref: make_ref()
     }
