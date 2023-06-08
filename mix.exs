@@ -79,7 +79,7 @@ defmodule Reactor.MixProject do
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
-      {:ex_check, "~> 0.12.0", only: [:dev, :test]},
+      {:ex_check, "~> 0.15.0", only: [:dev, :test]},
       {:git_ops, "~> 2.4.4", only: [:dev, :test]},
       {:mimic, "~> 1.7", only: :test},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
