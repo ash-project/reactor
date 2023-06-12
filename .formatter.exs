@@ -4,6 +4,8 @@ spark_locals_without_parens = [
   argument: 2,
   argument: 3,
   async?: 1,
+  compose: 2,
+  compose: 3,
   input: 1,
   input: 2,
   max_retries: 1,

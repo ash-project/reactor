@@ -15,4 +15,10 @@ defmodule Reactor.Argument.TemplatesTest do
       assert %Template.Result{name: :marty} = result(:marty)
     end
   end
+
+  describe "value/1" do
+    test "it creates a value template" do
+      assert %Template.Value{value: :marty} = value(:marty)
+    end
+  end
 end

@@ -51,13 +51,14 @@ defmodule Reactor do
   """
 
   defstruct context: %{},
+            id: nil,
             inputs: [],
             intermediate_results: %{},
             plan: nil,
-            undo: [],
             return: nil,
             state: :pending,
-            steps: []
+            steps: [],
+            undo: []
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
 
@@ -75,6 +76,7 @@ defmodule Reactor do
 
   @type t :: %Reactor{
           context: context,
+          id: any,
           inputs: [atom],
           intermediate_results: %{any => any},
           plan: nil | Graph.t(),

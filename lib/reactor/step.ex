@@ -27,6 +27,8 @@ defmodule Reactor.Step do
           transform: nil | (any -> any) | {module, keyword} | mfa
         }
 
+  @type step :: module
+
   @typedoc """
   Optional capabilities which may be implemented by the step module.
 
@@ -94,9 +96,6 @@ defmodule Reactor.Step do
   This provides you the opportunity to handle the error in a number of ways and
   direct the reactor as to what to do next.
 
-  This callback is only called if `c:can?/1` returns `true` for the
-  `:compensate` capability.
-
   ## Arguments
     - `reason` - the error reason returned from `c:run/3`.
     - `arguments` - the arguments passed to the step.
@@ -127,9 +126,6 @@ defmodule Reactor.Step do
   This callback is called when the reactor encounters an unhandled error later
   in it's execution run and must undo the work previously done.
 
-  This callback is only called if `c:can?/1` returns `true` for the `:undo`
-  capability.
-
   ## Arguments
 
     - `value` - the return value of the previously successful call to `c:run/3`.
@@ -159,13 +155,11 @@ defmodule Reactor.Step do
   Find out of a step has a capability.
   """
   @spec can?(module | Step.t(), capability()) :: boolean
-  def can?(%Step{impl: {module, _opts}}, capability)
-      when is_atom(module) and capability in ~w[undo compensate]a,
-      do: function_exported?(module, capability, 4)
+  def can?(%Step{impl: {module, _opts}}, capability) when is_atom(module),
+    do: can?(module, capability)
 
-  def can?(%Step{impl: module}, capability)
-      when is_atom(module) and capability in ~w[undo compensate]a,
-      do: function_exported?(module, capability, 4)
+  def can?(%Step{impl: module}, capability) when is_atom(module),
+    do: can?(module, capability)
 
   def can?(module, capability) when is_atom(module) and capability in ~w[undo compensate]a,
     do: function_exported?(module, capability, 4)

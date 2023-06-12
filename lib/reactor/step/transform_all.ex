@@ -7,7 +7,7 @@ defmodule Reactor.Step.TransformAll do
   """
 
   use Reactor.Step
-  alias Reactor.Step.Transform
+  alias Reactor.{Error.TransformError, Step.Transform}
 
   @doc false
   @impl true
@@ -17,8 +17,13 @@ defmodule Reactor.Step.TransformAll do
       {:ok, result} when is_map(result) ->
         {:ok, result}
 
-      {:ok, _other} ->
-        {:error, "Step transformers must return a map to use as replacement arguments."}
+      {:ok, result} ->
+        {:error,
+         TransformError.exception(
+           input: arguments,
+           output: result,
+           message: "Step transformers must return a map to use as replacement arguments."
+         )}
 
       {:error, reason} ->
         {:error, reason}

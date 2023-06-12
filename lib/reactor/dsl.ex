@@ -72,6 +72,9 @@ defmodule Reactor.Dsl do
       argument :user_id, result(:create_user) do
         transform & &1.id
       end
+      """,
+      """
+      argument :three, value(3)
       """
     ],
     args: [:name, {:optional, :source}],
@@ -87,7 +90,9 @@ defmodule Reactor.Dsl do
         """
       ],
       source: [
-        type: {:or, [{:struct, Template.Input}, {:struct, Template.Result}]},
+        type:
+          {:or,
+           [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
         required: true,
         doc: """
         What to use as the source of the argument.
@@ -191,6 +196,38 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @compose %Entity{
+    name: :compose,
+    describe: """
+    Compose another Reactor into this one.
+
+    Allows place another Reactor into this one as if it were a single step.
+    """,
+    args: [:name, :reactor],
+    target: Dsl.Compose,
+    no_depend_modules: [:reactor],
+    entities: [arguments: [@argument]],
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique name for the step.
+
+        Allows the result of the composed reactor to be depended upon by steps
+        in this reactor.
+        """
+      ],
+      reactor: [
+        type: {:or, [{:struct, Reactor}, {:spark, Reactor.Dsl}]},
+        required: true,
+        doc: """
+        The reactor module or struct to compose upon.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -203,11 +240,12 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@input, @step],
+    entities: [@input, @step, @compose],
     top_level?: true
   }
 
   use Extension,
     sections: [@reactor],
-    transformers: [Dsl.Transformer]
+    transformers: [Dsl.Transformer],
+    verifiers: [Dsl.PlanableVerifier]
 end
