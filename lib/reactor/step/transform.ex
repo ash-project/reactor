@@ -29,9 +29,6 @@ defmodule Reactor.Step.Transform do
 
       {{m, f, a}, _opts} when is_atom(m) and is_atom(f) and is_list(a) ->
         {:ok, apply(m, f, [value | a])}
-
-      {nil, opts} ->
-        raise "Invalid options given to `run/3` callback: `#{inspect(opts)}`."
     end
   rescue
     error -> {:error, error}

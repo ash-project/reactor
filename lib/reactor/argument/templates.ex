@@ -62,4 +62,32 @@ defmodule Reactor.Argument.Templates do
   def result(link_name) do
     %Template.Result{name: link_name}
   end
+
+  @doc ~S"""
+  The `value` template helper for the Reactor DSL.
+
+  ## Example
+
+  ```elixir
+  defmodule ExampleReactor do
+    use Reactor
+
+    input :number
+
+    step :times_three do
+      argument :lhs, input(:number)
+      # here: -------↓↓↓↓↓
+      argument :rhs, value(3)
+
+      impl fn args, _, _ ->
+        {:ok, args.lhs * args.rhs}
+      end
+    end
+  end
+  ```
+  """
+  @spec value(any) :: Template.Value.t()
+  def value(value) do
+    %Template.Value{value: value}
+  end
 end

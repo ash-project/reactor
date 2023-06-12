@@ -5,6 +5,7 @@ defmodule Reactor.Executor.Init do
 
   alias Reactor.Executor
   import Reactor, only: :macros
+  import Reactor.Utils
 
   @doc false
   @spec init(Reactor.t(), Reactor.inputs(), Reactor.context(), Reactor.options()) ::
@@ -19,15 +20,10 @@ defmodule Reactor.Executor.Init do
          {:ok, options} <- into_map(options) do
       state = Executor.State.init(options)
 
-      private =
-        context
-        |> Map.get(:private, %{})
-        |> Map.put(:inputs, inputs)
-
       context =
         reactor.context
-        |> Map.merge(context)
-        |> Map.put(:private, private)
+        |> deep_merge(context)
+        |> deep_merge(%{private: %{inputs: inputs}})
 
       {:ok, %{reactor | context: context}, state}
     end
@@ -53,11 +49,11 @@ defmodule Reactor.Executor.Init do
       missing_inputs =
         valid_input_names
         |> MapSet.difference(provided_input_names)
-        |> Enum.map_join(", ", &"`#{inspect(&1)}`")
+        |> sentence(&"`#{inspect(&1)}`", ", ", " and ")
 
       {:error,
        ArgumentError.exception(
-         message: "Reactor is missing the following inputs: #{missing_inputs}"
+         message: "Reactor is missing the following inputs; #{missing_inputs}"
        )}
     end
   end

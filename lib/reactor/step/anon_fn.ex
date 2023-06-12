@@ -13,6 +13,9 @@ defmodule Reactor.Step.AnonFn do
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
   def run(arguments, context, options) do
     case Keyword.pop(options, :fun) do
+      {fun, _opts} when is_function(fun, 1) ->
+        fun.(arguments)
+
       {fun, _opts} when is_function(fun, 2) ->
         fun.(arguments, context)
 

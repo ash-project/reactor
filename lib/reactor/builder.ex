@@ -18,14 +18,9 @@ defmodule Reactor.Builder do
   ```
   """
 
-  alias Reactor.{Argument, Step, Template}
-  import Argument, only: :macros
+  alias Reactor.{Argument, Builder, Step}
   import Reactor, only: :macros
   import Reactor.Utils
-
-  defguardp is_mfa(mfa)
-            when tuple_size(mfa) == 2 and is_atom(elem(mfa, 0)) and
-                   is_list(elem(mfa, 1))
 
   @type step_options :: [async? | max_retries() | arguments_transform | context]
 
@@ -48,9 +43,13 @@ defmodule Reactor.Builder do
 
   @doc """
   Build a new, empty Reactor.
+
+  Optionally an identifier for the Reactor. This is primarily used for recursive
+  composition tracking.
   """
-  @spec new :: Reactor.t()
-  def new, do: %Reactor{}
+  @spec new(any) :: Reactor.t()
+  def new(id \\ make_ref()),
+    do: %Reactor{id: id, context: %{private: %{composed_reactors: MapSet.new([id])}}}
 
   @doc """
   Add a named input to the Reactor.
@@ -62,42 +61,22 @@ defmodule Reactor.Builder do
   def add_input(reactor, name, transform \\ nil)
 
   def add_input(reactor, _name, _transform) when not is_reactor(reactor),
-    do: {:error, ArgumentError.exception("`reactor`: not a Reactor")}
+    do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 
-  def add_input(reactor, name, nil) do
-    step = %Step{
-      arguments: [],
-      async?: true,
-      impl: {Step.Input, name: name},
-      name: {:input, name},
-      max_retries: 0,
-      ref: make_ref()
-    }
+  def add_input(reactor, name, transform),
+    do: Builder.Input.add_input(reactor, name, transform)
 
-    {:ok, %{reactor | inputs: [name | reactor.inputs], steps: [step | reactor.steps]}}
-  end
+  @doc """
+  Raising version of `add_input/2..3`.
+  """
+  @spec add_input!(Reactor.t(), any, nil | (any -> any)) :: Reactor.t() | no_return
+  def add_input!(reactor, name, transform \\ nil)
 
-  def add_input(reactor, name, transform)
-      when is_function(transform, 1) or
-             (tuple_size(transform) == 2 and is_atom(elem(transform, 0)) and
-                is_list(elem(transform, 1))) do
-    input_step = %Step{
-      arguments: [],
-      async?: true,
-      impl: {Step.Input, name: name},
-      name: {:raw_input, name},
-      max_retries: 0,
-      ref: make_ref()
-    }
-
-    transform_step = build_transform_step({:raw_input, name}, {:input, name}, transform)
-
-    {:ok,
-     %{
-       reactor
-       | inputs: [name | reactor.inputs],
-         steps: [input_step, transform_step | reactor.steps]
-     }}
+  def add_input!(reactor, name, transform) do
+    case add_input(reactor, name, transform) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
   end
 
   @doc """
@@ -117,88 +96,67 @@ defmodule Reactor.Builder do
   def add_step(reactor, name, impl, arguments \\ [], options \\ [])
 
   def add_step(reactor, _name, _impl, _arguments, _options) when not is_reactor(reactor),
-    do: {:error, ArgumentError.exception("`reactor`: not a Reactor")}
+    do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 
   def add_step(_reactor, _name, _impl, arguments, _options) when not is_list(arguments),
-    do: {:error, ArgumentError.exception("`arguments` is not a list")}
+    do: {:error, argument_error(:arguments, "not a list", arguments)}
 
   def add_step(_reactor, _name, _impl, _arguments, options) when not is_list(options),
-    do: {:error, ArgumentError.exception("`options` is not a list")}
+    do: {:error, argument_error(:options, "not a list", options)}
 
-  def add_step(reactor, name, impl, arguments, options) do
-    with {:ok, arguments} <- assert_all_are_arguments(arguments),
-         :ok <- assert_is_step_impl(impl),
-         {:ok, arguments, argument_transform_steps} <-
-           build_argument_transform_steps(arguments, name),
-         {:ok, arguments, step_transform_step} <-
-           maybe_build_step_transform_step(arguments, name, options[:transform]) do
-      context =
-        if step_transform_step do
-          options
-          |> Keyword.get(:context, %{})
-          |> deep_merge(%{private: %{replace_arguments: :value}})
-        else
-          Keyword.get(options, :context, %{})
-        end
+  def add_step(reactor, name, impl, arguments, options),
+    do: Builder.Step.add_step(reactor, name, impl, arguments, options)
 
-      steps =
-        [
-          %Step{
-            arguments: arguments,
-            async?: Keyword.get(options, :async?, true),
-            context: context,
-            impl: impl,
-            name: name,
-            max_retries: Keyword.get(options, :max_retries, 100),
-            ref: make_ref()
-          }
-        ]
-        |> Enum.concat(argument_transform_steps)
-        |> maybe_append(step_transform_step)
-        |> Enum.concat(reactor.steps)
+  @doc """
+  Raising version of `add_step/3..5`.
+  """
+  @spec add_step!(Reactor.t(), name :: any, impl, [step_argument], step_options) ::
+          Reactor.t() | no_return
+  def add_step!(reactor, name, impl, arguments \\ [], options \\ [])
 
-      {:ok, %{reactor | steps: steps}}
+  def add_step!(reactor, name, impl, arguments, options) do
+    case add_step(reactor, name, impl, arguments, options) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
     end
   end
 
   @doc """
   Build a step which can be added to a reactor at runtime.
 
-  Note that the built step doesn't support argument transformations - you should
-  add an additional step to do the transformation needed (this is what
-  `add_step/5` does anyway).
+  Note that the built step doesn't support transformations - you should add an
+  additional step to do the transformation needed (this is what `add_step/5`
+  does anyway).
   """
-  @spec new_step(name :: any, impl, [step_argument], step_options) ::
-          {:ok, Step.t()} | {:error, any}
+  @spec new_step(any, impl, [step_argument], step_options) :: {:ok, Step.t()} | {:error, any}
   def new_step(name, impl, arguments \\ [], options \\ [])
 
   def new_step(_name, _impl, arguments, _options) when not is_list(arguments),
-    do: {:error, ArgumentError.exception("`arguments` is not a list")}
+    do: {:error, argument_error(:arguments, "not a list", arguments)}
 
   def new_step(_name, _impl, _arguments, options) when not is_list(options),
-    do: {:error, ArgumentError.exception("`options` is not a list")}
+    do: {:error, argument_error(:options, "not a list", options)}
 
-  def new_step(name, impl, arguments, options) do
-    with {:ok, arguments} <- assert_all_are_arguments(arguments),
-         :ok <- assert_is_step_impl(impl) do
-      step = %Step{
-        arguments: arguments,
-        async?: Keyword.get(options, :async?, true),
-        context: Keyword.get(options, :context, %{}),
-        impl: impl,
-        name: name,
-        max_retries: Keyword.get(options, :max_retries, 100),
-        ref: make_ref()
-      }
+  def new_step(name, impl, arguments, options),
+    do: Builder.Step.new_step(name, impl, arguments, options)
 
-      {:ok, step}
+  @doc """
+  Raising version of `new_step/2..4`.
+  """
+  @spec new_step!(any, impl, [step_argument], step_options) :: Step.t() | no_return
+  def new_step!(name, impl, arguments \\ [], options \\ [])
+
+  def new_step!(name, impl, arguments, options) do
+    case new_step(name, impl, arguments, options) do
+      {:ok, step} -> step
+      {:error, reason} -> raise reason
     end
   end
 
   @doc """
   Specify the return value of the Reactor.
 
-  The return value must be the result of a completed step.
+  The return value must be the name of a step.
   """
   @spec return(Reactor.t(), any) :: {:ok, Reactor.t()} | {:error, any}
   def return(reactor, name) do
@@ -209,127 +167,59 @@ defmodule Reactor.Builder do
     if name in step_names do
       {:ok, %{reactor | return: name}}
     else
-      {:error, ArgumentError.exception("`#{inspect(name)}` is not an existing step name")}
+      {:error, argument_error(:name, "not an existing step name.", name)}
     end
   end
 
-  defp assert_all_are_arguments(arguments) do
-    Enum.reduce_while(arguments, {:ok, []}, fn
-      argument, {:ok, arguments} when is_argument(argument) ->
-        {:cont, {:ok, [argument | arguments]}}
-
-      {name, {:input, source}}, {:ok, arguments} ->
-        {:cont, {:ok, [Argument.from_input(name, source) | arguments]}}
-
-      {name, {:result, source}}, {:ok, arguments} ->
-        {:cont, {:ok, [Argument.from_result(name, source) | arguments]}}
-
-      not_argument, _ ->
-        {:halt,
-         {:error,
-          ArgumentError.exception(
-            "Value `#{inspect(not_argument)}` is not a `Reactor.Argument` struct."
-          )}}
-    end)
-  end
-
-  defp assert_is_step_impl({impl, opts}) when is_list(opts), do: assert_is_step_impl(impl)
-
-  defp assert_is_step_impl(impl) when is_atom(impl) do
-    if Spark.implements_behaviour?(impl, Step) do
-      :ok
-    else
-      {:error,
-       ArgumentError.exception(
-         "Module `#{inspect(impl)}` does not implement the `Reactor.Step` behaviour."
-       )}
+  @doc """
+  Raising version of `return/2`.
+  """
+  @spec return!(Reactor.t(), any) :: Reactor.t() | no_return
+  def return!(reactor, name) do
+    case return(reactor, name) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
     end
   end
 
-  defp build_argument_transform_steps(arguments, step_name) do
-    arguments
-    |> Enum.reduce_while({:ok, [], []}, fn
-      argument, {:ok, arguments, steps}
-      when is_from_input(argument) and has_transform(argument) ->
-        transform_step_name = {:__reactor__, :transform, argument.name, step_name}
+  @doc """
+  Compose another Reactor inside this one.
 
-        step =
-          build_transform_step(
-            {:input, argument.source.name},
-            transform_step_name,
-            argument.transform
-          )
+  Whenever possible this function will extract the steps from inner Reactor and
+  place them inside the parent Reactor.  In order to achieve this the composer
+  will rename the steps to ensure that there are no conflicts.
 
-        argument = %Argument{
-          name: argument.name,
-          source: %Template.Result{name: transform_step_name}
-        }
+  If you're attempting to create a recursive Reactor (ie compose a Reactor
+  within itself) then this will be detected and runtime composition will be used
+  instead.  See `Reactor.Step.Compose` for more details.
+  """
+  @spec compose(Reactor.t(), atom, Reactor.t() | module, [step_argument]) ::
+          {:ok, Reactor.t()} | {:error, any}
+  def compose(reactor, _name, _inner_reactor, _arguments) when not is_reactor(reactor),
+    do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 
-        {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
+  def compose(_reactor, name, _inner_reactor, _arguments) when not is_atom(name),
+    do: {:error, argument_error(:name, "not an atom", name)}
 
-      argument, {:ok, arguments, steps}
-      when is_from_result(argument) and has_transform(argument) ->
-        transform_step_name = {:__reactor__, :transform, argument.name, step_name}
+  def compose(_reactor, _name, inner_reactor, _arguments)
+      when not is_reactor(inner_reactor) and not is_atom(inner_reactor),
+      do: {:error, argument_error(:inner_reactor, "not a Reactor", inner_reactor)}
 
-        step =
-          build_transform_step(
-            argument.source.name,
-            transform_step_name,
-            argument.transform
-          )
+  def compose(_reactor, _name, _inner_reactor, arguments) when not is_list(arguments),
+    do: {:error, argument_error(:arguments, "not a list", arguments)}
 
-        argument = %Argument{
-          name: argument.name,
-          source: %Template.Result{name: transform_step_name}
-        }
+  def compose(reactor, name, inner_reactor, arguments),
+    do: Builder.Compose.compose(reactor, name, inner_reactor, arguments)
 
-        {:cont, {:ok, [argument | arguments], [%{step | transform: nil} | steps]}}
-
-      argument, {:ok, arguments, steps} when is_from_input(argument) ->
-        argument = %{argument | source: %Template.Result{name: {:input, argument.source.name}}}
-
-        {:cont, {:ok, [argument | arguments], steps}}
-
-      argument, {:ok, arguments, steps} when is_from_result(argument) ->
-        {:cont, {:ok, [argument | arguments], steps}}
-    end)
-  end
-
-  defp maybe_build_step_transform_step(arguments, _name, nil), do: {:ok, arguments, nil}
-
-  defp maybe_build_step_transform_step(arguments, name, transform)
-       when is_function(transform, 1),
-       do: maybe_build_step_transform_step(arguments, name, {Step.TransformAll, fun: transform})
-
-  defp maybe_build_step_transform_step(arguments, name, transform) do
-    step = %Step{
-      arguments: arguments,
-      async?: true,
-      impl: transform,
-      name: {:__reactor__, :transform, name},
-      max_retries: 0,
-      ref: make_ref()
-    }
-
-    {:ok, [Argument.from_result(:value, step.name)], step}
-  end
-
-  defp build_transform_step(input_name, step_name, transform) when is_function(transform, 1),
-    do: build_transform_step(input_name, step_name, {Step.Transform, fun: transform})
-
-  defp build_transform_step(input_name, step_name, transform) when is_mfa(transform) do
-    %Step{
-      arguments: [
-        %Argument{
-          name: :value,
-          source: %Template.Result{name: input_name}
-        }
-      ],
-      async?: true,
-      impl: transform,
-      name: step_name,
-      max_retries: 0,
-      ref: make_ref()
-    }
+  @doc """
+  Raising version of `compose/4`.
+  """
+  @spec compose!(Reactor.t(), atom, Reactor.t() | module, [step_argument]) ::
+          Reactor.t() | no_return
+  def compose!(reactor, name, inner_reactor, arguments) do
+    case compose(reactor, name, inner_reactor, arguments) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
   end
 end

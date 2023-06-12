@@ -2,8 +2,9 @@ defmodule Reactor.Executor.StepRunner do
   @moduledoc """
   Run an individual step, including compensation if possible.
   """
-  alias Reactor.{Step, Template}
+  alias Reactor.Step
   import Reactor.Utils
+  import Reactor.Argument, only: :macros
   require Logger
 
   @max_undo_count 5
@@ -88,25 +89,40 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp get_step_arguments(reactor, step) do
-    Enum.reduce_while(step.arguments, {:ok, %{}}, fn argument, {:ok, arguments} ->
-      with %Template.Result{name: dependency_name} <- argument.source,
-           {:ok, value} <- Map.fetch(reactor.intermediate_results, dependency_name) do
-        {:cont, {:ok, Map.put(arguments, argument.name, value)}}
-      else
-        %Template.Input{} ->
-          {:halt,
-           {:error,
-            "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is invalid"}}
+    reduce_while_ok(step.arguments, %{}, fn
+      argument, arguments when is_from_input(argument) ->
+        case Map.fetch(reactor.context.private.inputs, argument.source.name) do
+          {:ok, value} ->
+            {:ok, Map.put(arguments, argument.name, value)}
 
-        :error ->
-          {:halt,
-           {:error,
-            "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is missing"}}
-      end
+          :error ->
+            {:error,
+             "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` relies on missing input `#{argument.source.name}`"}
+        end
+
+      argument, arguments when is_from_result(argument) ->
+        case Map.fetch(reactor.intermediate_results, argument.source.name) do
+          {:ok, value} ->
+            {:ok, Map.put(arguments, argument.name, value)}
+
+          :error ->
+            {:error,
+             "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is missing"}
+        end
+
+      argument, arguments when is_from_value(argument) ->
+        {:ok, Map.put(arguments, argument.name, argument.source.value)}
     end)
   end
 
-  defp build_context(reactor, step), do: {:ok, deep_merge(step.context, reactor.context)}
+  defp build_context(reactor, step) do
+    context =
+      step.context
+      |> deep_merge(reactor.context)
+      |> Map.put(:current_step, step)
+
+    {:ok, context}
+  end
 
   defp maybe_replace_arguments(arguments, context) when is_nil(context.private.replace_arguments),
     do: {:ok, arguments}

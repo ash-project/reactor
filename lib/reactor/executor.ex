@@ -48,6 +48,9 @@ defmodule Reactor.Executor do
           {:ok, any} | {:halted, Reactor.t()} | {:error, any}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
+  def run(reactor, _inputs, _context, _options) when is_nil(reactor.return),
+    do: {:error, ArgumentError.exception("`reactor` has no return value")}
+
   def run(reactor, inputs, context, options) when reactor.state in ~w[pending halted]a do
     case Executor.Init.init(reactor, inputs, context, options) do
       {:ok, reactor, state} -> execute(reactor, state)

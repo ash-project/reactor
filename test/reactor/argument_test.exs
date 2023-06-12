@@ -63,4 +63,34 @@ defmodule Reactor.ArgumentTest do
              } = Argument.from_result(:argument_name, :step_name, transform)
     end
   end
+
+  describe "from_value/2" do
+    test "when given no transformation it creates an argument" do
+      assert %Argument{
+               name: :argument_name,
+               source: %Template.Value{value: 32},
+               transform: nil
+             } = Argument.from_value(:argument_name, 32)
+    end
+
+    test "when given a function transformation it creates an argument" do
+      transform = &Atom.to_string/1
+
+      assert %Argument{
+               name: :argument_name,
+               source: %Template.Value{value: 32},
+               transform: ^transform
+             } = Argument.from_value(:argument_name, 32, transform)
+    end
+
+    test "when given an MFA transformation it creates an argument" do
+      transform = {Atom, :to_string, []}
+
+      assert %Argument{
+               name: :argument_name,
+               source: %Template.Value{value: 32},
+               transform: ^transform
+             } = Argument.from_value(:argument_name, 32, transform)
+    end
+  end
 end

@@ -8,6 +8,14 @@ defmodule Reactor.Step.AnonFnTest do
   end
 
   describe "run/3" do
+    test "it can handle 1 arity anonymous functions" do
+      fun = fn arguments ->
+        arguments.first_name
+      end
+
+      assert :marty = run(%{first_name: :marty}, %{}, fun: fun)
+    end
+
     test "it can handle 2 arity anonymous functions" do
       fun = fn arguments, _ ->
         arguments.first_name
