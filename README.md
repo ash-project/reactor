@@ -22,6 +22,11 @@ Woah. That's a lot. Let's break it down:
 
 [saga pattern](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/saga/saga)
 
+## Sponsors
+
+Thanks to [Alembic Pty Ltd](https://alembic.com.au/) for sponsoring a portion of
+this project's development.
+
 ## Installation
 
 The package can be installed by adding `reactor` to your list of dependencies in `mix.exs`:
