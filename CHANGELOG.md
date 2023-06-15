@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.4](https://github.com/ash-project/reactor/compare/v0.2.3...v0.2.4) (2023-06-15)
+
+
+
+
+### Improvements:
+
+* Add ability to compose reactors.
+
+* Builder: rename internally generated steps to start with `:__reactor__`. (#10)
+
 ## [v0.2.3](https://github.com/ash-project/reactor/compare/v0.2.2...v0.2.3) (2023-06-07)
 
 
