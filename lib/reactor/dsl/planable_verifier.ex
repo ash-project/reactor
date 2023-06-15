@@ -7,9 +7,7 @@ defmodule Reactor.Dsl.PlanableVerifier do
   alias Spark.{Dsl, Dsl.Verifier, Error.DslError}
   alias Reactor.{Info, Planner}
 
-  @doc """
-  Ensure that a DSL-based Reactor is not cyclic.
-  """
+  @doc false
   @impl true
   @spec verify(Dsl.t()) :: :ok | {:error, any}
   def verify(dsl_state) do

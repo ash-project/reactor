@@ -207,4 +207,17 @@ defmodule Reactor.Step do
       @behaviour unquote(__MODULE__)
     end
   end
+
+  defimpl Reactor.Dsl.Build do
+    alias Reactor.Builder
+    import Reactor, only: :macros
+
+    def build(step, reactor) when is_reactor(reactor) do
+      Builder.add_step(reactor, step.name, step.impl, step.arguments,
+        async?: step.async?,
+        max_retries: step.max_retries,
+        transform: step.transform
+      )
+    end
+  end
 end
