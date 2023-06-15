@@ -62,5 +62,5 @@ license](https://opensource.org/licenses/MIT). See the [`LICENSE` file in this
 repository](https://github.com/ash-project/reactor/blob/main/LICENSE)
 for details.
 
-[saga pattern](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/saga/saga)
+[saga pattern]: https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/saga/saga
 [dag]: https://en.wikipedia.org/wiki/Directed_acyclic_graph
