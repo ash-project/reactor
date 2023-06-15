@@ -140,6 +140,7 @@ defmodule Reactor.Dsl do
     target: Step,
     no_depend_modules: [:impl],
     entities: [arguments: [@argument]],
+    # recursive_as: :steps,
     schema: [
       name: [
         type: :atom,
@@ -207,6 +208,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Compose,
     no_depend_modules: [:reactor],
     entities: [arguments: [@argument]],
+    # recursive_as: :steps,
     schema: [
       name: [
         type: :atom,
@@ -228,6 +230,29 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @container %Entity{
+    name: :container,
+    describe: """
+    A container wraps several steps and provides a shared context for them.
+    """,
+    args: [:name],
+    target: Dsl.Container,
+    entities: [argument: [@argument], steps: []],
+    # recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique name for the container.
+
+        Allows the result of the container to be depended upon by steps
+        in this reactor.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -240,7 +265,7 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@input, @step, @compose],
+    entities: [@compose, @container, @input, @step],
     top_level?: true
   }
 
