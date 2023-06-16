@@ -1,6 +1,6 @@
 defmodule Reactor.Dsl.Transformer do
   @moduledoc false
-  alias Reactor.{Dsl, Info, Planner, Step}
+  alias Reactor.{Dsl, Info, Planner}
   alias Spark.{Dsl.Transformer, Error.DslError}
   import Reactor.Utils
   use Transformer
@@ -8,10 +8,10 @@ defmodule Reactor.Dsl.Transformer do
   @doc false
   @spec transform(Spark.Dsl.t()) :: {:ok, Spark.Dsl.t()} | {:error, DslError.t()}
   def transform(dsl_state) do
-    with {:ok, dsl_state} <- rewrite_step_impls(dsl_state),
-         {:ok, step_names} <- step_names(dsl_state),
+    with {:ok, step_names} <- step_names(dsl_state),
          {:ok, dsl_state} <- maybe_set_return(dsl_state, step_names),
          {:ok, dsl_state} <- validate_return(dsl_state, step_names),
+         {:ok, dsl_state} <- do_entity_transform(dsl_state),
          {:ok, reactor} <- Info.to_struct(dsl_state),
          {:ok, reactor} <- Planner.plan(reactor) do
       dsl_state =
@@ -32,7 +32,7 @@ defmodule Reactor.Dsl.Transformer do
   defp step_names(dsl_state) do
     dsl_state
     |> Transformer.get_entities([:reactor])
-    |> Enum.filter(&(is_struct(&1, Dsl.Step) || is_struct(&1, Dsl.Compose)))
+    |> Enum.reject(&is_struct(&1, Dsl.Input))
     |> Enum.map(& &1.name)
     |> case do
       [] ->
@@ -43,63 +43,20 @@ defmodule Reactor.Dsl.Transformer do
            message: "Reactor contains no steps"
          )}
 
-      step_names ->
-        {:ok, step_names}
+      names ->
+        names
+        |> Enum.frequencies()
+        |> reduce_while_ok(names, fn
+          {_name, 1}, names -> {:ok, names}
+          {name, n}, _names -> {:error, "There are #{n} steps named `#{inspect(name)}`."}
+        end)
     end
   end
 
-  defp rewrite_step_impls(dsl_state) do
+  defp do_entity_transform(dsl_state) do
     dsl_state
     |> Transformer.get_entities([:reactor])
-    |> Enum.filter(&is_struct(&1, Dsl.Step))
-    |> reduce_while_ok(dsl_state, fn
-      step, dsl_state when is_nil(step.impl) and is_nil(step.run) ->
-        {:error,
-         DslError.exception(
-           module: Transformer.get_persisted(dsl_state, :module),
-           path: [:reactor, :step, step.name],
-           message: "Step has no implementation"
-         )}
-
-      step, dsl_state when not is_nil(step.impl) and not is_nil(step.run) ->
-        {:error,
-         DslError.exception(
-           module: Transformer.get_persisted(dsl_state, :module),
-           path: [:reactor, :step, step.name],
-           message: "Step has both an implementation module and a run function"
-         )}
-
-      step, dsl_state when not is_nil(step.impl) and not is_nil(step.compensate) ->
-        {:error,
-         DslError.exception(
-           module: Transformer.get_persisted(dsl_state, :module),
-           path: [:reactor, :step, step.name],
-           message: "Step has both an implementation module and a compensate function"
-         )}
-
-      step, dsl_state when not is_nil(step.impl) and not is_nil(step.undo) ->
-        {:error,
-         DslError.exception(
-           module: Transformer.get_persisted(dsl_state, :module),
-           path: [:reactor, :step, step.name],
-           message: "Step has both an implementation module and a undo function"
-         )}
-
-      step, dsl_state
-      when is_nil(step.run) and is_nil(step.compensate) and is_nil(step.undo) and
-             not is_nil(step.impl) ->
-        {:ok, dsl_state}
-
-      step, dsl_state ->
-        {:ok,
-         Transformer.replace_entity(dsl_state, [:reactor], %{
-           step
-           | impl: {Step.AnonFn, run: step.run, compensate: step.compensate, undo: step.undo},
-             run: nil,
-             compensate: nil,
-             undo: nil
-         })}
-    end)
+    |> reduce_while_ok(dsl_state, &Dsl.Build.transform/2)
   end
 
   defp maybe_set_return(dsl_state, step_names) do

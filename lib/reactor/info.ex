@@ -4,14 +4,14 @@ defmodule Reactor.Info do
   """
   use Spark.InfoGenerator, sections: [:reactor], extension: Reactor.Dsl
 
-  alias Reactor.Builder
-  alias Spark.Dsl
+  alias Reactor.{Builder, Dsl}
+  alias Spark.Dsl.Extension
   import Reactor.Utils
 
   @doc """
   Convert a reactor DSL module into a reactor struct.
   """
-  @spec to_struct(module | Reactor.t() | Dsl.t()) :: {:ok, Reactor.t()} | {:error, any}
+  @spec to_struct(module | Reactor.t() | Spark.Dsl.t()) :: {:ok, Reactor.t()} | {:error, any}
   def to_struct(reactor) when is_struct(reactor, Reactor), do: {:ok, reactor}
 
   def to_struct(module) do
@@ -23,7 +23,7 @@ defmodule Reactor.Info do
   @doc """
   Raising version of `to_struct/1`.
   """
-  @spec to_struct!(module | Reactor.t() | Dsl.t()) :: Reactor.t() | no_return
+  @spec to_struct!(module | Reactor.t() | Spark.Dsl.t()) :: Reactor.t() | no_return
   def to_struct!(reactor) do
     case to_struct(reactor) do
       {:ok, reactor} -> reactor
@@ -31,10 +31,18 @@ defmodule Reactor.Info do
     end
   end
 
-  defp entities_to_struct(module) do
+  defp entities_to_struct(module) when is_atom(module) do
     module
     |> reactor()
-    |> reduce_while_ok(Builder.new(module), &Builder.Build.build/2)
+    |> reduce_while_ok(Builder.new(module), &Dsl.Build.build/2)
+  end
+
+  defp entities_to_struct(dsl_state) when is_map(dsl_state) do
+    module = Extension.get_persisted(dsl_state, :module)
+
+    dsl_state
+    |> reactor()
+    |> reduce_while_ok(Builder.new(module), &Dsl.Build.build/2)
   end
 
   defp maybe_set_return(module, reactor) do

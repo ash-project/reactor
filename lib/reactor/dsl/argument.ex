@@ -3,7 +3,11 @@ defmodule Reactor.Dsl.Argument do
   The struct used to store argument DSL entities.
   """
 
-  defstruct name: nil, source: nil, transform: nil, __identifier__: nil
+  defstruct __identifier__: nil,
+            name: nil,
+            source: nil,
+            transform: nil
+
   alias Reactor.{Argument, Dsl, Template}
 
   @type t :: %Dsl.Argument{

@@ -143,6 +143,7 @@ defmodule Reactor.Dsl do
     identifier: :name,
     no_depend_modules: [:impl],
     entities: [arguments: [@argument]],
+    recursive_as: :steps,
     schema: [
       name: [
         type: :atom,
@@ -165,7 +166,7 @@ defmodule Reactor.Dsl do
         """
       ],
       run: [
-        type: {:mfa_or_fun, 2},
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
         required: false,
         doc: """
         Provide an anonymous function which implements the `run/3` callback.
@@ -174,7 +175,7 @@ defmodule Reactor.Dsl do
         """
       ],
       undo: [
-        type: {:mfa_or_fun, 3},
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
         required: false,
         doc: """
         Provide an anonymous function which implements the `undo/4` callback.
@@ -183,7 +184,7 @@ defmodule Reactor.Dsl do
         """
       ],
       compensate: [
-        type: {:mfa_or_fun, 3},
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
         required: false,
         doc: """
         Provide an anonymous function which implements the `undo/4` callback.
@@ -234,6 +235,7 @@ defmodule Reactor.Dsl do
     identifier: :name,
     no_depend_modules: [:reactor],
     entities: [arguments: [@argument]],
+    recursive_as: :steps,
     schema: [
       name: [
         type: :atom,
@@ -255,6 +257,46 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @around %Entity{
+    name: :around,
+    describe: """
+    Wrap a function around a group of steps.
+    """,
+    target: Dsl.Around,
+    args: [:name, {:optional, :fun}],
+    identifier: :name,
+    entities: [steps: [], arguments: [@argument]],
+    recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique name of the group of steps.
+        """
+      ],
+      fun: [
+        type: {:mfa_or_fun, 4},
+        required: true,
+        doc: """
+        The around function.
+
+        See `Reactor.Step.Around` for more information.
+        """
+      ],
+      allow_async?: [
+        type: :boolean,
+        required: false,
+        default: false,
+        doc: """
+        Whether the emitted steps should be allowed to run asynchronously.
+
+        Passed to the child Reactor as it's `async?` option.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -267,11 +309,12 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@input, @step, @compose],
+    entities: [@around, @input, @step, @compose],
     top_level?: true
   }
 
   use Extension,
     sections: [@reactor],
-    transformers: [Dsl.Transformer]
+    transformers: [Dsl.Transformer],
+    verifiers: [Dsl.Verifier]
 end
