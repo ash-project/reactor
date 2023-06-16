@@ -8,43 +8,27 @@ defmodule Reactor.Step.AnonFnTest do
   end
 
   describe "run/3" do
-    test "it can handle 1 arity anonymous functions" do
-      fun = fn arguments ->
-        arguments.first_name
-      end
-
-      assert :marty = run(%{first_name: :marty}, %{}, fun: fun)
-    end
-
     test "it can handle 2 arity anonymous functions" do
       fun = fn arguments, _ ->
         arguments.first_name
       end
 
-      assert :marty = run(%{first_name: :marty}, %{}, fun: fun)
-    end
-
-    test "it can handle 3 arity anonymous functions" do
-      fun = fn arguments, _, _ ->
-        arguments.first_name
-      end
-
-      assert :marty = run(%{first_name: :marty}, %{}, fun: fun)
+      assert :marty = run(%{first_name: :marty}, %{}, run: fun)
     end
 
     test "it can handle an MFA" do
-      assert :marty = run(%{first_name: :marty}, %{}, fun: {__MODULE__, :example, []})
+      assert :marty = run(%{first_name: :marty}, %{}, run: {__MODULE__, :example, []})
     end
 
     test "it rescues errors" do
       fun = fn _, _ -> raise "Marty" end
 
-      assert {:error, error} = run(%{}, %{}, fun: fun)
+      assert {:error, error} = run(%{}, %{}, run: fun)
       assert Exception.message(error) =~ "Marty"
     end
   end
 
-  def example(arguments, _context, _options) do
+  def example(arguments, _context) do
     arguments.first_name
   end
 end

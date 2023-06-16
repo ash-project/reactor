@@ -8,7 +8,7 @@ defmodule Example.MapReduceReactor do
   producer :split_to_words do
     argument :words, input(:words)
 
-    impl(fn %{words: words}, _, _ ->
+    run(fn %{words: words}, _, _ ->
       stream =
         words
         |> split_into_stream()
@@ -23,7 +23,7 @@ defmodule Example.MapReduceReactor do
 
     step :count_batch do
       argument :batch, element(:count_batches)
-      impl fn %{batch: batch}, _, _ ->
+      run fn %{batch: batch}, _, _ ->
         {:ok, Enum.frequencies(batch)}
       end
     end
@@ -32,7 +32,7 @@ defmodule Example.MapReduceReactor do
   reduce :into_result do
     over result(:count_batches)
 
-    impl fn %{input: stream} ->
+    run fn %{input: stream} ->
 
     end
   end

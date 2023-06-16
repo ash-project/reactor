@@ -12,7 +12,7 @@ defmodule Reactor.ExecutorTest do
       step :atom_to_string do
         argument :name, input(:name)
 
-        impl(fn %{name: name}, _, _ ->
+        run(fn %{name: name}, _ ->
           {:ok, Atom.to_string(name)}
         end)
 
@@ -22,7 +22,7 @@ defmodule Reactor.ExecutorTest do
       step :upcase do
         argument :name, result(:atom_to_string)
 
-        impl(fn %{name: name} = args, _, _ ->
+        run(fn %{name: name}, _ ->
           {:ok, String.upcase(name)}
         end)
 
@@ -45,25 +45,25 @@ defmodule Reactor.ExecutorTest do
       use Reactor
 
       step :a do
-        impl(fn _, _, _ ->
+        run(fn _, _ ->
           {:ok, self()}
         end)
       end
 
       step :b do
-        impl(fn _, _, _ ->
+        run(fn _, _ ->
           {:ok, self()}
         end)
       end
 
       step :c do
-        impl(fn _, _, _ ->
+        run(fn _, _ ->
           {:ok, self()}
         end)
       end
 
       step :d do
-        impl(fn _, _, _ ->
+        run(fn _, _ ->
           {:ok, self()}
         end)
       end
@@ -74,7 +74,7 @@ defmodule Reactor.ExecutorTest do
         argument :c, result(:c)
         argument :d, result(:d)
 
-        impl(fn args, _, _ ->
+        run(fn args, _ ->
           {:ok, Map.values(args)}
         end)
       end
@@ -103,7 +103,7 @@ defmodule Reactor.ExecutorTest do
       step :atom_to_string do
         argument :name, input(:name)
 
-        impl(fn %{name: name}, _, _ ->
+        run(fn %{name: name}, _ ->
           {:halt, Atom.to_string(name)}
         end)
       end
@@ -111,7 +111,7 @@ defmodule Reactor.ExecutorTest do
       step :upcase do
         argument :name, result(:atom_to_string)
 
-        impl(fn %{name: name}, _, _ ->
+        run(fn %{name: name}, _ ->
           {:ok, String.upcase(name)}
         end)
       end
@@ -252,7 +252,7 @@ defmodule Reactor.ExecutorTest do
           transform & &1.year
         end
 
-        impl(fn args, _, _ ->
+        run(fn args, _ ->
           {:ok, "#{args.whom} in #{args.when}"}
         end)
       end
@@ -281,7 +281,7 @@ defmodule Reactor.ExecutorTest do
 
         transform &%{whom: "#{&1.whom.first_name} #{&1.whom.last_name}", when: &1.when.year}
 
-        impl(fn args, _, _ ->
+        run(fn args, _ ->
           {:ok, "#{args.whom} in #{args.when}"}
         end)
       end

@@ -15,17 +15,17 @@ defmodule ReactorTest do
 
       step :split do
         argument :name, input(:name)
-        impl(fn %{name: name}, _, _ -> {:ok, String.split(name)} end)
+        run(fn %{name: name}, _ -> {:ok, String.split(name)} end)
       end
 
       step :reverse do
         argument :chunks, result(:split)
-        impl(fn %{chunks: chunks}, _, _ -> {:ok, Enum.reverse(chunks)} end)
+        run(fn %{chunks: chunks}, _ -> {:ok, Enum.reverse(chunks)} end)
       end
 
       step :join do
         argument :chunks, result(:reverse)
-        impl(fn %{chunks: chunks}, _, _ -> {:ok, Enum.join(chunks, " ")} end)
+        run(fn %{chunks: chunks}, _ -> {:ok, Enum.join(chunks, " ")} end)
       end
     end
 

@@ -10,7 +10,7 @@ defmodule Reactor.Step do
             context: %{},
             impl: nil,
             name: nil,
-            max_retries: :infinite,
+            max_retries: :infinity,
             ref: nil,
             transform: nil
 

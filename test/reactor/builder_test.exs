@@ -205,10 +205,10 @@ defmodule Reactor.BuilderTest do
       composite_reactor =
         new()
         |> add_input!(:user)
-        |> add_step!(:first_name, {Step.AnonFn, fun: &Map.fetch(&1.user, :first_name)},
+        |> add_step!(:first_name, {Step.AnonFn, run: &Map.fetch(&1.user, :first_name)},
           user: {:input, :user}
         )
-        |> add_step!(:last_name, {Step.AnonFn, fun: &Map.fetch(&1.user, :last_name)},
+        |> add_step!(:last_name, {Step.AnonFn, run: &Map.fetch(&1.user, :last_name)},
           user: {:input, :user}
         )
         |> compose!(:shout, shouty_reactor,

@@ -1,9 +1,17 @@
-defmodule Reactor.Argument.Templates do
+defmodule Reactor.Dsl.Argument do
   @moduledoc """
-  Template functions used to declare DSL arguments.
+  The struct used to store argument DSL entities.
   """
 
+  defstruct name: nil, source: nil, transform: nil, __identifier__: nil
   alias Reactor.Template
+
+  @type t :: %__MODULE__{
+          name: atom,
+          source: Template.Input.t() | Template.Result.t() | Template.Value.t(),
+          transform: nil | (any -> any) | {module, keyword} | mfa,
+          __identifier__: any
+        }
 
   @doc ~S"""
   The `input` template helper for the Reactor DSL.

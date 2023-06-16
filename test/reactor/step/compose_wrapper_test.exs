@@ -40,7 +40,7 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:error, error} =
                Step.ComposeWrapper.run(%{}, %{current_step: %{name: :foo}},
                  prefix: [],
-                 original: {Step.AnonFn, fun: fn args -> {:ok, args.a + 1} end}
+                 original: {Step.AnonFn, run: fn args -> {:ok, args.a + 1} end}
                )
 
       assert Exception.message(error) =~ ~r/invalid `prefix` option/i
@@ -50,7 +50,7 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:error, error} =
                Step.ComposeWrapper.run(%{}, %{current_step: %{name: :foo}},
                  prefix: :marty,
-                 original: {Step.AnonFn, fun: fn args -> {:ok, args.a + 1} end}
+                 original: {Step.AnonFn, run: fn args -> {:ok, args.a + 1} end}
                )
 
       assert Exception.message(error) =~ ~r/invalid `prefix` option/i
@@ -60,7 +60,7 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:ok, 2} =
                Step.ComposeWrapper.run(%{a: 1}, %{current_step: %{name: :foo}},
                  prefix: [:a, :b],
-                 original: {Step.AnonFn, fun: fn args -> {:ok, args.a + 1} end}
+                 original: {Step.AnonFn, run: fn args -> {:ok, args.a + 1} end}
                )
     end
 
@@ -68,7 +68,7 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:error, :wat} =
                Step.ComposeWrapper.run(%{}, %{current_step: %{name: :foo}},
                  prefix: [:a, :b],
-                 original: {Step.AnonFn, fun: fn _ -> {:error, :wat} end}
+                 original: {Step.AnonFn, run: fn _ -> {:error, :wat} end}
                )
     end
 
@@ -76,14 +76,14 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:halt, :wat} =
                Step.ComposeWrapper.run(%{}, %{current_step: %{name: :foo}},
                  prefix: [:a, :b],
-                 original: {Step.AnonFn, fun: fn _ -> {:halt, :wat} end}
+                 original: {Step.AnonFn, run: fn _ -> {:halt, :wat} end}
                )
     end
 
     test "when the original step returns new dynamic steps, it rewrites them" do
       [new_c, new_d] = [
-        Builder.new_step!(:c, {Step.AnonFn, fun: fn args -> {:ok, args.b} end}, b: {:input, :b}),
-        Builder.new_step!(:d, {Step.AnonFn, fun: fn args -> {:ok, args.c + 1} end},
+        Builder.new_step!(:c, {Step.AnonFn, run: fn args -> {:ok, args.b} end}, b: {:input, :b}),
+        Builder.new_step!(:d, {Step.AnonFn, run: fn args -> {:ok, args.c + 1} end},
           c: {:result, :c}
         )
       ]
@@ -91,7 +91,7 @@ defmodule Reactor.Step.ComposeWrapperTest do
       assert {:ok, _, [rewritten_c, rewritten_d]} =
                Step.ComposeWrapper.run(%{}, %{current_step: %{name: :foo}},
                  prefix: [:a, :b],
-                 original: {Step.AnonFn, fun: fn _ -> {:ok, nil, [new_c, new_d]} end}
+                 original: {Step.AnonFn, run: fn _ -> {:ok, nil, [new_c, new_d]} end}
                )
 
       assert rewritten_c.name == {:a, :b, new_c.name}
