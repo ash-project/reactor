@@ -62,13 +62,55 @@ defmodule Reactor do
 
   use Spark.Dsl, default_extensions: [extensions: Dsl]
 
-  @type context :: Enumerable.t({any, any})
+  @type context :: %{optional(atom) => any}
+  @type context_arg :: Enumerable.t({atom, any})
+
+  @typedoc """
+  Specify the maximum number of asynchronous steps which can be run in parallel.
+
+  Defaults to the result of `System.schedulers_online/0`.
+  """
+  @type max_concurrency_option :: {:max_concurrency, pos_integer()}
+
+  @typedoc """
+  Specify the amount of execution time after which to halt processing.
+
+  Note that this is not a hard limit. The Reactor will stop when the first step
+  completes _after_ the timeout has expired.
+
+  Defaults to `:infinity`.
+  """
+  @type timeout_option :: {:timeout, pos_integer() | :infinity}
+
+  @typedoc """
+  The maximum number of iterations which after which the Reactor will halt.
+
+  Defaults to `:infinity`.
+  """
+  @type max_iterations_option :: {:max_iterations, pos_integer() | :infinity}
+
+  @typedoc """
+  How long to wait for asynchronous steps to complete when halting.
+
+  Defaults to 5000ms.
+  """
+  @type halt_timeout_option :: {:halt_timeout, pos_integer() | :infinity}
+
+  @typedoc """
+  When set to `false` forces the Reactor to run every step synchronously,
+  regardless of the step configuration.
+
+  Defaults to `true`.
+  """
+  @type async_option :: {:async?, boolean}
+
   @type options ::
           Enumerable.t(
-            {:max_concurrency, pos_integer()}
-            | {:timeout, pos_integer() | :infinity}
-            | {:max_iterations, pos_integer() | :infinity}
-            | {:halt_timeout, pos_integer() | :infinity}
+            max_concurrency_option
+            | timeout_option
+            | max_iterations_option
+            | halt_timeout_option
+            | async_option
           )
 
   @type state :: :pending | :executing | :halted | :failed | :successful
@@ -93,7 +135,7 @@ defmodule Reactor do
   @doc """
   Run a reactor.
   """
-  @spec run(t | module, inputs, context, options) :: {:ok, any} | {:error, any} | {:halted, t}
+  @spec run(t | module, inputs, context_arg, options) :: {:ok, any} | {:error, any} | {:halted, t}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, inputs, context, options) when is_atom(reactor) do

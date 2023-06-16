@@ -67,7 +67,8 @@ defmodule Reactor.Executor do
   end
 
   defp execute(reactor, state) do
-    with {:continue, reactor, state} <- handle_unplanned_steps(reactor, state),
+    with {:continue, reactor, state} <- maybe_timeout(reactor, state),
+         {:continue, reactor, state} <- handle_unplanned_steps(reactor, state),
          {:continue, reactor, state} <- handle_completed_async_steps(reactor, state),
          {:continue, reactor, state} <- start_ready_async_steps(reactor, state),
          {:continue, reactor, state} <- run_ready_sync_step(reactor, state),
@@ -91,6 +92,18 @@ defmodule Reactor.Executor do
     end
   end
 
+  defp maybe_timeout(reactor, state) when state.timeout == :infinity,
+    do: {:continue, reactor, state}
+
+  defp maybe_timeout(reactor, state) do
+    if DateTime.diff(DateTime.utc_now(), state.started_at, :millisecond) >= state.timeout do
+      {reactor, _status} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
+      {:halt, reactor, state}
+    else
+      {:continue, reactor, state}
+    end
+  end
+
   defp handle_unplanned_steps(reactor, state) when reactor.steps == [],
     do: {:continue, reactor, state}
 
@@ -101,9 +114,14 @@ defmodule Reactor.Executor do
     end
   end
 
-  defp handle_completed_async_steps(reactor, state) do
-    Executor.Async.handle_completed_steps(reactor, state)
-  end
+  defp handle_completed_async_steps(reactor, state) when state.async? == false,
+    do: {:continue, reactor, state}
+
+  defp handle_completed_async_steps(reactor, state),
+    do: Executor.Async.handle_completed_steps(reactor, state)
+
+  defp start_ready_async_steps(reactor, state) when state.async? == false,
+    do: {:continue, reactor, state}
 
   defp start_ready_async_steps(reactor, state)
        when map_size(state.current_tasks) == state.max_concurrency,
@@ -113,6 +131,15 @@ defmodule Reactor.Executor do
     steps = find_ready_async_steps(reactor)
 
     Executor.Async.start_steps(reactor, state, steps)
+  end
+
+  defp run_ready_sync_step(reactor, state) when state.async? == false do
+    step =
+      reactor
+      |> find_ready_steps()
+      |> Enum.at(0)
+
+    Executor.Sync.run(reactor, state, step)
   end
 
   defp run_ready_sync_step(reactor, state) do
@@ -161,11 +188,16 @@ defmodule Reactor.Executor do
     |> Enum.at(0)
   end
 
-  defp find_ready_steps(reactor, predicate) when is_function(predicate, 1) do
+  defp find_ready_steps(reactor) do
     reactor.plan
     |> Graph.vertices()
     |> Stream.filter(&(Graph.in_degree(reactor.plan, &1) == 0))
     |> Stream.reject(&is_struct(&1, Task))
+  end
+
+  defp find_ready_steps(reactor, predicate) when is_function(predicate, 1) do
+    reactor
+    |> find_ready_steps()
     |> Stream.filter(predicate)
   end
 end
