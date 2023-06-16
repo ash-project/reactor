@@ -124,7 +124,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:error, %ArgumentError{} = error} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, [:marty])
+               |> Compose.compose(:shout_at, inner_reactor, [{:marty}])
 
       assert Exception.message(error) =~ ~r/contains a non-argument value/i
     end

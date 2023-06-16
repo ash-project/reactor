@@ -14,8 +14,10 @@ defmodule Reactor.Dsl.Step do
             undo: nil,
             __identifier__: nil
 
+  alias Reactor.{Builder, Dsl}
+
   @type t :: %__MODULE__{
-          arguments: [Reactor.Argument.t()],
+          arguments: [Dsl.Argument.t()],
           async?: boolean,
           compensate:
             nil | (any, Reactor.inputs(), Reactor.context() -> :ok | :retry | {:continue, any}),
@@ -30,4 +32,14 @@ defmodule Reactor.Dsl.Step do
           undo: nil | (any, Reactor.inputs(), Reactor.context() -> :ok | :retry | {:error, any}),
           __identifier__: any
         }
+
+  defimpl Builder.Build do
+    def build(step, reactor) do
+      Builder.add_step(reactor, step.name, step.impl, step.arguments,
+        async?: step.async?,
+        max_retries: step.max_retries,
+        transform: step.transform
+      )
+    end
+  end
 end

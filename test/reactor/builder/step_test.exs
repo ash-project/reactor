@@ -18,7 +18,7 @@ defmodule Reactor.Builder.StepTest do
       reactor = Builder.new()
 
       assert {:error, %ArgumentError{} = error} =
-               Builder.Step.add_step(reactor, :greet, GreeterStep, [:marty], [])
+               Builder.Step.add_step(reactor, :greet, GreeterStep, [{:marty}], [])
 
       assert Exception.message(error) =~ ~r/non-argument/i
     end
@@ -195,7 +195,7 @@ defmodule Reactor.Builder.StepTest do
     end
 
     test "when given an invalid argument it returns an error" do
-      assert {:error, error} = Builder.Step.new_step(:marty, GreeterStep, [:doc], [])
+      assert {:error, error} = Builder.Step.new_step(:marty, GreeterStep, [{:doc}], [])
       assert Exception.message(error) =~ "non-argument"
     end
 
