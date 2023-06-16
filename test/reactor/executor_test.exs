@@ -1,5 +1,6 @@
 defmodule Reactor.ExecutorTest do
   @moduledoc false
+  alias Reactor.ExecutorTest.SleepyReactor
   use ExUnit.Case, async: true
 
   describe "synchronous execution" do
@@ -295,6 +296,91 @@ defmodule Reactor.ExecutorTest do
                  whom: %{first_name: "Marty", last_name: "McFly"},
                  when: ~N[1985-10-26 01:22:00]
                })
+    end
+  end
+
+  describe "async? option" do
+    defmodule SleepyReactor do
+      @moduledoc false
+      use Reactor
+
+      step :a do
+        run fn _, _ ->
+          Process.sleep(100)
+          {:ok, 1}
+        end
+      end
+
+      step :b do
+        run fn _, _ ->
+          Process.sleep(100)
+          {:ok, 2}
+        end
+      end
+
+      step :c do
+        run fn _, _ ->
+          Process.sleep(100)
+          {:ok, 3}
+        end
+      end
+
+      step :d do
+        run fn _, _ ->
+          Process.sleep(100)
+          {:ok, 4}
+        end
+      end
+
+      step :e do
+        run fn _, _ ->
+          Process.sleep(100)
+          {:ok, 5}
+        end
+      end
+    end
+
+    # Yes I know this is a dumb methodology, but what my theory presupposes is -
+    # maybe it isn't?
+
+    test "it can be run synchronously" do
+      elapsed =
+        measure_elapsed(fn ->
+          assert {:ok, _} = Reactor.run(SleepyReactor, %{}, %{}, async?: false)
+        end)
+
+      assert elapsed >= 500 and elapsed <= 600
+    end
+
+    test "it can be run asynchronously" do
+      elapsed =
+        measure_elapsed(fn ->
+          assert {:ok, _} = Reactor.run(SleepyReactor, %{}, %{}, async?: true)
+        end)
+
+      assert elapsed >= 100 and elapsed <= 500
+    end
+
+    defp measure_elapsed(fun) do
+      started_at = DateTime.utc_now()
+
+      fun.()
+
+      DateTime.diff(DateTime.utc_now(), started_at, :millisecond)
+    end
+  end
+
+  describe "reactor timeout" do
+    test "when the timeout is elapsed, it halts the reactor" do
+      elapsed =
+        measure_elapsed(fn ->
+          assert {:halted, reactor} =
+                   Reactor.run(SleepyReactor, %{}, %{}, async?: false, timeout: 200)
+
+          assert Graph.num_vertices(reactor.plan) == 3
+        end)
+
+      assert elapsed <= 300
     end
   end
 end
