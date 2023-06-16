@@ -12,24 +12,62 @@ defmodule Reactor.Step.AnonFn do
   @impl true
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
   def run(arguments, context, options) do
-    case Keyword.pop(options, :fun) do
-      {fun, _opts} when is_function(fun, 1) ->
+    case Keyword.fetch!(options, :run) do
+      fun when is_function(fun, 1) ->
         fun.(arguments)
 
-      {fun, _opts} when is_function(fun, 2) ->
+      fun when is_function(fun, 2) ->
         fun.(arguments, context)
 
-      {fun, opts} when is_function(fun, 3) ->
-        fun.(arguments, context, opts)
-
-      {{m, f, a}, opts} when is_atom(m) and is_atom(f) and is_list(a) ->
-        apply(m, f, [arguments | [context | [opts | a]]])
-
-      {nil, opts} ->
-        raise ArgumentError,
-          message: "Invalid options given to `run/3` callback: `#{inspect(opts)}`"
+      {m, f, a} when is_atom(m) and is_atom(f) and is_list(a) ->
+        apply(m, f, [arguments, context] ++ a)
     end
   rescue
     error -> {:error, error}
+  end
+
+  @doc false
+  @impl true
+  @spec compensate(any, Reactor.inputs(), Reactor.context(), keyword) ::
+          {:continue, any} | :ok | :retry
+  def compensate(reason, arguments, context, options) do
+    case Keyword.fetch(options, :compensate) do
+      {:ok, fun} when is_function(fun, 1) ->
+        fun.(reason)
+
+      {:ok, fun} when is_function(fun, 2) ->
+        fun.(reason, arguments)
+
+      {:ok, fun} when is_function(fun, 3) ->
+        fun.(reason, arguments, context)
+
+      {:ok, {m, f, a}} when is_atom(m) and is_atom(f) and is_list(a) ->
+        apply(m, f, [reason, arguments, context] ++ a)
+
+      _ ->
+        :ok
+    end
+  end
+
+  @doc false
+  @impl true
+  @spec undo(any, Reactor.inputs(), Reactor.context(), keyword) :: :ok | :retry | {:error, any}
+  def undo(value, arguments, context, options) do
+    case Keyword.fetch(options, :undo) do
+      {:ok, fun} when is_function(fun, 1) ->
+        fun.(value)
+
+      {:ok, fun} when is_function(fun, 2) ->
+        fun.(value, arguments)
+
+      {:ok, fun} when is_function(fun, 3) ->
+        fun.(value, arguments, context)
+
+      {:ok, {m, f, a}} when is_atom(m) and is_atom(f) and is_list(a) ->
+        apply(m, f, [value, arguments, context] ++ a)
+
+      _ ->
+        :ok
+    end
   end
 end

@@ -28,13 +28,13 @@ defmodule Reactor.Builder.InputTest do
     test "when the input has a transform impl the input and a transform step are added to the reactor" do
       assert {:ok, reactor} =
                Builder.new()
-               |> Input.add_input(:marty, {Step.Transform, fun: &Function.identity/1})
+               |> Input.add_input(:marty, {Step.Transform, run: &Function.identity/1})
 
       assert :marty in reactor.inputs
       assert [step] = reactor.steps
 
       assert step.name == {:__reactor__, :transform, :input, :marty}
-      assert step.impl == {Step.Transform, fun: &Function.identity/1}
+      assert step.impl == {Step.Transform, run: &Function.identity/1}
     end
 
     test "when the transform is not valid, it returns an error" do

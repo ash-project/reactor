@@ -1,7 +1,7 @@
 defmodule Reactor.Dsl do
   @moduledoc false
 
-  alias Reactor.{Argument, Dsl, Input, Step, Template}
+  alias Reactor.{Dsl, Step, Template}
   alias Spark.Dsl.{Entity, Extension, Section}
 
   @transform [
@@ -32,7 +32,8 @@ defmodule Reactor.Dsl do
       """
     ],
     args: [:name],
-    target: Input,
+    target: Dsl.Input,
+    identifier: :name,
     schema: [
       name: [
         type: :atom,
@@ -78,8 +79,9 @@ defmodule Reactor.Dsl do
       """
     ],
     args: [:name, {:optional, :source}],
-    target: Argument,
-    imports: [Argument.Templates],
+    target: Dsl.Argument,
+    identifier: :name,
+    imports: [Dsl.Argument],
     schema: [
       name: [
         type: :atom,
@@ -97,7 +99,7 @@ defmodule Reactor.Dsl do
         doc: """
         What to use as the source of the argument.
 
-        See `Reactor.Argument.Templates` for more information.
+        See `Reactor.Dsl.Argument` for more information.
         """
       ],
       transform:
@@ -130,14 +132,15 @@ defmodule Reactor.Dsl do
       step :hash_password do
         argument :password, input(:password)
 
-        impl fn %{password: password}, _ ->
+        run fn %{password: password}, _ ->
           {:ok, Bcrypt.hash_pwd_salt(password)}
         end
       end
       """
     ],
     args: [:name, {:optional, :impl}],
-    target: Step,
+    target: Dsl.Step,
+    identifier: :name,
     no_depend_modules: [:impl],
     entities: [arguments: [@argument]],
     schema: [
@@ -152,17 +155,40 @@ defmodule Reactor.Dsl do
         """
       ],
       impl: [
-        type: {:spark_function_behaviour, Step, {Step.AnonFn, 3}},
-        required: true,
+        type: {:or, [{:spark_behaviour, Step}, nil]},
+        required: false,
         doc: """
         The step implementation.
 
-        The implementation can be either a module which implements the
-        `Reactor.Step` behaviour or an anonymous function or function capture
-        with an arity of 2.
+        Provides an implementation for the step with the named module.  The
+        module must implement the `Reactor.Step` behaviour.
+        """
+      ],
+      run: [
+        type: {:mfa_or_fun, 2},
+        required: false,
+        doc: """
+        Provide an anonymous function which implements the `run/3` callback.
 
-        Note that steps which are implemented as functions cannot be
-        compensated or undone.
+        You cannot provide this option at the same time as the `impl` argument.
+        """
+      ],
+      undo: [
+        type: {:mfa_or_fun, 3},
+        required: false,
+        doc: """
+        Provide an anonymous function which implements the `undo/4` callback.
+
+        You cannot provide this option at the same time as the `impl` argument.
+        """
+      ],
+      compensate: [
+        type: {:mfa_or_fun, 3},
+        required: false,
+        doc: """
+        Provide an anonymous function which implements the `undo/4` callback.
+
+        You cannot provide this option at the same time as the `impl` argument.
         """
       ],
       max_retries: [
@@ -205,6 +231,7 @@ defmodule Reactor.Dsl do
     """,
     args: [:name, :reactor],
     target: Dsl.Compose,
+    identifier: :name,
     no_depend_modules: [:reactor],
     entities: [arguments: [@argument]],
     schema: [

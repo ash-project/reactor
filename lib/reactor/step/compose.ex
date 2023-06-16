@@ -89,7 +89,7 @@ defmodule Reactor.Step.Compose do
   defp create_recursion_step(reactor, name) do
     Builder.new_step(
       name,
-      {Step.AnonFn, fun: fn args, _, _ -> {:ok, args.value} end},
+      {Step.AnonFn, run: fn args, _, _ -> {:ok, args.value} end},
       [value: {:result, {__MODULE__, name, reactor.return}}],
       max_retries: 0
     )

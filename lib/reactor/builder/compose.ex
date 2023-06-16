@@ -123,7 +123,7 @@ defmodule Reactor.Builder.Compose do
        ],
        name: name,
        async?: true,
-       impl: {Step.AnonFn, fun: &{:ok, Map.fetch!(&1, :value)}},
+       impl: {Step.AnonFn, run: &{:ok, Map.fetch!(&1, :value)}},
        max_retries: 0,
        ref: make_ref()
      }}
