@@ -8,7 +8,6 @@ defmodule Reactor.Builder.Step do
   alias Reactor.{Argument, Builder, Step, Template}
   import Reactor.Argument, only: :macros
   import Reactor.Utils
-  import Reactor.Builder.Argument
 
   @doc """
   Build and add a new step to a Reactor.
@@ -140,6 +139,10 @@ defmodule Reactor.Builder.Step do
     else
       :ok
     end
+  end
+
+  defp assert_all_are_arguments(arguments) do
+    map_while_ok(arguments, &Argument.Build.build/1)
   end
 
   defp maybe_rewrite_input_arguments(reactor, arguments) do

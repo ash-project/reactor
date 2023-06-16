@@ -4,9 +4,9 @@ defmodule Reactor.Dsl.Argument do
   """
 
   defstruct name: nil, source: nil, transform: nil, __identifier__: nil
-  alias Reactor.Template
+  alias Reactor.{Argument, Dsl, Template}
 
-  @type t :: %__MODULE__{
+  @type t :: %Dsl.Argument{
           name: atom,
           source: Template.Input.t() | Template.Result.t() | Template.Value.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa,
@@ -97,5 +97,17 @@ defmodule Reactor.Dsl.Argument do
   @spec value(any) :: Template.Value.t()
   def value(value) do
     %Template.Value{value: value}
+  end
+
+  defimpl Argument.Build do
+    def build(argument) do
+      argument =
+        argument
+        |> Map.from_struct()
+        |> Map.take(~w[name source transform]a)
+        |> then(&struct(Argument, &1))
+
+      {:ok, argument}
+    end
   end
 end

@@ -102,7 +102,7 @@ defmodule Reactor.BuilderTest do
 
     test "when an argument is anything else, it is an error" do
       reactor = new()
-      assert {:error, error} = add_step(reactor, :marty, Noop, [:wat])
+      assert {:error, error} = add_step(reactor, :marty, Noop, [{:wat}])
       assert Exception.message(error) =~ "contains a non-argument value"
     end
 

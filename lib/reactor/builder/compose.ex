@@ -10,7 +10,6 @@ defmodule Reactor.Builder.Compose do
   """
   import Reactor, only: :macros
   import Reactor.Argument, only: :macros
-  import Reactor.Builder.Argument
   import Reactor.Utils
   alias Reactor.{Argument, Builder, Error.ComposeError, Step}
 
@@ -127,6 +126,10 @@ defmodule Reactor.Builder.Compose do
        max_retries: 0,
        ref: make_ref()
      }}
+  end
+
+  defp assert_all_are_arguments(arguments) do
+    map_while_ok(arguments, &Argument.Build.build/1)
   end
 
   defp assert_arguments_match_inner_reactor_inputs(arguments, inner_reactor) do

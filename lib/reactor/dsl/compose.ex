@@ -6,9 +6,17 @@ defmodule Reactor.Dsl.Compose do
   """
   defstruct arguments: [], name: nil, reactor: nil
 
-  @type t :: %__MODULE__{
-          arguments: [Reactor.Argument.t()],
+  alias Reactor.{Builder, Dsl}
+
+  @type t :: %Dsl.Compose{
+          arguments: [Dsl.Argument.t()],
           name: any,
           reactor: module | Reactor.t()
         }
+
+  defimpl Builder.Build do
+    def build(compose, reactor) do
+      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments)
+    end
+  end
 end
