@@ -273,6 +273,5 @@ defmodule Reactor.Dsl do
 
   use Extension,
     sections: [@reactor],
-    transformers: [Dsl.Transformer],
-    verifiers: [Dsl.PlanableVerifier]
+    transformers: [Dsl.Transformer]
 end

@@ -38,7 +38,8 @@ defmodule Reactor.Dsl.Step do
       Builder.add_step(reactor, step.name, step.impl, step.arguments,
         async?: step.async?,
         max_retries: step.max_retries,
-        transform: step.transform
+        transform: step.transform,
+        ref: :step_name
       )
     end
   end

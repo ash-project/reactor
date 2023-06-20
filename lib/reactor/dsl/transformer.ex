@@ -1,6 +1,6 @@
 defmodule Reactor.Dsl.Transformer do
   @moduledoc false
-  alias Reactor.{Dsl, Step}
+  alias Reactor.{Dsl, Info, Planner, Step}
   alias Spark.{Dsl.Transformer, Error.DslError}
   import Reactor.Utils
   use Transformer
@@ -10,8 +10,22 @@ defmodule Reactor.Dsl.Transformer do
   def transform(dsl_state) do
     with {:ok, dsl_state} <- rewrite_step_impls(dsl_state),
          {:ok, step_names} <- step_names(dsl_state),
-         {:ok, dsl_state} <- maybe_set_return(dsl_state, step_names) do
-      validate_return(dsl_state, step_names)
+         {:ok, dsl_state} <- maybe_set_return(dsl_state, step_names),
+         {:ok, dsl_state} <- validate_return(dsl_state, step_names),
+         {:ok, reactor} <- Info.to_struct(dsl_state),
+         {:ok, reactor} <- Planner.plan(reactor) do
+      dsl_state =
+        dsl_state
+        |> Transformer.eval(
+          [reactor: Macro.escape(reactor)],
+          quote do
+            @doc false
+            @spec reactor :: Reactor.t()
+            def reactor, do: unquote(Macro.escape(reactor))
+          end
+        )
+
+      {:ok, dsl_state}
     end
   end
 

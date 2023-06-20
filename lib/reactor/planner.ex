@@ -41,7 +41,10 @@ defmodule Reactor.Planner do
     end
   end
 
-  defp empty_graph, do: Graph.new(type: :directed, vertex_identifier: & &1.ref)
+  @doc false
+  def get_ref(%{ref: ref}), do: ref
+
+  defp empty_graph, do: Graph.new(type: :directed, vertex_identifier: &__MODULE__.get_ref/1)
 
   defp reduce_steps_into_graph(graph, steps) do
     steps_by_name =

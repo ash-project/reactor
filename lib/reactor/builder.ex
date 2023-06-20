@@ -22,7 +22,7 @@ defmodule Reactor.Builder do
   import Reactor, only: :macros
   import Reactor.Utils
 
-  @type step_options :: [async? | max_retries() | arguments_transform | context]
+  @type step_options :: [async? | max_retries() | arguments_transform | context | ref]
 
   @typedoc "Should the step be run asynchronously?"
   @type async? :: {:async?, boolean}
@@ -34,6 +34,8 @@ defmodule Reactor.Builder do
   @type arguments_transform ::
           {:transform,
            nil | (%{optional(atom) => any} -> %{optional(atom) => any}) | {module | keyword} | mfa}
+
+  @type ref :: {:ref, :step_name | :make_ref}
 
   @typedoc "Optional context which will be merged with the reactor context when calling this step."
   @type context :: Reactor.context()

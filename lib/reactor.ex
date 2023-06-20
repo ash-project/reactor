@@ -1,5 +1,5 @@
 defmodule Reactor do
-  alias Reactor.{Dsl, Executor, Info, Planner, Step}
+  alias Reactor.{Dsl, Executor, Planner, Step}
 
   @moduledoc """
   Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
@@ -139,9 +139,8 @@ defmodule Reactor do
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, inputs, context, options) when is_atom(reactor) do
-    with Reactor <- reactor.spark_is(),
-         {:ok, reactor} <- Info.to_struct(reactor) do
-      run(reactor, inputs, context, options)
+    with Reactor <- reactor.spark_is() do
+      run(reactor.reactor(), inputs, context, options)
     end
   rescue
     UndefinedFunctionError -> {:error, "Module `#{inspect(reactor)}` is not a Reactor module"}

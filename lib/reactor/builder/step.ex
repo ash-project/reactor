@@ -45,17 +45,20 @@ defmodule Reactor.Builder.Step do
             context: context,
             impl: impl,
             name: name,
-            max_retries: max_retries,
-            ref: make_ref()
+            max_retries: max_retries
           }
         ]
         |> Enum.concat(argument_transform_steps)
         |> maybe_append(step_transform_step)
         |> Enum.concat(reactor.steps)
+        |> Enum.map(&set_ref(&1, options[:ref]))
 
       {:ok, %{reactor | steps: steps}}
     end
   end
+
+  defp set_ref(step, :step_name), do: %{step | ref: step.name}
+  defp set_ref(step, _), do: %{step | ref: make_ref()}
 
   @doc """
   Dynamically build a new step for later use.
@@ -79,8 +82,7 @@ defmodule Reactor.Builder.Step do
         context: context,
         impl: impl,
         name: name,
-        max_retries: max_retries,
-        ref: make_ref()
+        max_retries: max_retries
       }
 
       {:ok, step}
@@ -229,8 +231,7 @@ defmodule Reactor.Builder.Step do
       async?: false,
       impl: transform,
       name: {:__reactor__, :transform, name},
-      max_retries: 0,
-      ref: make_ref()
+      max_retries: 0
     }
 
     {:ok, [Argument.from_result(:value, step.name)], step}
@@ -252,8 +253,7 @@ defmodule Reactor.Builder.Step do
       async?: false,
       impl: transform,
       name: step_name,
-      max_retries: 0,
-      ref: make_ref()
+      max_retries: 0
     }
   end
 
