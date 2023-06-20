@@ -226,7 +226,7 @@ defmodule Reactor.Builder.Step do
   defp maybe_build_step_transform_all_step(arguments, name, transform) do
     step = %Step{
       arguments: arguments,
-      async?: true,
+      async?: false,
       impl: transform,
       name: {:__reactor__, :transform, name},
       max_retries: 0,
@@ -249,7 +249,7 @@ defmodule Reactor.Builder.Step do
           source: argument_source
         }
       ],
-      async?: true,
+      async?: false,
       impl: transform,
       name: step_name,
       max_retries: 0,
