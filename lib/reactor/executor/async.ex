@@ -3,6 +3,7 @@ defmodule Reactor.Executor.Async do
   Handle the asynchronous execution of a batch of steps, along with any
   mutations to the reactor or execution state.
   """
+  alias Reactor.Executor.ConcurrencyTracker
   alias Reactor.{Executor, Step}
   require Logger
 
@@ -34,25 +35,30 @@ defmodule Reactor.Executor.Async do
     started =
       steps
       |> Enum.take(available_concurrency)
+      |> Enum.take_while(&acquire_concurrency_resource_from_pool(state.concurrency_key, &1))
       |> Enum.reduce_while(%{}, fn step, started ->
-        case start_task_for_step(reactor, step, supervisor) do
+        case start_task_for_step(reactor, step, supervisor, state.concurrency_key) do
           {:ok, task} -> {:cont, Map.put(started, task, step)}
           {:error, reason} -> {:halt, {:error, reason}}
         end
       end)
 
-    reactor = add_task_edges(reactor, started)
-    state = %{state | current_tasks: Map.merge(state.current_tasks, started)}
-    {:recurse, reactor, state}
+    if map_size(started) > 0 do
+      reactor = add_task_edges(reactor, started)
+      state = %{state | current_tasks: Map.merge(state.current_tasks, started)}
+      {:recurse, reactor, state}
+    else
+      {:continue, reactor, state}
+    end
   end
 
-  defp start_task_for_step(reactor, step, supervisor) do
+  defp start_task_for_step(reactor, step, supervisor, pool_key) do
     {:ok,
      Task.Supervisor.async_nolink(
        supervisor,
        Executor.StepRunner,
        :run,
-       [reactor, step]
+       [reactor, step, pool_key]
      )}
   rescue
     error -> {:error, error}
@@ -76,6 +82,8 @@ defmodule Reactor.Executor.Async do
        do: {:continue, reactor, state}
 
   defp handle_completed_steps(reactor, state, completed_task_results) do
+    release_concurrency_resources_to_pool(state.concurrency_key, map_size(completed_task_results))
+
     new_current_tasks = Map.drop(state.current_tasks, Map.keys(completed_task_results))
 
     completed_step_results =
@@ -262,6 +270,8 @@ defmodule Reactor.Executor.Async do
   def collect_remaining_tasks_for_shutdown(reactor, state) do
     remaining_task_results = get_normalised_task_results(state.current_tasks, state.halt_timeout)
 
+    release_concurrency_resources_to_pool(state.concurrency_key, map_size(remaining_task_results))
+
     remaining_step_results =
       remaining_task_results
       |> Map.values()
@@ -325,5 +335,19 @@ defmodule Reactor.Executor.Async do
 
   defp append_steps(reactor, steps) do
     %{reactor | steps: Enum.concat(steps, reactor.steps)}
+  end
+
+  defp release_concurrency_resources_to_pool(_pool_key, 0), do: :ok
+
+  defp release_concurrency_resources_to_pool(pool_key, n) when n > 0 do
+    ConcurrencyTracker.release(pool_key)
+    release_concurrency_resources_to_pool(pool_key, n - 1)
+  end
+
+  defp acquire_concurrency_resource_from_pool(pool_key, _) do
+    case ConcurrencyTracker.acquire(pool_key) do
+      :ok -> true
+      :error -> false
+    end
   end
 end

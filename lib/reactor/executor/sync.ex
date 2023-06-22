@@ -14,7 +14,7 @@ defmodule Reactor.Executor.Sync do
   def run(reactor, state, nil), do: {:continue, reactor, state}
 
   def run(reactor, state, step) do
-    case Executor.StepRunner.run(reactor, step) do
+    case Executor.StepRunner.run(reactor, step, state.concurrency_key) do
       :retry ->
         state = increment_retries(state, step)
 

@@ -2,7 +2,7 @@ defmodule Reactor.Executor.StepRunner do
   @moduledoc """
   Run an individual step, including compensation if possible.
   """
-  alias Reactor.Step
+  alias Reactor.{Executor.ConcurrencyTracker, Step}
   import Reactor.Utils
   import Reactor.Argument, only: :macros
   require Logger
@@ -12,11 +12,12 @@ defmodule Reactor.Executor.StepRunner do
   @doc """
   Collect the arguments and and run a step, with compensation if required.
   """
-  @spec run(Reactor.t(), Step.t()) :: {:ok, any, [Step.t()]} | :retry | {:error | :halt, any}
-  def run(reactor, step) do
+  @spec run(Reactor.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
+          {:ok, any, [Step.t()]} | :retry | {:error | :halt, any}
+  def run(reactor, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {module, options} <- module_and_opts(step),
-         {:ok, context} <- build_context(reactor, step),
+         {:ok, context} <- build_context(reactor, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
       do_run(module, options, arguments, context)
     end
@@ -25,11 +26,11 @@ defmodule Reactor.Executor.StepRunner do
   @doc """
   Undo a step if possible.
   """
-  @spec undo(Reactor.t(), Step.t(), any) :: :ok | {:error, any}
-  def undo(reactor, step, value) do
+  @spec undo(Reactor.t(), Step.t(), any, ConcurrencyTracker.pool_key()) :: :ok | {:error, any}
+  def undo(reactor, step, value, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {module, options} <- module_and_opts(step),
-         {:ok, context} <- build_context(reactor, step),
+         {:ok, context} <- build_context(reactor, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
       do_undo(value, module, options, arguments, context)
     end
@@ -115,11 +116,12 @@ defmodule Reactor.Executor.StepRunner do
     end)
   end
 
-  defp build_context(reactor, step) do
+  defp build_context(reactor, step, concurrency_key) do
     context =
       step.context
       |> deep_merge(reactor.context)
       |> Map.put(:current_step, step)
+      |> Map.put(:concurrency_key, concurrency_key)
 
     {:ok, context}
   end

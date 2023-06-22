@@ -1,7 +1,7 @@
 defmodule Reactor.Step.ComposeTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Argument, Step}
+  alias Reactor.{Argument, Executor.ConcurrencyTracker, Step}
   import Reactor.Builder
   require Reactor.Argument
 
@@ -31,6 +31,7 @@ defmodule Reactor.Step.ComposeTest do
                  %{whom: "Marty McFly"},
                  %{
                    current_step: %{name: :greet_marty},
+                   concurrency_key: ConcurrencyTracker.allocate_pool(16),
                    private: %{composed_reactors: MapSet.new([inner_reactor.id])}
                  },
                  reactor: inner_reactor

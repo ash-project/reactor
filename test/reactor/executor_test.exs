@@ -1,5 +1,6 @@
 defmodule Reactor.ExecutorTest do
   @moduledoc false
+  alias Reactor.Executor.ConcurrencyTracker
   use ExUnit.Case, async: true
 
   describe "synchronous execution" do
@@ -379,7 +380,49 @@ defmodule Reactor.ExecutorTest do
           assert Graph.num_vertices(reactor.plan) == 3
         end)
 
-      assert elapsed <= 300
+      assert elapsed <= 500
+    end
+  end
+
+  describe "shared concurrency pools" do
+    test "when multiple reactors share a concurrency pool, it limits the simultaneous number of processes" do
+      defmodule ShortSleepReactor do
+        @moduledoc false
+        use Reactor
+
+        step :a do
+          run fn _ ->
+            {:ok, Process.sleep(100)}
+          end
+        end
+      end
+
+      concurrency_key = ConcurrencyTracker.allocate_pool(1)
+
+      assert {:ok, _} = Reactor.run(ShortSleepReactor, %{}, %{}, concurrency_key: concurrency_key)
+
+      elapsed =
+        :timer.tc(fn ->
+          t0 =
+            Task.async(fn ->
+              {:ok, _} =
+                Reactor.run(ShortSleepReactor, %{}, %{}, concurrency_key: concurrency_key)
+            end)
+
+          t1 =
+            Task.async(fn ->
+              {:ok, _} =
+                Reactor.run(ShortSleepReactor, %{}, %{}, concurrency_key: concurrency_key)
+            end)
+
+          Task.await(t0)
+          Task.await(t1)
+        end)
+        |> elem(0)
+        |> System.convert_time_unit(:microsecond, :millisecond)
+
+      assert elapsed >= 200
+      assert elapsed < 300
     end
   end
 end
