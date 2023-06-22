@@ -1,6 +1,5 @@
 defmodule Reactor.ExecutorTest do
   @moduledoc false
-  alias Reactor.ExecutorTest.SleepyReactor
   use ExUnit.Case, async: true
 
   describe "synchronous execution" do
@@ -299,47 +298,47 @@ defmodule Reactor.ExecutorTest do
     end
   end
 
-  describe "async? option" do
-    defmodule SleepyReactor do
-      @moduledoc false
-      use Reactor
+  defmodule SleepyReactor do
+    @moduledoc false
+    use Reactor
 
-      step :a do
-        run fn _, _ ->
-          Process.sleep(100)
-          {:ok, 1}
-        end
-      end
-
-      step :b do
-        run fn _, _ ->
-          Process.sleep(100)
-          {:ok, 2}
-        end
-      end
-
-      step :c do
-        run fn _, _ ->
-          Process.sleep(100)
-          {:ok, 3}
-        end
-      end
-
-      step :d do
-        run fn _, _ ->
-          Process.sleep(100)
-          {:ok, 4}
-        end
-      end
-
-      step :e do
-        run fn _, _ ->
-          Process.sleep(100)
-          {:ok, 5}
-        end
+    step :a do
+      run fn _, _ ->
+        Process.sleep(100)
+        {:ok, 1}
       end
     end
 
+    step :b do
+      run fn _, _ ->
+        Process.sleep(100)
+        {:ok, 2}
+      end
+    end
+
+    step :c do
+      run fn _, _ ->
+        Process.sleep(100)
+        {:ok, 3}
+      end
+    end
+
+    step :d do
+      run fn _, _ ->
+        Process.sleep(100)
+        {:ok, 4}
+      end
+    end
+
+    step :e do
+      run fn _, _ ->
+        Process.sleep(100)
+        {:ok, 5}
+      end
+    end
+  end
+
+  describe "async? option" do
     # Yes I know this is a dumb methodology, but what my theory presupposes is -
     # maybe it isn't?
 

@@ -3,7 +3,8 @@ defmodule Reactor.Dsl.Step do
   The struct used to store step DSL entities.
   """
 
-  defstruct arguments: [],
+  defstruct __identifier__: nil,
+            arguments: [],
             async?: true,
             compensate: nil,
             impl: nil,
@@ -11,8 +12,7 @@ defmodule Reactor.Dsl.Step do
             name: nil,
             run: nil,
             transform: nil,
-            undo: nil,
-            __identifier__: nil
+            undo: nil
 
   alias Reactor.{Builder, Dsl}
 
@@ -33,14 +33,76 @@ defmodule Reactor.Dsl.Step do
           __identifier__: any
         }
 
-  defimpl Builder.Build do
+  defimpl Dsl.Build do
+    alias Spark.Error.DslError
+
     def build(step, reactor) do
-      Builder.add_step(reactor, step.name, step.impl, step.arguments,
-        async?: step.async?,
-        max_retries: step.max_retries,
-        transform: step.transform,
-        ref: :step_name
-      )
+      with {:ok, step} <- rewrite_step(step, reactor.id) do
+        Builder.add_step(reactor, step.name, step.impl, step.arguments,
+          async?: step.async?,
+          max_retries: step.max_retries,
+          transform: step.transform,
+          ref: :step_name
+        )
+      end
     end
+
+    def transform(_step, dsl_state), do: {:ok, dsl_state}
+
+    def verify(_step, _dsl_state), do: :ok
+
+    defp rewrite_step(step, module) when is_nil(step.impl) and is_nil(step.run),
+      do:
+        {:error,
+         DslError.exception(
+           module: module,
+           path: [:reactor, :step, step.name],
+           message: "Step has no implementation"
+         )}
+
+    defp rewrite_step(step, module) when not is_nil(step.impl) and not is_nil(step.run),
+      do:
+        {:error,
+         DslError.exception(
+           module: module,
+           path: [:reactor, :step, step.name],
+           message: "Step has both an implementation module and a run function"
+         )}
+
+    defp rewrite_step(step, module)
+         when not is_nil(step.impl) and not is_nil(step.compensate),
+         do:
+           {:error,
+            DslError.exception(
+              module: module,
+              path: [:reactor, :step, step.name],
+              message: "Step has both an implementation module and a compensate function"
+            )}
+
+    defp rewrite_step(step, module) when not is_nil(step.impl) and not is_nil(step.undo),
+      do:
+        {:error,
+         DslError.exception(
+           module: module,
+           path: [:reactor, :step, step.name],
+           message: "Step has both an implementation module and a undo function"
+         )}
+
+    defp rewrite_step(step, _dsl_state)
+         when is_nil(step.run) and is_nil(step.compensate) and is_nil(step.undo) and
+                not is_nil(step.impl),
+         do: {:ok, step}
+
+    defp rewrite_step(step, _dsl_state),
+      do:
+        {:ok,
+         %{
+           step
+           | impl:
+               {Reactor.Step.AnonFn, run: step.run, compensate: step.compensate, undo: step.undo},
+             run: nil,
+             compensate: nil,
+             undo: nil
+         }}
   end
 end

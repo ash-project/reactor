@@ -109,25 +109,25 @@ defmodule Reactor.Utils do
   @doc """
   A wrapper for defining an ArgumentError with a consistent error message format.
   """
+  @spec argument_error(String.Chars.t(), String.Chars.t()) :: argument_error
+  def argument_error(argument_name, reason),
+    do: ArgumentError.exception(message: "`#{argument_name}` #{reason}")
+
+  @doc """
+  A wrapper for defining an ArgumentError with a consistent error message format.
+  """
   @spec argument_error(String.Chars.t(), String.Chars.t(), any) :: argument_error
   def argument_error(argument_name, reason, value) do
-    message =
-      case value do
-        nil ->
-          "`#{argument_name}` #{reason}"
+    ArgumentError.exception(
+      message: """
+      `#{argument_name}` #{reason}
 
-        value ->
-          """
-          `#{argument_name}` #{reason}
+      ## Value of `#{argument_name}`
 
-          ## Value of `#{argument_name}`
-
-          ```
-          #{inspect(value)}
-          ```
-          """
-      end
-
-    ArgumentError.exception(message: message)
+      ```
+      #{inspect(value)}
+      ```
+      """
+    )
   end
 end

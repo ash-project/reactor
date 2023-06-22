@@ -1,8 +1,12 @@
 # Used by "mix format"
 spark_locals_without_parens = [
+  allow_async?: 1,
   argument: 1,
   argument: 2,
   argument: 3,
+  around: 1,
+  around: 2,
+  around: 3,
   async?: 1,
   compensate: 1,
   compose: 2,
