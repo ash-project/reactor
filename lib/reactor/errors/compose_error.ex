@@ -1,10 +1,15 @@
 defmodule Reactor.Error.ComposeError do
+  @moduledoc """
+  An error used when attempting to compose to Reactors together.
+  """
   defexception [:outer_reactor, :inner_reactor, :message, :arguments]
   import Reactor.Utils
 
+  @doc false
   @impl true
   def exception(attrs), do: struct(__MODULE__, attrs)
 
+  @doc false
   @impl true
   def message(error) do
     [

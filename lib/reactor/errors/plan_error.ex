@@ -1,10 +1,15 @@
 defmodule Reactor.Error.PlanError do
+  @moduledoc """
+  An error thrown during the planning of a Reactor.
+  """
   defexception [:reactor, :graph, :step, :message]
   import Reactor.Utils
 
+  @doc false
   @impl true
   def exception(attrs), do: struct(__MODULE__, attrs)
 
+  @doc false
   @impl true
   def message(error) do
     [

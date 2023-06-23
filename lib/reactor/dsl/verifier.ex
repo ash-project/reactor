@@ -6,6 +6,9 @@ defmodule Reactor.Dsl.Verifier do
   alias Reactor.Dsl.Build
   alias Spark.Dsl.Verifier
 
+  @doc false
+  @impl true
+  @spec verify(Spark.Dsl.t()) :: :ok | {:error, any}
   def verify(dsl_state) do
     dsl_state
     |> Verifier.get_entities([:reactor])
