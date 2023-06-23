@@ -7,6 +7,7 @@ defmodule Reactor.Executor.StepRunnerTest do
 
   setup do
     reactor = Builder.new()
+
     {:ok, reactor: reactor}
   end
 
@@ -18,7 +19,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
       step = reactor.steps |> hd()
 
-      assert {:error, reason} = run(reactor, step)
+      assert {:error, reason} = run(reactor, step, nil)
       assert reason =~ "argument `:current_year` is missing"
     end
 
@@ -37,7 +38,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, marty)
+      assert {:ok, :marty, []} = run(reactor, marty, nil)
     end
 
     test "when the step is successful, it returns an ok tuple", %{reactor: reactor} do
@@ -49,7 +50,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty, []}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, step)
+      assert {:ok, :marty, []} = run(reactor, step, nil)
     end
 
     test "when the step asks to be retried, it returns a retry atom", %{reactor: reactor} do
@@ -61,7 +62,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         :retry
       end)
 
-      assert :retry = run(reactor, step)
+      assert :retry = run(reactor, step, nil)
     end
 
     test "when a step returns an error and cannot be compensated, it returns an error tuple", %{
@@ -75,7 +76,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:error, :doc}
       end)
 
-      assert {:error, :doc} = run(reactor, step)
+      assert {:error, :doc} = run(reactor, step, nil)
     end
 
     test "when a step raises an error it returns an error tuple", %{reactor: reactor} do
@@ -87,7 +88,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         raise RuntimeError, "Not enough plutonium!"
       end)
 
-      assert {:error, error} = run(reactor, step)
+      assert {:error, error} = run(reactor, step, nil)
       assert is_struct(error, RuntimeError)
       assert Exception.message(error) == "Not enough plutonium!"
     end
@@ -101,7 +102,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> {:continue, :marty} end)
 
-      assert {:ok, :marty} = run(reactor, step)
+      assert {:ok, :marty} = run(reactor, step, nil)
     end
 
     test "when a step returns an error and can be compensated and the compensation succeed it returns an error tuple",
@@ -113,7 +114,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> :ok end)
 
-      assert {:error, :doc} = run(reactor, step)
+      assert {:error, :doc} = run(reactor, step, nil)
     end
   end
 
@@ -129,7 +130,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         :ok
       end)
 
-      undo(reactor, step, :marty)
+      undo(reactor, step, :marty, nil)
     end
 
     test "when the step can be undone it returns ok", %{reactor: reactor} do
@@ -139,7 +140,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       Example.Step.Undoable
       |> stub(:undo, fn _, _, _, _ -> :ok end)
 
-      assert :ok = undo(reactor, step, :marty)
+      assert :ok = undo(reactor, step, :marty, nil)
     end
 
     test "when the step undo needs to be retried it eventually returns ok", %{reactor: reactor} do
@@ -152,7 +153,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> expect(:undo, fn _, _, _, _ -> :retry end)
       |> expect(:undo, fn _, _, _, _ -> :ok end)
 
-      assert :ok = undo(reactor, step, :marty)
+      assert :ok = undo(reactor, step, :marty, nil)
     end
 
     test "when the step undo is stuck in a retry loop, it eventually returns an error", %{
@@ -164,7 +165,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       Example.Step.Undoable
       |> stub(:undo, fn _, _, _, _ -> :retry end)
 
-      assert {:error, message} = undo(reactor, step, :marty)
+      assert {:error, message} = undo(reactor, step, :marty, nil)
       assert message =~ "retried 5 times"
     end
   end

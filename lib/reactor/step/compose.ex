@@ -34,7 +34,7 @@ defmodule Reactor.Step.Compose do
   end
 
   defp handle_recursive_reactor(reactor, arguments, context),
-    do: Reactor.run(reactor, arguments, context, [])
+    do: Reactor.run(reactor, arguments, context, concurrency_key: context.concurrency_key)
 
   defp handle_non_recursive_reactor(reactor, arguments, context) when is_atom(reactor) do
     with {:ok, reactor} <- Info.to_struct(reactor) do

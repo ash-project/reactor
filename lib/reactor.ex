@@ -1,5 +1,5 @@
 defmodule Reactor do
-  alias Reactor.{Dsl, Executor, Planner, Step}
+  alias Reactor.{Dsl, Executor, Step}
 
   @moduledoc """
   Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
@@ -68,7 +68,8 @@ defmodule Reactor do
   @typedoc """
   Specify the maximum number of asynchronous steps which can be run in parallel.
 
-  Defaults to the result of `System.schedulers_online/0`.
+  Defaults to the result of `System.schedulers_online/0`.  Only used if
+  `async?` is set to `true`.
   """
   @type max_concurrency_option :: {:max_concurrency, pos_integer()}
 
@@ -104,6 +105,17 @@ defmodule Reactor do
   """
   @type async_option :: {:async?, boolean}
 
+  @typedoc """
+  Use a `Reactor.Executor.ConcurrencyTracker.pool_key` to allow this Reactor to
+  share it's concurrency pool with other Reactor instances.
+
+  If you do not specify one then the Reactor will initialise a new pool and
+  place it in it's context for any child Reactors to re-use.
+
+  Only used if `async?` is set to `true`.
+  """
+  @type concurrency_key_option :: {:concurrency_key, reference()}
+
   @type options ::
           Enumerable.t(
             max_concurrency_option
@@ -111,6 +123,7 @@ defmodule Reactor do
             | max_iterations_option
             | halt_timeout_option
             | async_option
+            | concurrency_key_option
           )
 
   @type state :: :pending | :executing | :halted | :failed | :successful
@@ -148,11 +161,6 @@ defmodule Reactor do
 
   def run(reactor, inputs, context, options)
       when is_reactor(reactor) and reactor.state in ~w[pending halted]a do
-    with {:ok, reactor} <- maybe_plan(reactor) do
-      Executor.run(reactor, inputs, context, options)
-    end
+    Executor.run(reactor, inputs, context, options)
   end
-
-  defp maybe_plan(reactor) when reactor.steps == [], do: {:ok, reactor}
-  defp maybe_plan(reactor), do: Planner.plan(reactor)
 end

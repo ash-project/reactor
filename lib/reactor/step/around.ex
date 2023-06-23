@@ -121,7 +121,11 @@ defmodule Reactor.Step.Around do
     with {:ok, reactor} <- build_inputs(Builder.new(), arguments),
          {:ok, reactor} <- build_steps(reactor, steps),
          {:ok, reactor} <- build_return_step(reactor, steps),
-         {:ok, result} <- Reactor.run(reactor, context, async?: allow_async?) do
+         {:ok, result} <-
+           Reactor.run(reactor, context,
+             async?: allow_async?,
+             concurrency_key: context.concurrency_key
+           ) do
       {:ok, result}
     else
       {:error, reason} -> {:error, reason}
