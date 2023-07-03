@@ -2,7 +2,7 @@ defmodule Reactor.Dsl.Compose do
   @moduledoc """
   The `compose` DSL entity struct.
 
-  See the `Reactor` DSL docs.
+  See the `d:Reactor.compose`.
   """
   defstruct arguments: [], name: nil, reactor: nil
 

@@ -1,6 +1,8 @@
 defmodule Reactor.Dsl.Argument do
   @moduledoc """
   The struct used to store argument DSL entities.
+
+  See `d:Reactor.step.argument`.
   """
 
   defstruct __identifier__: nil,

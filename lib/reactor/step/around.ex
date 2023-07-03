@@ -102,9 +102,8 @@ defmodule Reactor.Step.Around do
   @impl true
   @spec run(Reactor.inputs(), Reactor.context(), options) :: {:ok, any} | {:error, any}
   def run(arguments, context, options) do
-    with {:ok, fun} <- Keyword.fetch(options, :fun),
-         {:ok, fun} <- capture(fun),
-         steps when is_list(steps) <- Keyword.get(options, :steps, []),
+    with {:ok, fun} <- capture(options),
+         {:ok, steps} <- fetch_steps(options),
          {:ok, result} <- fun.(arguments, context, steps, &__MODULE__.around(&1, &2, &3, options)) do
       {:ok, result}
     else
@@ -117,53 +116,77 @@ defmodule Reactor.Step.Around do
 
   def around(arguments, context, steps, options) do
     allow_async? = Keyword.get(options, :allow_async?, true)
+    name = context.current_step.name
+    reactor = Builder.new({__MODULE__, name})
 
-    with {:ok, reactor} <- build_inputs(Builder.new(), arguments),
+    with {:ok, reactor} <- build_inputs(reactor, arguments),
          {:ok, reactor} <- build_steps(reactor, steps),
          {:ok, reactor} <- build_return_step(reactor, steps),
+         options <-
+           maybe_append_result([async?: allow_async?], fn ->
+             case Map.fetch(context, :concurrency_key) do
+               {:ok, value} -> {:concurrency_key, value}
+               :error -> nil
+             end
+           end),
          {:ok, result} <-
-           Reactor.run(reactor, context,
-             async?: allow_async?,
-             concurrency_key: context.concurrency_key
-           ) do
+           Reactor.run(reactor, arguments, context, options) do
       {:ok, result}
     else
       {:error, reason} -> {:error, reason}
-      {:halt, _reactor} -> {:error, "Inner reactor halted!"}
+      {:halt, reactor} -> {:halt, reactor}
     end
   end
 
-  defp capture({m, f, []}) when is_atom(m) and is_atom(f) do
-    if function_exported?(m, f, 4) do
-      {:ok, Function.capture(m, f, 4)}
+  defp capture(options) do
+    case Keyword.fetch(options, :fun) do
+      {:ok, fun} when is_function(fun, 4) ->
+        {:ok, fun}
+
+      {:ok, {m, f, []}} when is_atom(m) and is_atom(f) ->
+        ensure_exported(m, f, 4, fn -> {:ok, Function.capture(m, f, 4)} end)
+
+      {:ok, {m, f, a}} when is_atom(m) and is_atom(f) and is_list(a) ->
+        ensure_exported(m, f, length(a) + 4, fn ->
+          {:ok,
+           fn arguments, context, steps, callback ->
+             apply(m, f, [arguments, context, steps, callback | a])
+           end}
+        end)
+
+      _ ->
+        {:error,
+         argument_error(:options, "Expected `fun` option to be a 4 arity function", options)}
+    end
+  end
+
+  defp ensure_exported(m, f, arity, callback) do
+    if Code.ensure_loaded?(m) && function_exported?(m, f, arity) do
+      callback.()
     else
-      {:error, "Expected `#{inspect(m)}.#{inspect(f)}/4` to be exported."}
+      {:error, "Expected `#{inspect(m)}.#{f}/#{arity}` to be exported."}
     end
   end
 
-  defp capture({m, f, a}) when is_atom(m) and is_atom(f) and is_list(a) do
-    arity = 4 + length(a)
+  defp fetch_steps(options) do
+    steps = Keyword.get(options, :steps, [])
 
-    if function_exported?(m, f, arity) do
-      fun = fn arguments, context, steps, callback ->
-        apply(m, f, [arguments, context, steps, callback | a])
-      end
-
-      {:ok, fun}
+    if Enum.all?(steps, &is_struct(&1, Step)) do
+      {:ok, steps}
     else
-      {:error, "Expected `#{inspect(m)}.#{inspect(f)}/#{arity}` to be exported."}
+      {:error,
+       argument_error(
+         :options,
+         "Expected `steps` option to be a list of `Reactor.Step` structs",
+         options
+       )}
     end
   end
-
-  defp capture(fun) when is_function(fun, 4), do: {:ok, fun}
-
-  defp capture(fun),
-    do: {:error, argument_error(:fun, "Expected argument to be an arity 4 function", fun)}
 
   defp build_inputs(reactor, arguments) do
     arguments
-    |> Enum.map(& &1.name)
-    |> reduce_while_ok(reactor, &Builder.add_input(&2, &1))
+    |> map_while_ok!(&Argument.Build.build/1)
+    |> reduce_while_ok(reactor, &Builder.add_input(&2, &1.name))
   end
 
   defp build_steps(reactor, steps) do

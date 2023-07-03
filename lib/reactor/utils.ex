@@ -86,6 +86,19 @@ defmodule Reactor.Utils do
   end
 
   @doc """
+  A raising version of `map_while_ok/2..3`.
+  """
+  @spec map_while_ok!(Enumerable.t(input), (input -> {:ok, output} | {:error, any}), boolean) ::
+          Enumerable.t(output) | no_return
+        when input: any, output: any
+  def map_while_ok!(inputs, mapper, preserve_order? \\ false) do
+    case map_while_ok(inputs, mapper, preserve_order?) do
+      {:ok, outputs} -> outputs
+      {:error, reason} -> raise(reason)
+    end
+  end
+
+  @doc """
   Perform a reduction over an enumerable provided that the reduction function
   returns an ok tuple.
   """
@@ -99,6 +112,19 @@ defmodule Reactor.Utils do
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
+  end
+
+  @doc """
+  A raising version of `reduce_while_ok/3`.
+  """
+  @spec reduce_while_ok!(Enumerable.t(input), acc, (input, acc -> {:ok, acc} | {:error, any})) ::
+          acc | no_return
+        when input: any, acc: any
+  def reduce_while_ok!(inputs, default \\ [], reducer) do
+    case reduce_while_ok(inputs, default, reducer) do
+      {:ok, acc} -> acc
+      {:error, reason} -> raise(reason)
+    end
   end
 
   @type argument_error :: %ArgumentError{
