@@ -1,23 +1,25 @@
-defmodule Reactor.Dsl.Around do
+defmodule Reactor.Dsl.Group do
   @moduledoc """
-  The `around` DSL entity struct.
+  The `group` DSL entity struct.
 
-  See `d:Reactor.around`.
+  See `d:Reactor.group`.
   """
   defstruct __identifier__: nil,
             allow_async?: false,
             arguments: [],
-            fun: nil,
+            before_all: nil,
+            after_all: nil,
             name: nil,
             steps: []
 
   alias Reactor.{Builder, Dsl, Step}
 
-  @type t :: %Dsl.Around{
+  @type t :: %Dsl.Group{
           __identifier__: any,
-          allow_async?: boolean,
+          allow_async?: true,
           arguments: [Dsl.Argument.t()],
-          fun: mfa | Step.Around.around_fun(),
+          before_all: mfa | Step.Group.before_fun(),
+          after_all: mfa | Step.Group.after_fun(),
           name: atom,
           steps: [Dsl.Step.t()]
         }
@@ -26,34 +28,37 @@ defmodule Reactor.Dsl.Around do
     import Reactor.Utils
     alias Spark.{Dsl.Verifier, Error.DslError}
 
-    def build(around, reactor) do
+    def build(group, reactor) do
       sub_reactor = Builder.new(reactor.id)
 
-      with {:ok, sub_reactor} <- build_inputs(sub_reactor, around),
-           {:ok, sub_reactor} <- build_steps(sub_reactor, around) do
+      with {:ok, sub_reactor} <- build_inputs(sub_reactor, group),
+           {:ok, sub_reactor} <- build_steps(sub_reactor, group) do
         Builder.add_step(
           reactor,
-          around.name,
-          {Step.Around,
-           steps: sub_reactor.steps, fun: around.fun, allow_async?: around.allow_async?},
-          around.arguments,
-          async?: around.allow_async?,
+          group.name,
+          {Step.Group,
+           before: group.before_all,
+           after: group.after_all,
+           steps: sub_reactor.steps,
+           allow_async?: group.allow_async?},
+          group.arguments,
+          async?: group.allow_async?,
           max_retries: 0,
           ref: :step_name
         )
       end
     end
 
-    def verify(around, dsl_state) when around.steps == [] do
+    def verify(group, dsl_state) when group.steps == [] do
       {:error,
        DslError.exception(
          module: Verifier.get_persisted(dsl_state, :module),
-         path: [:reactor, :around, around.name],
-         message: "Around contains no steps"
+         path: [:reactor, :group, group.name],
+         message: "Group contains no steps"
        )}
     end
 
-    def verify(_around, _dsl_state), do: :ok
+    def verify(_group, _dsl_state), do: :ok
 
     def transform(_around, dsl_state), do: {:ok, dsl_state}
 
@@ -63,8 +68,8 @@ defmodule Reactor.Dsl.Around do
       |> reduce_while_ok(reactor, &Builder.add_input(&2, &1))
     end
 
-    defp build_steps(reactor, around) do
-      around.steps
+    defp build_steps(reactor, group) do
+      group.steps
       |> reduce_while_ok(reactor, &Dsl.Build.build/2)
     end
   end

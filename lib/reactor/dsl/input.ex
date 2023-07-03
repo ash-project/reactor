@@ -1,6 +1,8 @@
 defmodule Reactor.Dsl.Input do
   @moduledoc """
   The struct used to store input DSL entities.
+
+  See `d:Reactor.input`.
   """
 
   defstruct __identifier__: nil,

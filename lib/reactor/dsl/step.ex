@@ -1,6 +1,8 @@
 defmodule Reactor.Dsl.Step do
   @moduledoc """
   The struct used to store step DSL entities.
+
+  See `d:Reactor.step`.
   """
 
   defstruct __identifier__: nil,

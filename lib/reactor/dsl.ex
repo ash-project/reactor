@@ -297,6 +297,55 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @group %Entity{
+    name: :group,
+    describe: """
+    Call functions before and after a group of steps.
+    """,
+    target: Dsl.Group,
+    args: [:name],
+    identifier: :name,
+    entities: [steps: [], arguments: [@argument]],
+    recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique name for the group of steps.
+        """
+      ],
+      before_all: [
+        type: {:mfa_or_fun, 3},
+        required: true,
+        doc: """
+        The before function.
+
+        See `Reactor.Step.Group` for more information.
+        """
+      ],
+      after_all: [
+        type: {:mfa_or_fun, 3},
+        required: true,
+        doc: """
+        The after function.
+
+        See `Reactor.Step.Group` for more information.
+        """
+      ],
+      allow_async?: [
+        type: :boolean,
+        required: false,
+        default: true,
+        doc: """
+        Whether the emitted steps should be allowed to run asynchronously.
+
+        Passed to the child Reactor as it's `async?` option.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -309,7 +358,7 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@around, @input, @step, @compose],
+    entities: [@around, @group, @input, @step, @compose],
     top_level?: true
   }
 
