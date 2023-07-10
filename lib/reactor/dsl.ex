@@ -441,6 +441,42 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @debug %Entity{
+    name: :debug,
+    describe: """
+    Inserts a step which will send debug information to the `Logger`.
+    """,
+    examples: [
+      """
+      debug :debug do
+        argument :suss, result(:suss_step)
+      end
+      """
+    ],
+    target: Dsl.Debug,
+    args: [:name],
+    identifier: :name,
+    entities: [arguments: [@argument]],
+    recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique identifier for the step.
+        """
+      ],
+      level: [
+        type: {:in, [:emergency, :alert, :critical, :error, :warning, :notice, :info, :debug]},
+        required: false,
+        default: :debug,
+        doc: """
+        The log level to send the debug information to.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -453,7 +489,7 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@around, @group, @input, @step, @switch, @compose],
+    entities: [@around, @debug, @group, @input, @step, @switch, @compose],
     top_level?: true
   }
 
