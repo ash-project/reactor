@@ -346,6 +346,101 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @switch_match %Entity{
+    name: :matches?,
+    describe: """
+    A group of steps to run when the predicate matches.
+    """,
+    target: Dsl.Switch.Match,
+    args: [:predicate],
+    entities: [steps: []],
+    schema: [
+      predicate: [
+        type: {:mfa_or_fun, 1},
+        required: true,
+        doc: """
+        A one-arity function which is used to match the switch input.
+
+        If the switch returns a truthy value, then the nested steps will be run.
+        """
+      ],
+      allow_async?: [
+        type: :boolean,
+        required: false,
+        default: true,
+        doc: """
+        Whether the emitted steps should be allowed to run asynchronously.
+        """
+      ],
+      return: [
+        type: :atom,
+        required: false,
+        doc: """
+        Specify which step result to return upon completion.
+        """
+      ]
+    ]
+  }
+
+  @switch_default %Entity{
+    name: :default,
+    describe: """
+    If none of the `matches?` branches match the input, then the `default`
+    steps will be run if provided.
+    """,
+    target: Dsl.Switch.Default,
+    entities: [steps: []],
+    schema: [
+      return: [
+        type: :atom,
+        required: false,
+        doc: """
+        Specify which step result to return upon completion.
+        """
+      ]
+    ]
+  }
+
+  @switch %Entity{
+    name: :switch,
+    describe: """
+    Use a predicate to determine which steps should be executed.
+    """,
+    target: Dsl.Switch,
+    args: [:name],
+    identifier: :name,
+    imports: [Dsl.Argument],
+    entities: [matches: [@switch_match], default: [@switch_default]],
+    singleton_entity_keys: [:default],
+    recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique name for the switch.
+        """
+      ],
+      allow_async?: [
+        type: :boolean,
+        required: false,
+        default: true,
+        doc: """
+        Whether the emitted steps should be allowed to run asynchronously.
+        """
+      ],
+      on: [
+        type:
+          {:or,
+           [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
+        required: true,
+        doc: """
+        The value to match against.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -358,7 +453,7 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@around, @group, @input, @step, @compose],
+    entities: [@around, @group, @input, @step, @switch, @compose],
     top_level?: true
   }
 
