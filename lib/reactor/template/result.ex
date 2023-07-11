@@ -3,7 +3,7 @@ defmodule Reactor.Template.Result do
   The `result` template.
   """
 
-  defstruct name: nil
+  defstruct name: nil, sub_path: []
 
-  @type t :: %__MODULE__{name: atom}
+  @type t :: %__MODULE__{name: atom, sub_path: [atom]}
 end

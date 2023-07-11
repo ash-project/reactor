@@ -90,30 +90,69 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp get_step_arguments(reactor, step) do
-    reduce_while_ok(step.arguments, %{}, fn
-      argument, arguments when is_from_input(argument) ->
-        case Map.fetch(reactor.context.private.inputs, argument.source.name) do
-          {:ok, value} ->
-            {:ok, Map.put(arguments, argument.name, value)}
-
-          :error ->
-            {:error,
-             "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` relies on missing input `#{argument.source.name}`"}
-        end
-
-      argument, arguments when is_from_result(argument) ->
-        case Map.fetch(reactor.intermediate_results, argument.source.name) do
-          {:ok, value} ->
-            {:ok, Map.put(arguments, argument.name, value)}
-
-          :error ->
-            {:error,
-             "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is missing"}
-        end
-
-      argument, arguments when is_from_value(argument) ->
-        {:ok, Map.put(arguments, argument.name, argument.source.value)}
+    reduce_while_ok(step.arguments, %{}, fn argument, arguments ->
+      with {:ok, value} <- fetch_argument(reactor, step, argument),
+           {:ok, value} <- subpath_argument(value, argument) do
+        {:ok, Map.put(arguments, argument.name, value)}
+      end
     end)
+  end
+
+  defp fetch_argument(reactor, step, argument) when is_from_input(argument) do
+    with :error <- Map.fetch(reactor.context.private.inputs, argument.source.name) do
+      {:error,
+       "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` relies on missing input `#{argument.source.name}`"}
+    end
+  end
+
+  defp fetch_argument(reactor, step, argument) when is_from_result(argument) do
+    with :error <- Map.fetch(reactor.intermediate_results, argument.source.name) do
+      {:error, "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is missing"}
+    end
+  end
+
+  defp fetch_argument(_reactor, _step, argument) when is_from_value(argument) do
+    {:ok, argument.source.value}
+  end
+
+  defp subpath_argument(value, argument) when has_sub_path(argument),
+    do: perform_argument_subpath(value, argument.name, argument.source.sub_path, [])
+
+  defp subpath_argument(value, _argument), do: {:ok, value}
+
+  defp perform_argument_subpath(value, _, [], _), do: {:ok, value}
+
+  defp perform_argument_subpath(value, name, remaining, done) when is_struct(value),
+    do: value |> Map.from_struct() |> perform_argument_subpath(name, remaining, done)
+
+  defp perform_argument_subpath(value, name, [head | tail], []) do
+    case access_fetch_with_rescue(value, head) do
+      {:ok, value} ->
+        perform_argument_subpath(value, name, tail, [head])
+
+      :error ->
+        {:error,
+         "Unable to resolve subpath for argument `#{inspect(name)}` at key `[#{inspect(head)}]`"}
+    end
+  end
+
+  defp perform_argument_subpath(value, name, [head | tail], done) do
+    case access_fetch_with_rescue(value, head) do
+      {:ok, value} ->
+        perform_argument_subpath(value, name, tail, [head])
+
+      :error ->
+        path = Enum.reverse([head | done])
+
+        {:error,
+         "Unable to resolve subpath for argument `#{inspect(name)}` at key `#{inspect(path)}`"}
+    end
+  end
+
+  defp access_fetch_with_rescue(container, key) do
+    Access.fetch(container, key)
+  rescue
+    FunctionClauseError -> :error
   end
 
   defp build_context(reactor, step, concurrency_key) do
