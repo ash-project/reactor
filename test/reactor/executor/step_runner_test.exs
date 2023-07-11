@@ -1,7 +1,7 @@
 defmodule Reactor.Executor.StepRunnerTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Argument, Builder}
+  alias Reactor.{Argument, Builder, Template}
   import Reactor.Executor.StepRunner
   use Mimic
 
@@ -21,6 +21,48 @@ defmodule Reactor.Executor.StepRunnerTest do
 
       assert {:error, reason} = run(reactor, step, nil)
       assert reason =~ "argument `:current_year` is missing"
+    end
+
+    test "when the required argument cannot be subpathed, it returns an error", %{
+      reactor: reactor
+    } do
+      {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
+
+      argument = %Argument{
+        name: :current_year,
+        source: %Template.Result{name: :time_circuits, sub_path: [:year]}
+      }
+
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
+      step = reactor.steps |> hd()
+      reactor = %{reactor | intermediate_results: %{time_circuits: 1985}}
+
+      assert {:error, reason} = run(reactor, step, nil)
+      assert reason == "Unable to resolve subpath for argument `:current_year` at key `[:year]`"
+    end
+
+    test "when the required argument can be subpathed, it calls the step with the correct arguments",
+         %{reactor: reactor} do
+      {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
+
+      argument = %Argument{
+        name: :current_year,
+        source: %Template.Result{name: :time_circuits, sub_path: [:year]}
+      }
+
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
+      [marty, time_circuits] = reactor.steps
+      reactor = %{reactor | intermediate_results: %{time_circuits.name => ~D[1985-10-26]}}
+
+      Example.Step.Doable
+      |> expect(:run, fn arguments, _, _ ->
+        assert Map.keys(arguments) == [:current_year]
+        assert arguments.current_year == 1985
+
+        {:ok, :marty}
+      end)
+
+      assert {:ok, :marty, []} = run(reactor, marty, nil)
     end
 
     test "it calls the step with the correct arguments", %{reactor: reactor} do

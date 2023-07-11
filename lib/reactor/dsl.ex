@@ -67,12 +67,18 @@ defmodule Reactor.Dsl do
       argument :name, input(:name)
       """,
       """
+      argument :year, input(:date, [:year])
+      """,
+      """
       argument :user, result(:create_user)
       """,
       """
       argument :user_id, result(:create_user) do
         transform & &1.id
       end
+      """,
+      """
+      argument :user_id, result(:create_user, [:id])
       """,
       """
       argument :three, value(3)

@@ -88,4 +88,10 @@ defmodule Reactor.Argument do
   Validate that the argument has a transform.
   """
   defguard has_transform(argument) when is_transform(argument.transform)
+
+  @doc """
+  Validate that the argument source has a sub_path
+  """
+  defguard has_sub_path(argument)
+           when is_list(argument.source.sub_path) and argument.source.sub_path != []
 end

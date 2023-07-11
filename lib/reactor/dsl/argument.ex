@@ -40,11 +40,18 @@ defmodule Reactor.Dsl.Argument do
     end
   end
   ```
+
+  ## Extracting nested values
+
+  You can provide a list of keys to extract from a data structure, similar to
+  `Kernel.get_in/2` with the condition that the input value is either a struct
+  or implements the `Access` protocol.
   """
-  @spec input(atom) :: Template.Input.t()
-  def input(input_name) do
-    %Template.Input{name: input_name}
-  end
+  @spec input(atom, [any]) :: Template.Input.t()
+  def input(input_name, sub_path \\ [])
+
+  def input(input_name, sub_path),
+    do: %Template.Input{name: input_name, sub_path: List.wrap(sub_path)}
 
   @doc ~S"""
   The `result` template helper for the Reactor DSL.
@@ -71,11 +78,18 @@ defmodule Reactor.Dsl.Argument do
     end
   end
   ```
+
+  ## Extracting nested values
+
+  You can provide a list of keys to extract from a data structure, similar to
+  `Kernel.get_in/2` with the condition that the result is either a struct or
+  implements the `Access` protocol.
   """
-  @spec result(atom) :: Template.Result.t()
-  def result(link_name) do
-    %Template.Result{name: link_name}
-  end
+  @spec result(atom, [any]) :: Template.Result.t()
+  def result(step_name, sub_path \\ [])
+
+  def result(step_name, sub_path),
+    do: %Template.Result{name: step_name, sub_path: List.wrap(sub_path)}
 
   @doc ~S"""
   The `value` template helper for the Reactor DSL.
@@ -101,9 +115,7 @@ defmodule Reactor.Dsl.Argument do
   ```
   """
   @spec value(any) :: Template.Value.t()
-  def value(value) do
-    %Template.Value{value: value}
-  end
+  def value(value), do: %Template.Value{value: value}
 
   defimpl Argument.Build do
     def build(argument) do
