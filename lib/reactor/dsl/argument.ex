@@ -14,7 +14,8 @@ defmodule Reactor.Dsl.Argument do
 
   @type t :: %Dsl.Argument{
           name: atom,
-          source: Template.Input.t() | Template.Result.t() | Template.Value.t(),
+          source:
+            Template.Element.t() | Template.Input.t() | Template.Result.t() | Template.Value.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa,
           __identifier__: any
         }

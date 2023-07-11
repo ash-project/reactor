@@ -483,6 +483,116 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @argument_with_element @argument
+                         |> Map.from_struct()
+                         |> update_in(
+                           [:examples],
+                           &["argument :element, element(:stream_name)" | &1]
+                         )
+                         |> update_in([:schema, :source, :type], fn {:or, types} ->
+                           {:or, [{:struct, Template.Element} | types]}
+                         end)
+                         |> update_in([:schema, :source, :doc], fn doc ->
+                           String.replace(
+                             doc,
+                             "Reactor.Dsl.Argument",
+                             "Reactor.Dsl.Stream.Argument"
+                           )
+                         end)
+                         |> update_in([:imports], &[Dsl.Stream | &1])
+                         |> then(&struct(Entity, &1))
+
+  @stream_filter %Entity{
+    name: :filter,
+    describe: """
+    Filter stream elements using a predicate.
+    """,
+    target: Dsl.Stream.Filter,
+    entities: [arguments: [@argument_with_element]],
+    schema: [
+      predicate: [
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
+        required: false,
+        doc: """
+        The predicate to use to filter the stream.
+        """
+      ]
+    ]
+  }
+
+  @stream_reject %Entity{
+    name: :reject,
+    describe: """
+    Reject stream elements using a predicate.
+    """,
+    target: Dsl.Stream.Reject,
+    entities: [arguments: [@argument_with_element]],
+    schema: [
+      predicate: [
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
+        required: false,
+        doc: """
+        The predicate to use to reject elements from the stream.
+        """
+      ]
+    ]
+  }
+
+  @stream_generator %Entity{
+    name: :generator,
+    describe: """
+    Generates a stream of values.
+    """,
+    target: Dsl.Stream.Generator,
+    args: [{:optional, :source}],
+    entities: [arguments: [@argument]],
+    schema: [
+      source: [
+        type:
+          {:or,
+           [
+             {:struct, Template.Input},
+             {:struct, Template.Result},
+             {:struct, Template.Value}
+           ]},
+        required: false
+      ],
+      run: [
+        type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
+        required: false,
+        doc: """
+        A function that can transform arguments into an enumerable.
+
+        Required if no `source` template is provided.
+        """
+      ]
+    ]
+  }
+
+  @stream %Entity{
+    name: :stream,
+    describe: """
+    Lazily transforms a stream of values similar to the elixir `Stream` module.
+    """,
+    target: Dsl.Stream,
+    args: [:name],
+    identifier: :name,
+    entities: [
+      generator: [@stream_generator],
+      stages: [@stream_filter, @stream_reject]
+    ],
+    recursive_as: :steps,
+    schema: [
+      name: [
+        type: :atom,
+        required: true,
+        doc: """
+        A unique identifier for the stream.
+        """
+      ]
+    ]
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -495,7 +605,7 @@ defmodule Reactor.Dsl do
         """
       ]
     ],
-    entities: [@around, @debug, @group, @input, @step, @switch, @compose],
+    entities: [@around, @debug, @group, @input, @step, @stream, @switch, @compose],
     top_level?: true
   }
 
