@@ -67,8 +67,12 @@ defmodule Reactor.PlannerTest do
     test "when the created graph would be cyclic, it returns an error" do
       assert {:error, %PlanError{} = error} =
                Builder.new()
-               |> Builder.add_step!(:a, Example.BasicReactor.DrinkingAgeVerifier, b: {:result, :b})
-               |> Builder.add_step!(:b, Example.BasicReactor.DrinkingAgeVerifier, a: {:result, :a})
+               |> Builder.add_step!(:a, Example.BasicReactor.DrinkingAgeVerifier,
+                 b: {:result, :b}
+               )
+               |> Builder.add_step!(:b, Example.BasicReactor.DrinkingAgeVerifier,
+                 a: {:result, :a}
+               )
                |> Planner.plan()
 
       assert Exception.message(error) =~ ~r/cyclic/i
@@ -86,7 +90,9 @@ defmodule Reactor.PlannerTest do
     test "when an argument depends on an unknown step, it returns an error" do
       assert {:error, %PlanError{} = error} =
                Builder.new()
-               |> Builder.add_step!(:a, Example.BasicReactor.DrinkingAgeVerifier, a: {:result, :b})
+               |> Builder.add_step!(:a, Example.BasicReactor.DrinkingAgeVerifier,
+                 a: {:result, :b}
+               )
                |> Planner.plan()
 
       assert Exception.message(error) =~ ~r/cannot be found/i
