@@ -33,13 +33,6 @@ defmodule Reactor.Executor.AsyncTest do
       assert {:continue, ^reactor, ^state} = start_steps(reactor, state, [])
     end
 
-    test "when there is no available concurrency slots, it tells the reactor to continue",
-         %{reactor: reactor, state: state, doable: doable} do
-      state = %{state | max_concurrency: 1, current_tasks: %{nil => nil}}
-
-      assert {:continue, ^reactor, ^state} = start_steps(reactor, state, [doable])
-    end
-
     test "when steps are started, it stores them in the state",
          %{reactor: reactor, state: state, doable: doable, supervisor: supervisor} do
       assert {_, _reactor, state} = start_steps(reactor, state, [doable], supervisor)

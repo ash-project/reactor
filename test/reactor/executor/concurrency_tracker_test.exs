@@ -29,18 +29,18 @@ defmodule Reactor.Executor.ConcurrencyTrackerTest do
   describe "acquire/1" do
     test "when there is available concurrency in the pool, it returns ok" do
       pool = allocate_pool(16)
-      assert :ok = acquire(pool)
+      assert {:ok, 1} = acquire(pool)
       assert {:ok, 15, 16} = status(pool)
     end
 
-    test "when there is no available concurrency in the pool, it returns error" do
+    test "when there is no available concurrency in the pool, it returns zero" do
       pool = allocate_pool(0)
-      assert :error = acquire(pool)
+      assert {:ok, 0} = acquire(pool)
     end
 
     test "when there is 1 slot left, it can be acquired" do
       pool = allocate_pool(1)
-      assert :ok = acquire(pool)
+      assert {:ok, 1} = acquire(pool)
       assert {:ok, 0, 1} = status(pool)
     end
   end
@@ -48,7 +48,7 @@ defmodule Reactor.Executor.ConcurrencyTrackerTest do
   describe "release/1" do
     test "it increments the available concurrency in the pool when possible" do
       pool = allocate_pool(16)
-      :ok = acquire(pool)
+      {:ok, 1} = acquire(pool)
       assert {:ok, 15, 16} = status(pool)
       assert :ok = release(pool)
       assert {:ok, 16, 16} = status(pool)
@@ -57,7 +57,7 @@ defmodule Reactor.Executor.ConcurrencyTrackerTest do
     test "it doesn't allow the pool to grow" do
       pool = allocate_pool(16)
       assert {:ok, 16, 16} = status(pool)
-      assert :ok = release(pool)
+      assert :error = release(pool)
       assert {:ok, 16, 16} = status(pool)
     end
   end

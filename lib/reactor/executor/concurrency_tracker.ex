@@ -8,11 +8,19 @@ defmodule Reactor.Executor.ConcurrencyTracker do
 
   This avoids nested Reactors spawning too many workers and thrashing the
   system.
+
+  The process calling `allocate_pool/1` is monitored, and when it terminates
+  it's allocation is removed.  Any processes which are using that pool will
+  not be able to allocate any new resources.
   """
 
   use GenServer
 
   @type pool_key :: reference()
+
+  @type record ::
+          {pool_key, concurrency_limit :: pos_integer, available_slots :: non_neg_integer(),
+           allocator :: pid}
 
   @doc false
   @spec start_link(any) :: GenServer.on_start()
@@ -65,35 +73,63 @@ defmodule Reactor.Executor.ConcurrencyTracker do
   end
 
   @doc """
-  Release a concurrency allocation back to the pool.
+  Release concurrency allocation back to the pool.
   """
-  @spec release(pool_key) :: :ok
-  def release(key) do
-    :ets.select_replace(__MODULE__, [
-      {{:"$1", :"$2", :"$3", :"$4"},
-       [{:andalso, {:"=<", {:+, :"$2", 1}, :"$3"}, {:==, :"$1", key}}],
-       [{{:"$1", {:+, :"$2", 1}, :"$3", :"$4"}}]}
-    ])
+  @spec release(pool_key, how_many :: pos_integer) :: :ok | :error
+  def release(key, how_many \\ 1) do
+    # generated using:
+    #
+    # :ets.fun2ms(fn {key, concurrency_limit, concurrency_available, owner}
+    #                when key == :key and concurrency_available + 1 <= concurrency_limit ->
+    #   {key, concurrency_limit, concurrency_available + 1, owner}
+    # end)
+    #
+    # and replacing `:key` with the provided key.
 
-    :ok
+    Enum.reduce_while(1..how_many, :ok, fn _, :ok ->
+      case :ets.select_replace(__MODULE__, [
+             {{:"$1", :"$2", :"$3", :"$4"},
+              [{:andalso, {:==, :"$1", key}, {:"=<", {:+, :"$3", 1}, :"$2"}}],
+              [{{:"$1", :"$2", {:+, :"$3", 1}, :"$4"}}]}
+           ]) do
+        0 -> {:halt, :error}
+        1 -> {:cont, :ok}
+      end
+    end)
   end
 
   @doc """
-  Attempt to acquire a concurrency allocation from the pool.
+  Attempt to acquire a number of concurrency allocations from the pool.
 
-  Returns `:ok` if the allocation was successful, otherwise `:error`.
+  Returns `{:ok, n}` where `n` was the number of slots that were actually
+  allocated.  It's important to note that whilst you may request `16` slots, if
+  there is only `3` available, then this function will return `{:ok, 3}` and you
+  must abide by it.
+
+  It is possible for this function to return `{:ok, 0}` if there is no slots
+  available.
   """
-  @spec acquire(pool_key) :: :ok | :error
-  def acquire(key) do
-    __MODULE__
-    |> :ets.select_replace([
-      {{:"$1", :"$2", :"$3", :"$4"}, [{:andalso, {:>=, {:-, :"$2", 1}, 0}, {:==, :"$1", key}}],
-       [{{:"$1", {:-, :"$2", 1}, :"$3", :"$4"}}]}
-    ])
-    |> case do
-      0 -> :error
-      1 -> :ok
-    end
+  @spec acquire(pool_key, how_many :: pos_integer()) :: {:ok, non_neg_integer()}
+  def acquire(key, how_many \\ 1) do
+    # generated using:
+    #
+    # :ets.fun2ms(fn {key, concurrency_limit, concurrency_available, owner}
+    #                when key == :key and concurrency_available - 1 >= 0 ->
+    #   {key, concurrency_limit, concurrency_available - 1, owner}
+    # end)
+    #
+    # and replacing `:key` with the provided key.
+
+    Enum.reduce_while(1..how_many, {:ok, 0}, fn _, {:ok, n} ->
+      case :ets.select_replace(__MODULE__, [
+             {{:"$1", :"$2", :"$3", :"$4"},
+              [{:andalso, {:==, :"$1", key}, {:>=, {:-, :"$3", 1}, 0}}],
+              [{{:"$1", :"$2", {:-, :"$3", 1}, :"$4"}}]}
+           ]) do
+        0 -> {:halt, {:ok, n}}
+        1 -> {:cont, {:ok, n + 1}}
+      end
+    end)
   end
 
   @doc """
@@ -105,7 +141,7 @@ defmodule Reactor.Executor.ConcurrencyTracker do
     __MODULE__
     |> :ets.lookup(key)
     |> case do
-      [{_, available, limit, _}] -> {:ok, available, limit}
+      [{_, limit, available, _}] -> {:ok, available, limit}
       [] -> {:error, "Unknown concurrency pool"}
     end
   end

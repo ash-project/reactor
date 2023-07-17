@@ -76,6 +76,7 @@ defmodule Reactor.Executor do
          {:continue, ready_steps} <- find_ready_steps(reactor),
          {:continue, reactor, state} <- start_ready_async_steps(reactor, state, ready_steps),
          {:continue, reactor, state} <- run_ready_sync_step(reactor, state, ready_steps),
+         {:continue, reactor, state} <- maybe_run_any_step_sync(reactor, state, ready_steps),
          {:continue, reactor} <- all_done(reactor) do
       execute(reactor, subtract_iteration(state))
     else
@@ -132,10 +133,6 @@ defmodule Reactor.Executor do
 
   defp start_ready_async_steps(reactor, state, []), do: {:continue, reactor, state}
 
-  defp start_ready_async_steps(reactor, state, _steps)
-       when map_size(state.current_tasks) == state.max_concurrency,
-       do: {:continue, reactor, state}
-
   defp start_ready_async_steps(reactor, state, steps) do
     steps = Enum.filter(steps, &(&1.async? == true))
 
@@ -152,6 +149,53 @@ defmodule Reactor.Executor do
     step = Enum.find(steps, &(&1.async? == false))
 
     Executor.Sync.run(reactor, state, step)
+  end
+
+  # This seems a little unintuitive, but this is what allows reactors who are
+  # sharing a concurrency pool to move forward even then there's no concurrency
+  # left without deadlocking.
+  #
+  # It's a complicated scenario, so let's lay out the pieces:
+  #
+  # 1. When a new reactor is started it allocates a concurrency pool using
+  #    `Reactor.Executor.ConcurrencyTracker` **unless** it is explicitly passed
+  #    a `concurrency_key` option.
+  # 2. Every time a reactor runs an async step it starts a `Task` and consumes a
+  #    space in the concurrency pool (if possible).
+  # 3. Every task that is started has it's concurrency key stored in it's
+  #    process dictionary (actually a stack of them because we may be multiple
+  #    nested reactors deep).
+  # 4. If that async step then turns around and runs a new reactor with shared
+  #    concurrency then that reactor is already consuming a concurrency slot and
+  #    may not be able to allocate any more slots for it's tasks.
+  #
+  # This situation can lead to a deadlock where we have multiple reactors all in
+  # a tight loop trying to start tasks but none of them able to proceed.
+  #
+  # We detect this situation by:
+  #
+  # 1. We are unable to start any async steps (`start_ready_async_steps/3`
+  #    returns `:continue`).
+  # 2. We are unable to start any sync steps (`run_ready_sync_step/3` returns
+  #    `:continue`).
+  # 3. We have any steps which can be run (ie async ones which we couldn't
+  #    start).
+  # 4. Our concurrency key is in the process dictionary.
+  #
+  # If all four of these conditions are met we pick the first step and run it
+  # synchronously.  This is fine because the reactor process itself is a task in
+  # another reactor so in effect is still running asynchronously.
+  defp maybe_run_any_step_sync(reactor, state, []), do: {:continue, reactor, state}
+
+  defp maybe_run_any_step_sync(reactor, state, [step | _]) do
+    :__reactor__
+    |> Process.get([])
+    |> Enum.any?(&(&1.concurrency_key == state.concurrency_key))
+    |> if do
+      Executor.Sync.run(reactor, state, step)
+    else
+      {:continue, reactor, state}
+    end
   end
 
   defp subtract_iteration(state) when state.max_iterations == :infinity, do: state
