@@ -201,8 +201,11 @@ defmodule Reactor.Step.Group do
 
   defp build_inputs(reactor, arguments) do
     arguments
-    |> map_while_ok!(&Argument.Build.build/1)
-    |> reduce_while_ok(reactor, &Builder.add_input(&2, &1.name))
+    |> map_while_ok(&Argument.Build.build/1)
+    |> and_then(&{:ok, List.flatten(&1)})
+    |> and_then(fn arguments ->
+      reduce_while_ok(arguments, reactor, &Builder.add_input(&2, &1.name))
+    end)
   end
 
   defp build_steps(reactor, steps) do

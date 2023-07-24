@@ -65,6 +65,23 @@ defmodule Reactor.Executor.StepRunnerTest do
       assert {:ok, :marty, []} = run(reactor, marty, nil)
     end
 
+    test "when the argument is named `:_` it is not passed to the step", %{reactor: reactor} do
+      {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
+      argument = Argument.from_result(:_, :time_circuits)
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
+      [marty, time_circuits] = reactor.steps
+      reactor = %{reactor | intermediate_results: %{time_circuits.name => 1985}}
+
+      Example.Step.Doable
+      |> expect(:run, fn arguments, _, _ ->
+        assert Map.keys(arguments) == []
+
+        {:ok, :marty}
+      end)
+
+      assert {:ok, :marty, []} = run(reactor, marty, nil)
+    end
+
     test "it calls the step with the correct arguments", %{reactor: reactor} do
       {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
       argument = Argument.from_result(:current_year, :time_circuits)

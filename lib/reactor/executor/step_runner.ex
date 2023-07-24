@@ -90,11 +90,15 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp get_step_arguments(reactor, step) do
-    reduce_while_ok(step.arguments, %{}, fn argument, arguments ->
-      with {:ok, value} <- fetch_argument(reactor, step, argument),
-           {:ok, value} <- subpath_argument(value, argument) do
-        {:ok, Map.put(arguments, argument.name, value)}
-      end
+    reduce_while_ok(step.arguments, %{}, fn
+      argument, arguments when argument.name == :_ ->
+        {:ok, arguments}
+
+      argument, arguments ->
+        with {:ok, value} <- fetch_argument(reactor, step, argument),
+             {:ok, value} <- subpath_argument(value, argument) do
+          {:ok, Map.put(arguments, argument.name, value)}
+        end
     end)
   end
 

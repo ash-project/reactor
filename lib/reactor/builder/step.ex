@@ -144,7 +144,9 @@ defmodule Reactor.Builder.Step do
   end
 
   defp assert_all_are_arguments(arguments) do
-    map_while_ok(arguments, &Argument.Build.build/1)
+    arguments
+    |> map_while_ok(&Argument.Build.build/1)
+    |> and_then(&{:ok, List.flatten(&1)})
   end
 
   defp maybe_rewrite_input_arguments(reactor, arguments) do

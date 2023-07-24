@@ -127,6 +127,22 @@ defmodule Reactor.Utils do
     end
   end
 
+  @doc """
+  Apply the input function to an `ok` tuple, passing an error tuple through
+  unchanged.
+  """
+  @spec and_then({:ok, input} | {:error, reason}, (input -> {:ok, output} | {:error, reason})) ::
+          {:ok, output} | {:error, reason}
+        when input: any, output: any, reason: any
+  def and_then({:ok, input}, transform) when is_function(transform, 1) do
+    case transform.(input) do
+      {:ok, output} -> {:ok, output}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def and_then({:error, reason}, _transform), do: {:error, reason}
+
   @type argument_error :: %ArgumentError{
           __exception__: true,
           message: binary

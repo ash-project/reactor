@@ -29,11 +29,13 @@ defmodule Reactor.Dsl.ArgumentTest do
       transform = &Function.identity/1
 
       assert {:ok,
-              %Argument{
-                name: :name,
-                source: %Template.Input{name: :source},
-                transform: ^transform
-              }} =
+              [
+                %Argument{
+                  name: :name,
+                  source: %Template.Input{name: :source},
+                  transform: ^transform
+                }
+              ]} =
                Argument.Build.build(%Dsl.Argument{
                  name: :name,
                  source: %Template.Input{name: :source},
