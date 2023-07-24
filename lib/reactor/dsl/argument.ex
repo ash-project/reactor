@@ -1,6 +1,6 @@
 defmodule Reactor.Dsl.Argument do
   @moduledoc """
-  The struct used to store argument DSL entities.
+  The struct used to store `argument` DSL entities.
 
   See `d:Reactor.step.argument`.
   """
@@ -125,7 +125,7 @@ defmodule Reactor.Dsl.Argument do
         |> Map.take(~w[name source transform]a)
         |> then(&struct(Argument, &1))
 
-      {:ok, argument}
+      {:ok, [argument]}
     end
   end
 end

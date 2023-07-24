@@ -7,23 +7,23 @@ defmodule Reactor.Argument.BuildTest do
     test "it builds a `Reactor.Argument`" do
       argument = Argument.from_value(:name, :value)
 
-      assert {:ok, ^argument} = Argument.Build.build(argument)
+      assert {:ok, [^argument]} = Argument.Build.build(argument)
     end
   end
 
   describe "build/1 for `Tuple`" do
     test "when given an input tuple it builds a `Reactor.Argument`" do
-      assert {:ok, %Argument{name: :name, source: %Template.Input{name: :source}}} =
+      assert {:ok, [%Argument{name: :name, source: %Template.Input{name: :source}}]} =
                Argument.Build.build({:name, {:input, :source}})
     end
 
     test "when given a result tuple it builds a `Reactor.Argument`" do
-      assert {:ok, %Argument{name: :name, source: %Template.Result{name: :source}}} =
+      assert {:ok, [%Argument{name: :name, source: %Template.Result{name: :source}}]} =
                Argument.Build.build({:name, {:result, :source}})
     end
 
     test "when given a value tuple it builds a `Reactor.Argument`" do
-      assert {:ok, %Argument{name: :name, source: %Template.Value{value: :value}}} =
+      assert {:ok, [%Argument{name: :name, source: %Template.Value{value: :value}}]} =
                Argument.Build.build({:name, :value})
     end
 

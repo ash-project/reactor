@@ -116,6 +116,27 @@ defmodule Reactor.Dsl do
     ]
   }
 
+  @wait_for %Entity{
+    name: :wait_for,
+    describe: """
+    Wait for the named step to complete before allowing this one to start.
+
+    Desugars to `argument :_, result(step_to_wait_for)`
+    """,
+    examples: ["wait_for :create_user"],
+    args: [:names],
+    target: Dsl.WaitFor,
+    schema: [
+      names: [
+        type: {:wrap_list, :atom},
+        required: true,
+        doc: """
+        The name of the step to wait for.
+        """
+      ]
+    ]
+  }
+
   @step %Entity{
     name: :step,
     describe: """
@@ -148,7 +169,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Step,
     identifier: :name,
     no_depend_modules: [:impl],
-    entities: [arguments: [@argument]],
+    entities: [arguments: [@argument, @wait_for]],
     recursive_as: :steps,
     schema: [
       name: [
@@ -240,7 +261,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Compose,
     identifier: :name,
     no_depend_modules: [:reactor],
-    entities: [arguments: [@argument]],
+    entities: [arguments: [@argument, @wait_for]],
     recursive_as: :steps,
     schema: [
       name: [
@@ -271,7 +292,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Around,
     args: [:name, {:optional, :fun}],
     identifier: :name,
-    entities: [steps: [], arguments: [@argument]],
+    entities: [steps: [], arguments: [@argument, @wait_for]],
     recursive_as: :steps,
     schema: [
       name: [
@@ -311,7 +332,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Group,
     args: [:name],
     identifier: :name,
-    entities: [steps: [], arguments: [@argument]],
+    entities: [steps: [], arguments: [@argument, @wait_for]],
     recursive_as: :steps,
     schema: [
       name: [
@@ -462,7 +483,7 @@ defmodule Reactor.Dsl do
     target: Dsl.Debug,
     args: [:name],
     identifier: :name,
-    entities: [arguments: [@argument]],
+    entities: [arguments: [@argument, @wait_for]],
     recursive_as: :steps,
     schema: [
       name: [

@@ -129,7 +129,9 @@ defmodule Reactor.Builder.Compose do
   end
 
   defp assert_all_are_arguments(arguments) do
-    map_while_ok(arguments, &Argument.Build.build/1)
+    arguments
+    |> map_while_ok(&Argument.Build.build/1)
+    |> and_then(&{:ok, List.flatten(&1)})
   end
 
   defp assert_arguments_match_inner_reactor_inputs(arguments, inner_reactor) do
