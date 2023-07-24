@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.1](https://github.com/ash-project/reactor/compare/v0.3.0...v0.3.1) (2023-07-24)
+
+
+
+
+### Improvements:
+
+* Add `wait_for` DSL. (#39)
+
+* Add "subpaths" to templates. (#31)
+
+* Step.Debug: Add `debug` step and DSL. (#30)
+
+* Step.Switch: Add `switch` DSL and step type. (#29)
+
 ## [v0.3.0](https://github.com/ash-project/reactor/compare/v0.2.4...v0.3.0) (2023-07-03)
 
 
