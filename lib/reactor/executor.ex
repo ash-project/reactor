@@ -166,7 +166,7 @@ defmodule Reactor.Executor do
   defp handle_undo(_reactor, state, []), do: {:error, state.errors}
 
   defp handle_undo(reactor, state, [{step, value} | tail]) do
-    case Executor.StepRunner.undo(reactor, step, value, state.concurrency_key) do
+    case Executor.StepRunner.undo(reactor, state, step, value, state.concurrency_key) do
       :ok -> handle_undo(reactor, state, tail)
       {:error, reason} -> handle_undo(reactor, %{state | errors: [reason | state.errors]}, tail)
     end

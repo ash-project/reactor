@@ -42,17 +42,19 @@ defmodule Reactor.Step do
   @type run_result ::
           {:ok, value :: any}
           | {:ok, value :: any, [Step.t()]}
-          | {:halt | :error, reason :: any}
+          | :retry
+          | {:halt | :error | :retry, reason :: any}
 
   @typedoc """
   Possible valid return values for the `c:compensate/4` callback.
   """
-  @type compensate_result :: {:continue, value :: any} | :ok | :retry
+  @type compensate_result ::
+          {:continue, value :: any} | :ok | :retry | {:error | :retry, reason :: any}
 
   @typedoc """
   Possible valid return values for the `c:undo/4` callback.
   """
-  @type undo_result :: :ok | :retry | {:error, any}
+  @type undo_result :: :ok | :retry | {:retry | :error, reason :: any}
 
   @doc """
   Execute the step.
@@ -75,6 +77,10 @@ defmodule Reactor.Step do
     - `{:ok, value, [step]}` the step completed successfully and wants to add
       new steps to the reactor.
     - `{:error, reason}` the if step failed, return an error tuple.
+    - `:retry` or `{:retry, reason}` the step failed, but is retryable.  You can
+      optionally supply an error reason which will be used in the event that the
+      step runs out of retries, otherwise a `Reactor.Error.RetriesExceededError`
+      will be used.
     - `{:halt, reason}` terminate (or pause) reactor execution.  If there are
       actively running steps the reactor will wait for them to finish and then
       return the incomplete state for later resumption.
@@ -109,7 +115,11 @@ defmodule Reactor.Step do
       `:continue` tuple and execution will continue as planned.
     - `:ok` the step was successfully compensated and the reactor should
       continue undoing upstream changes.
-    - `:retry` if you would like the reactor to attempt to re-run the step.
+    - `:retry` or `{:retry, reason}` if you would like the reactor to attempt to
+      re-run the step. You can optionally supply an error reason which will be
+      used in the event that the step runs out of retries, otherwise a
+      `Reactor.Error.RetriesExceededError` will be used.
+    - `{:error, reason}` if compensation was unsuccessful.
   """
   @callback compensate(
               reason :: any,

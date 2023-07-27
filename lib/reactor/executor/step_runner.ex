@@ -2,7 +2,7 @@ defmodule Reactor.Executor.StepRunner do
   @moduledoc """
   Run an individual step, including compensation if possible.
   """
-  alias Reactor.{Executor.ConcurrencyTracker, Step}
+  alias Reactor.{Executor.ConcurrencyTracker, Executor.State, Step}
   import Reactor.Utils
   import Reactor.Argument, only: :macros
   require Logger
@@ -12,12 +12,12 @@ defmodule Reactor.Executor.StepRunner do
   @doc """
   Collect the arguments and and run a step, with compensation if required.
   """
-  @spec run(Reactor.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
-          {:ok, any, [Step.t()]} | :retry | {:error | :halt, any}
-  def run(reactor, step, concurrency_key) do
+  @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
+          {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
+  def run(reactor, state, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {module, options} <- module_and_opts(step),
-         {:ok, context} <- build_context(reactor, step, concurrency_key),
+         {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
       do_run(module, options, arguments, context)
     end
@@ -26,11 +26,12 @@ defmodule Reactor.Executor.StepRunner do
   @doc """
   Undo a step if possible.
   """
-  @spec undo(Reactor.t(), Step.t(), any, ConcurrencyTracker.pool_key()) :: :ok | {:error, any}
-  def undo(reactor, step, value, concurrency_key) do
+  @spec undo(Reactor.t(), State.t(), Step.t(), any, ConcurrencyTracker.pool_key()) ::
+          :ok | {:error, any}
+  def undo(reactor, state, step, value, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {module, options} <- module_and_opts(step),
-         {:ok, context} <- build_context(reactor, step, concurrency_key),
+         {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
       do_undo(value, module, options, arguments, context)
     end
@@ -57,6 +58,7 @@ defmodule Reactor.Executor.StepRunner do
     case module.run(arguments, context, options) do
       {:ok, value} -> {:ok, value, []}
       {:ok, value, steps} when is_list(steps) -> {:ok, value, steps}
+      {:retry, reason} -> {:retry, reason}
       :retry -> :retry
       {:error, reason} -> maybe_compensate(module, reason, arguments, context, options)
       {:halt, value} -> {:halt, value}
@@ -76,7 +78,9 @@ defmodule Reactor.Executor.StepRunner do
   defp compensate(module, reason, arguments, context, options) do
     case module.compensate(reason, arguments, context, options) do
       {:continue, value} -> {:ok, value}
-      :retry -> :retry
+      {:retry, reason} -> {:retry, reason}
+      :retry -> {:retry, reason}
+      {:error, reason} -> {:error, reason}
       :ok -> {:error, reason}
     end
   rescue
@@ -159,10 +163,29 @@ defmodule Reactor.Executor.StepRunner do
     FunctionClauseError -> :error
   end
 
-  defp build_context(reactor, step, concurrency_key) do
+  defp build_context(reactor, state, step, concurrency_key) do
+    current_try =
+      state
+      |> Map.get(:retries, %{})
+      |> Map.get(step.ref, 0)
+
+    retries_remaining =
+      step
+      |> Map.get(:max_retries)
+      |> case do
+        :infinity -> :infinity
+        max when is_integer(max) and max >= 0 -> max - current_try
+      end
+
     context =
       step.context
       |> deep_merge(reactor.context)
+      |> Map.merge(%{
+        current_step: step,
+        concurrency_key: concurrency_key,
+        current_try: current_try,
+        retries_remaining: retries_remaining
+      })
       |> Map.put(:current_step, step)
       |> Map.put(:concurrency_key, concurrency_key)
 
