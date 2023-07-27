@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.2](https://github.com/ash-project/reactor/compare/v0.3.1...v0.3.2) (2023-07-27)
+
+
+
+
+### Bug Fixes:
+
+* Don't swallow errors when a step runs out of retries. (#41)
+
 ## [v0.3.1](https://github.com/ash-project/reactor/compare/v0.3.0...v0.3.1) (2023-07-24)
 
 
