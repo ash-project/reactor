@@ -4,7 +4,7 @@ defmodule Reactor.Executor.Sync do
   the reactor or execution state.
   """
 
-  alias Reactor.{Executor, Step}
+  alias Reactor.{Error, Executor, Step}
 
   @doc """
   Try and run a step synchronously.
@@ -14,13 +14,30 @@ defmodule Reactor.Executor.Sync do
   def run(reactor, state, nil), do: {:continue, reactor, state}
 
   def run(reactor, state, step) do
-    case Executor.StepRunner.run(reactor, step, state.concurrency_key) do
+    case Executor.StepRunner.run(reactor, state, step, state.concurrency_key) do
       :retry ->
         state = increment_retries(state, step)
 
         if Map.get(state.retries, step.ref) >= step.max_retries do
           reactor = drop_from_plan(reactor, step)
-          {:undo, reactor, state}
+
+          error =
+            Error.RetriesExceededError.exception(
+              step: step,
+              retry_count: Map.get(state.retries, step.ref)
+            )
+
+          {:undo, reactor, %{state | errors: [error | state.errors]}}
+        else
+          {:recurse, reactor, state}
+        end
+
+      {:retry, reason} ->
+        state = increment_retries(state, step)
+
+        if Map.get(state.retries, step.ref) >= step.max_retries do
+          reactor = drop_from_plan(reactor, step)
+          {:undo, reactor, %{state | errors: [reason | state.errors]}}
         else
           {:recurse, reactor, state}
         end

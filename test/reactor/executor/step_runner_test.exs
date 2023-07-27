@@ -1,30 +1,33 @@
 defmodule Reactor.Executor.StepRunnerTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Argument, Builder, Template}
+  alias Reactor.{Argument, Builder, Executor.State, Template}
   import Reactor.Executor.StepRunner
   use Mimic
 
   setup do
     reactor = Builder.new()
+    state = State.init()
 
-    {:ok, reactor: reactor}
+    {:ok, reactor: reactor, state: state}
   end
 
   describe "run/1" do
     test "when the required argument cannot be fulfilled, it returns an error", %{
-      reactor: reactor
+      reactor: reactor,
+      state: state
     } do
       argument = Argument.from_result(:current_year, :time_circuits)
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
       step = reactor.steps |> hd()
 
-      assert {:error, reason} = run(reactor, step, nil)
+      assert {:error, reason} = run(reactor, state, step, nil)
       assert reason =~ "argument `:current_year` is missing"
     end
 
     test "when the required argument cannot be subpathed, it returns an error", %{
-      reactor: reactor
+      reactor: reactor,
+      state: state
     } do
       {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
 
@@ -37,12 +40,12 @@ defmodule Reactor.Executor.StepRunnerTest do
       step = reactor.steps |> hd()
       reactor = %{reactor | intermediate_results: %{time_circuits: 1985}}
 
-      assert {:error, reason} = run(reactor, step, nil)
+      assert {:error, reason} = run(reactor, state, step, nil)
       assert reason == "Unable to resolve subpath for argument `:current_year` at key `[:year]`"
     end
 
     test "when the required argument can be subpathed, it calls the step with the correct arguments",
-         %{reactor: reactor} do
+         %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
 
       argument = %Argument{
@@ -62,10 +65,13 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, marty, nil)
+      assert {:ok, :marty, []} = run(reactor, state, marty, nil)
     end
 
-    test "when the argument is named `:_` it is not passed to the step", %{reactor: reactor} do
+    test "when the argument is named `:_` it is not passed to the step", %{
+      reactor: reactor,
+      state: state
+    } do
       {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
       argument = Argument.from_result(:_, :time_circuits)
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
@@ -79,10 +85,10 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, marty, nil)
+      assert {:ok, :marty, []} = run(reactor, state, marty, nil)
     end
 
-    test "it calls the step with the correct arguments", %{reactor: reactor} do
+    test "it calls the step with the correct arguments", %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :time_circuits, Example.Step.Undoable)
       argument = Argument.from_result(:current_year, :time_circuits)
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
@@ -97,10 +103,10 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, marty, nil)
+      assert {:ok, :marty, []} = run(reactor, state, marty, nil)
     end
 
-    test "when the step is successful, it returns an ok tuple", %{reactor: reactor} do
+    test "when the step is successful, it returns an ok tuple", %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable)
       step = reactor.steps |> hd()
 
@@ -109,10 +115,13 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:ok, :marty, []}
       end)
 
-      assert {:ok, :marty, []} = run(reactor, step, nil)
+      assert {:ok, :marty, []} = run(reactor, state, step, nil)
     end
 
-    test "when the step asks to be retried, it returns a retry atom", %{reactor: reactor} do
+    test "when the step asks to be retried, it returns a retry atom", %{
+      reactor: reactor,
+      state: state
+    } do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable)
       step = reactor.steps |> hd()
 
@@ -121,11 +130,12 @@ defmodule Reactor.Executor.StepRunnerTest do
         :retry
       end)
 
-      assert :retry = run(reactor, step, nil)
+      assert :retry = run(reactor, state, step, nil)
     end
 
     test "when a step returns an error and cannot be compensated, it returns an error tuple", %{
-      reactor: reactor
+      reactor: reactor,
+      state: state
     } do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable)
       step = reactor.steps |> hd()
@@ -135,10 +145,13 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:error, :doc}
       end)
 
-      assert {:error, :doc} = run(reactor, step, nil)
+      assert {:error, :doc} = run(reactor, state, step, nil)
     end
 
-    test "when a step raises an error it returns an error tuple", %{reactor: reactor} do
+    test "when a step raises an error it returns an error tuple", %{
+      reactor: reactor,
+      state: state
+    } do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable)
       step = reactor.steps |> hd()
 
@@ -147,13 +160,13 @@ defmodule Reactor.Executor.StepRunnerTest do
         raise RuntimeError, "Not enough plutonium!"
       end)
 
-      assert {:error, error} = run(reactor, step, nil)
+      assert {:error, error} = run(reactor, state, step, nil)
       assert is_struct(error, RuntimeError)
       assert Exception.message(error) == "Not enough plutonium!"
     end
 
     test "when a step returns an error and can be compensated and the compensation says it can continue it returns an ok tuple",
-         %{reactor: reactor} do
+         %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Compensable)
       step = reactor.steps |> hd()
 
@@ -161,11 +174,11 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> {:continue, :marty} end)
 
-      assert {:ok, :marty} = run(reactor, step, nil)
+      assert {:ok, :marty} = run(reactor, state, step, nil)
     end
 
     test "when a step returns an error and can be compensated and the compensation succeed it returns an error tuple",
-         %{reactor: reactor} do
+         %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Compensable)
       step = reactor.steps |> hd()
 
@@ -173,12 +186,12 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> :ok end)
 
-      assert {:error, :doc} = run(reactor, step, nil)
+      assert {:error, :doc} = run(reactor, state, step, nil)
     end
   end
 
   describe "undo/3" do
-    test "it calls undo on the step with the correct arguments", %{reactor: reactor} do
+    test "it calls undo on the step with the correct arguments", %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Undoable)
       step = reactor.steps |> hd()
 
@@ -189,20 +202,23 @@ defmodule Reactor.Executor.StepRunnerTest do
         :ok
       end)
 
-      undo(reactor, step, :marty, nil)
+      undo(reactor, state, step, :marty, nil)
     end
 
-    test "when the step can be undone it returns ok", %{reactor: reactor} do
+    test "when the step can be undone it returns ok", %{reactor: reactor, state: state} do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Undoable)
       step = reactor.steps |> hd()
 
       Example.Step.Undoable
       |> stub(:undo, fn _, _, _, _ -> :ok end)
 
-      assert :ok = undo(reactor, step, :marty, nil)
+      assert :ok = undo(reactor, state, step, :marty, nil)
     end
 
-    test "when the step undo needs to be retried it eventually returns ok", %{reactor: reactor} do
+    test "when the step undo needs to be retried it eventually returns ok", %{
+      reactor: reactor,
+      state: state
+    } do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Undoable)
       step = reactor.steps |> hd()
 
@@ -212,11 +228,12 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> expect(:undo, fn _, _, _, _ -> :retry end)
       |> expect(:undo, fn _, _, _, _ -> :ok end)
 
-      assert :ok = undo(reactor, step, :marty, nil)
+      assert :ok = undo(reactor, state, step, :marty, nil)
     end
 
     test "when the step undo is stuck in a retry loop, it eventually returns an error", %{
-      reactor: reactor
+      reactor: reactor,
+      state: state
     } do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Undoable)
       step = reactor.steps |> hd()
@@ -224,7 +241,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       Example.Step.Undoable
       |> stub(:undo, fn _, _, _, _ -> :retry end)
 
-      assert {:error, message} = undo(reactor, step, :marty, nil)
+      assert {:error, message} = undo(reactor, state, step, :marty, nil)
       assert message =~ "retried 5 times"
     end
   end

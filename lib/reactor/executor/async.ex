@@ -4,7 +4,7 @@ defmodule Reactor.Executor.Async do
   mutations to the reactor or execution state.
   """
   alias Reactor.Executor.ConcurrencyTracker
-  alias Reactor.{Executor, Step}
+  alias Reactor.{Error, Executor, Step}
   require Logger
 
   @doc """
@@ -37,7 +37,7 @@ defmodule Reactor.Executor.Async do
       |> Enum.take(available_concurrency)
       |> Enum.take_while(&acquire_concurrency_resource_from_pool(state.concurrency_key, &1))
       |> Enum.reduce_while(%{}, fn step, started ->
-        case start_task_for_step(reactor, step, supervisor, state.concurrency_key) do
+        case start_task_for_step(reactor, state, step, supervisor, state.concurrency_key) do
           {:ok, task} -> {:cont, Map.put(started, task, step)}
           {:error, reason} -> {:halt, {:error, reason}}
         end
@@ -52,13 +52,13 @@ defmodule Reactor.Executor.Async do
     end
   end
 
-  defp start_task_for_step(reactor, step, supervisor, pool_key) do
+  defp start_task_for_step(reactor, state, step, supervisor, pool_key) do
     {:ok,
      Task.Supervisor.async_nolink(
        supervisor,
        Executor.StepRunner,
        :run,
-       [reactor, step, pool_key]
+       [reactor, state, step, pool_key]
      )}
   rescue
     error -> {:error, error}
@@ -93,7 +93,11 @@ defmodule Reactor.Executor.Async do
 
     retry_steps =
       completed_step_results
-      |> Enum.filter(&(elem(&1, 1) == :retry))
+      |> Enum.filter(fn
+        {_, :retry} -> true
+        {_, {:retry, _}} -> true
+        _ -> false
+      end)
       |> Enum.map(&elem(&1, 0))
 
     steps_to_remove =
@@ -171,6 +175,9 @@ defmodule Reactor.Executor.Async do
       {task, {:ok, :retry}} ->
         {task, :retry}
 
+      {task, {:ok, {:retry, reason}}} ->
+        {task, {:retry, reason}}
+
       {task, {:ok, {:ok, value, steps}}} when is_list(steps) ->
         {task, {:ok, value, steps}}
 
@@ -247,10 +254,28 @@ defmodule Reactor.Executor.Async do
     errors =
       completed_step_results
       |> Enum.filter(fn
-        {_step, {:error, _}} -> true
-        _ -> false
+        {_step, {:error, _}} ->
+          true
+
+        {step, {:retry, _}} ->
+          Map.get(state.retries, step.ref) >= step.max_retries
+
+        {step, :retry} ->
+          Map.get(state.retries, step.ref) >= step.max_retries
+
+        _ ->
+          false
       end)
-      |> Enum.map(fn {_step, {:error, reason}} -> reason end)
+      |> Enum.map(fn
+        {_step, {_, reason}} ->
+          reason
+
+        {step, :retry} ->
+          Error.RetriesExceededError.exception(
+            step: step,
+            retry_count: Map.get(state.retries, step.ref)
+          )
+      end)
       |> Enum.concat(state.errors)
 
     %{state | errors: errors}

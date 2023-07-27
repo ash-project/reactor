@@ -1,5 +1,5 @@
 defmodule Reactor.Executor.AsyncTest do
-  alias Reactor.Executor
+  alias Reactor.{Error, Executor}
   import Reactor.Executor.Async
   use ExUnit.Case, async: true
 
@@ -230,7 +230,9 @@ defmodule Reactor.Executor.AsyncTest do
          %{reactor: reactor, state: state, undoable: undoable, supervisor: supervisor} do
       task = Task.Supervisor.async_nolink(supervisor, fn -> :retry end)
       state = %{state | current_tasks: %{task => undoable}, retries: %{undoable.ref => 100}}
-      assert {:undo, _reactor, _state} = handle_completed_steps(reactor, state)
+
+      assert {:undo, _reactor, %{errors: [%Error.RetriesExceededError{}]}} =
+               handle_completed_steps(reactor, state)
     end
   end
 end
