@@ -60,7 +60,7 @@ defmodule Reactor do
             steps: [],
             undo: []
 
-  use Spark.Dsl, default_extensions: [extensions: Dsl]
+  use Spark.Dsl, default_extensions: [extensions: [Dsl]]
 
   @type context :: %{optional(atom) => any}
   @type context_arg :: Enumerable.t({atom, any})
