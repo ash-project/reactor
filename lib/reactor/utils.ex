@@ -25,7 +25,7 @@ defmodule Reactor.Utils do
   @doc """
   Append a non-nil result of the callback function to the enumerable.
   """
-  @spec maybe_append_result(Enumerable.t(), (() -> any)) :: Enumerable.t()
+  @spec maybe_append_result(Enumerable.t(), (-> any)) :: Enumerable.t()
   def maybe_append_result(collection, callback) do
     case callback.() do
       nil -> collection
