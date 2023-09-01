@@ -12,6 +12,7 @@ defmodule Reactor.Dsl.Switch do
             on: nil
 
   alias Reactor.{
+    Dsl.Argument,
     Dsl.Build,
     Dsl.Switch,
     Dsl.Switch.Default,
@@ -28,6 +29,102 @@ defmodule Reactor.Dsl.Switch do
           name: atom,
           on: Template.Input.t() | Template.Result.t() | Template.Value.t()
         }
+
+  @switch_match %Spark.Dsl.Entity{
+    name: :matches?,
+    describe: """
+    A group of steps to run when the predicate matches.
+    """,
+    target: Match,
+    args: [:predicate],
+    entities: [steps: []],
+    schema: [
+      predicate: [
+        type: {:mfa_or_fun, 1},
+        required: true,
+        doc: """
+        A one-arity function which is used to match the switch input.
+
+        If the switch returns a truthy value, then the nested steps will be run.
+        """
+      ],
+      allow_async?: [
+        type: :boolean,
+        required: false,
+        default: true,
+        doc: """
+        Whether the emitted steps should be allowed to run asynchronously.
+        """
+      ],
+      return: [
+        type: :atom,
+        required: false,
+        doc: """
+        Specify which step result to return upon completion.
+        """
+      ]
+    ]
+  }
+
+  @switch_default %Spark.Dsl.Entity{
+    name: :default,
+    describe: """
+    If none of the `matches?` branches match the input, then the `default`
+    steps will be run if provided.
+    """,
+    target: Default,
+    entities: [steps: []],
+    schema: [
+      return: [
+        type: :atom,
+        required: false,
+        doc: """
+        Specify which step result to return upon completion.
+        """
+      ]
+    ]
+  }
+
+  def __entity__,
+    do: %Spark.Dsl.Entity{
+      name: :switch,
+      describe: """
+      Use a predicate to determine which steps should be executed.
+      """,
+      target: Switch,
+      args: [:name],
+      identifier: :name,
+      imports: [Argument],
+      entities: [matches: [@switch_match], default: [@switch_default]],
+      singleton_entity_keys: [:default],
+      recursive_as: :steps,
+      schema: [
+        name: [
+          type: :atom,
+          required: true,
+          doc: """
+          A unique name for the switch.
+          """
+        ],
+        allow_async?: [
+          type: :boolean,
+          required: false,
+          default: true,
+          doc: """
+          Whether the emitted steps should be allowed to run asynchronously.
+          """
+        ],
+        on: [
+          type:
+            {:or,
+             [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
+          required: true,
+          doc: """
+          The value to match against.
+          """
+        ]
+      ]
+    }
 
   defimpl Build do
     import Reactor.Utils

@@ -10,7 +10,7 @@ defmodule Reactor.Dsl.Argument do
             source: nil,
             transform: nil
 
-  alias Reactor.{Argument, Dsl, Template}
+  alias Reactor.{Argument, Dsl, Step, Template}
 
   @type t :: %Dsl.Argument{
           name: atom,
@@ -116,6 +116,76 @@ defmodule Reactor.Dsl.Argument do
   """
   @spec value(any) :: Template.Value.t()
   def value(value), do: %Template.Value{value: value}
+
+  @doc false
+  def __entity__,
+    do: %Spark.Dsl.Entity{
+      name: :argument,
+      describe: """
+      Specifies an argument to a Reactor step.
+
+      Each argument is a value which is either the result of another step, or an input value.
+
+      Individual arguments can be transformed with an arbitrary function before
+      being passed to any steps.
+      """,
+      examples: [
+        """
+        argument :name, input(:name)
+        """,
+        """
+        argument :year, input(:date, [:year])
+        """,
+        """
+        argument :user, result(:create_user)
+        """,
+        """
+        argument :user_id, result(:create_user) do
+          transform & &1.id
+        end
+        """,
+        """
+        argument :user_id, result(:create_user, [:id])
+        """,
+        """
+        argument :three, value(3)
+        """
+      ],
+      args: [:name, {:optional, :source}],
+      target: Dsl.Argument,
+      identifier: :name,
+      imports: [Dsl.Argument],
+      schema: [
+        name: [
+          type: :atom,
+          required: true,
+          doc: """
+          The name of the argument which will be used as the key in the
+          `arguments` map passed to the implementation.
+          """
+        ],
+        source: [
+          type:
+            {:or,
+             [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
+          required: true,
+          doc: """
+          What to use as the source of the argument.
+
+          See `Reactor.Dsl.Argument` for more information.
+          """
+        ],
+        transform: [
+          type: {:or, [{:spark_function_behaviour, Step, {Step.Transform, 1}}, nil]},
+          required: false,
+          default: nil,
+          doc: """
+          An optional transformation function which can be used to modify the
+          argument before it is passed to the step.
+          """
+        ]
+      ]
+    }
 
   defimpl Argument.Build do
     def build(argument) do
