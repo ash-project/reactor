@@ -12,6 +12,29 @@ defmodule Reactor.Dsl.WaitFor do
 
   @type t :: %Dsl.WaitFor{names: [atom], __identifier__: any}
 
+  @doc false
+  def __entity__,
+    do: %Spark.Dsl.Entity{
+      name: :wait_for,
+      describe: """
+      Wait for the named step to complete before allowing this one to start.
+
+      Desugars to `argument :_, result(step_to_wait_for)`
+      """,
+      examples: ["wait_for :create_user"],
+      args: [:names],
+      target: Dsl.WaitFor,
+      schema: [
+        names: [
+          type: {:wrap_list, :atom},
+          required: true,
+          doc: """
+          The name of the step to wait for.
+          """
+        ]
+      ]
+    }
+
   defimpl Argument.Build do
     def build(wait_for) do
       wait_for

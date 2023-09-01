@@ -22,6 +22,48 @@ defmodule Reactor.Dsl.Around do
           steps: [Dsl.Step.t()]
         }
 
+  @doc false
+  def __entity__,
+    do: %Spark.Dsl.Entity{
+      name: :around,
+      describe: """
+      Wrap a function around a group of steps.
+      """,
+      target: Dsl.Around,
+      args: [:name, {:optional, :fun}],
+      identifier: :name,
+      entities: [steps: [], arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      recursive_as: :steps,
+      schema: [
+        name: [
+          type: :atom,
+          required: true,
+          doc: """
+          A unique name of the group of steps.
+          """
+        ],
+        fun: [
+          type: {:mfa_or_fun, 4},
+          required: true,
+          doc: """
+          The around function.
+
+          See `Reactor.Step.Around` for more information.
+          """
+        ],
+        allow_async?: [
+          type: :boolean,
+          required: false,
+          default: false,
+          doc: """
+          Whether the emitted steps should be allowed to run asynchronously.
+
+          Passed to the child Reactor as it's `async?` option.
+          """
+        ]
+      ]
+    }
+
   defimpl Dsl.Build do
     import Reactor.Utils
     alias Spark.{Dsl.Verifier, Error.DslError}
