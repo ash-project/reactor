@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.4](https://github.com/ash-project/reactor/compare/v0.3.3...v0.3.4) (2023-09-04)
+
+
+
+
+### Bug Fixes:
+
+* Allow `reactor` DSL section to be patched.
+
+* Reactor: fix call to `use Spark.Dsl`.
+
 ## [v0.3.3](https://github.com/ash-project/reactor/compare/v0.3.2...v0.3.3) (2023-09-01)
 
 
