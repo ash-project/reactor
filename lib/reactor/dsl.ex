@@ -25,7 +25,8 @@ defmodule Reactor.Dsl do
       Dsl.Switch.__entity__(),
       Dsl.Compose.__entity__()
     ],
-    top_level?: true
+    top_level?: true,
+    patchable?: true
   }
 
   use Extension,
