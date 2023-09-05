@@ -115,9 +115,7 @@ defmodule Reactor.Dsl.Switch do
           """
         ],
         on: [
-          type:
-            {:or,
-             [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
+          type: Template.type(),
           required: true,
           doc: """
           The value to match against.

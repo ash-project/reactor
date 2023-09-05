@@ -14,7 +14,7 @@ defmodule Reactor.Dsl.Argument do
 
   @type t :: %Dsl.Argument{
           name: atom,
-          source: Template.Input.t() | Template.Result.t() | Template.Value.t(),
+          source: Template.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa,
           __identifier__: any
         }
@@ -165,9 +165,7 @@ defmodule Reactor.Dsl.Argument do
           """
         ],
         source: [
-          type:
-            {:or,
-             [{:struct, Template.Input}, {:struct, Template.Result}, {:struct, Template.Value}]},
+          type: Template.type(),
           required: true,
           doc: """
           What to use as the source of the argument.

@@ -9,7 +9,7 @@ defmodule Reactor.Argument do
 
   @type t :: %Argument{
           name: atom,
-          source: Template.Input.t() | Template.Result.t() | Template.Value.t(),
+          source: Template.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa
         }
 
