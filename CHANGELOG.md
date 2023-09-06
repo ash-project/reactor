@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.3.5](https://github.com/ash-project/reactor/compare/v0.3.4...v0.3.5) (2023-09-06)
+
+
+
+
+### Improvements:
+
+* Template: Abstract template type so that it can be used by extensions.
+
 ## [v0.3.4](https://github.com/ash-project/reactor/compare/v0.3.3...v0.3.4) (2023-09-04)
 
 
