@@ -10,6 +10,8 @@ spark_locals_without_parens = [
   around: 3,
   async?: 1,
   before_all: 1,
+  collect: 1,
+  collect: 2,
   compensate: 1,
   compose: 2,
   compose: 3,

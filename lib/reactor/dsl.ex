@@ -18,12 +18,13 @@ defmodule Reactor.Dsl do
     ],
     entities: [
       Dsl.Around.__entity__(),
+      Dsl.Collect.__entity__(),
+      Dsl.Compose.__entity__(),
       Dsl.Debug.__entity__(),
       Dsl.Group.__entity__(),
       Dsl.Input.__entity__(),
       Dsl.Step.__entity__(),
-      Dsl.Switch.__entity__(),
-      Dsl.Compose.__entity__()
+      Dsl.Switch.__entity__()
     ],
     top_level?: true,
     patchable?: true
