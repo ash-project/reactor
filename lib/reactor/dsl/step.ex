@@ -66,7 +66,7 @@ defmodule Reactor.Dsl.Step do
         """
       ],
       args: [:name, {:optional, :impl}],
-      target: Dsl.Step,
+      target: __MODULE__,
       identifier: :name,
       no_depend_modules: [:impl],
       entities: [arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
@@ -79,7 +79,7 @@ defmodule Reactor.Dsl.Step do
           A unique name for the step.
 
           This is used when choosing the return value of the Reactor and for arguments into
-          another step.
+          other steps.
           """
         ],
         impl: [
