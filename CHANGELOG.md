@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.0](https://github.com/ash-project/reactor/compare/v0.3.5...v0.4.0) (2023-09-11)
+
+
+
+
+### Features:
+
+* Add `collect` step entity. (#53)
+
 ## [v0.3.5](https://github.com/ash-project/reactor/compare/v0.3.4...v0.3.5) (2023-09-06)
 
 
