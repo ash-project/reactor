@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.4.1](https://github.com/ash-project/reactor/compare/v0.4.0...v0.4.1) (2023-09-26)
+
+
+
+
+### Bug Fixes:
+
+* weird issue with aliases sometimes not being expanded in generated reactors.
+
 ## [v0.4.0](https://github.com/ash-project/reactor/compare/v0.3.5...v0.4.0) (2023-09-11)
 
 
