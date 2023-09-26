@@ -17,7 +17,7 @@ defmodule Reactor.Dsl.Transformer do
       dsl_state =
         dsl_state
         |> Transformer.eval(
-          [reactor: Macro.escape(reactor)],
+          [],
           quote do
             @doc false
             @spec reactor :: Reactor.t()
