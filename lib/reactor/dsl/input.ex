@@ -44,9 +44,7 @@ defmodule Reactor.Dsl.Input do
           type: :atom,
           required: true,
           doc: """
-          A unique name for this input.
-
-          The name is used to allow steps to depend on it.
+          A unique name for this input. Used to allow steps to depend on it.
           """
         ],
         transform: [
@@ -54,8 +52,7 @@ defmodule Reactor.Dsl.Input do
           required: false,
           default: nil,
           doc: """
-          An optional transformation function which can be used to modify the
-          input before it is passed to any steps.
+          An optional transformation function which can be used to modify the input before it is passed to any steps.
           """
         ]
       ]

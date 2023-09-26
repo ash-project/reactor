@@ -43,9 +43,7 @@ defmodule Reactor.Dsl.Switch do
         type: {:mfa_or_fun, 1},
         required: true,
         doc: """
-        A one-arity function which is used to match the switch input.
-
-        If the switch returns a truthy value, then the nested steps will be run.
+        A one-arity function which is used to match the switch input. If the switch returns a truthy value, then the nested steps will be run.
         """
       ],
       allow_async?: [

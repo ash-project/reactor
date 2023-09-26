@@ -99,13 +99,20 @@ defmodule Reactor.MixProject do
     [
       sobelow: "sobelow --skip",
       credo: "credo --strict",
-      "spark.formatter": "spark.formatter --extensions Reactor.Dsl"
+      docs: [
+        "spark.cheat_sheets",
+        "docs",
+        "spark.cheat_sheets_in_search"
+      ],
+      "spark.formatter": "spark.formatter --extensions Reactor.Dsl",
+      "spark.cheat_sheets": "spark.cheat_sheets --extensions Reactor.Dsl",
+      "spark.cheat_sheets_in_search": "spark.cheat_sheets_in_search --extensions Reactor.Dsl"
     ]
   end
 
   defp extra_documentation do
     ["README.md"]
-    |> Enum.concat(Path.wildcard("documentation/**/*.md"))
+    |> Enum.concat(Path.wildcard("documentation/**/*.{md,livemd,cheatmd}"))
     |> Enum.map(fn
       "README.md" ->
         {:"README.md", title: "Read Me", ash_hq?: false}
@@ -115,27 +122,16 @@ defmodule Reactor.MixProject do
 
       "documentation/topics/" <> _ = path ->
         {String.to_atom(path), []}
+
+      "documentation/dsls/" <> _ = path ->
+        {String.to_atom(path), []}
     end)
   end
 
   defp extra_documentation_groups do
-    "documentation/*"
-    |> Path.wildcard()
-    |> Enum.filter(&File.dir?/1)
-    |> Enum.map(fn dir ->
-      name =
-        dir
-        |> Path.basename()
-        |> String.split(~r/_+/)
-        |> Enum.join(" ")
-        |> String.capitalize()
-
-      contents =
-        dir
-        |> Path.join("**")
-        |> Path.wildcard()
-
-      {name, contents}
-    end)
+    [
+      Tutorials: ~r'documentation/tutorials',
+      DSLs: ~r'documentation/dsls'
+    ]
   end
 end

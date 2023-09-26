@@ -160,17 +160,14 @@ defmodule Reactor.Dsl.Argument do
           type: :atom,
           required: true,
           doc: """
-          The name of the argument which will be used as the key in the
-          `arguments` map passed to the implementation.
+          The name of the argument which will be used as the key in the `arguments` map passed to the implementation.
           """
         ],
         source: [
           type: Template.type(),
           required: true,
           doc: """
-          What to use as the source of the argument.
-
-          See `Reactor.Dsl.Argument` for more information.
+          What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information.
           """
         ],
         transform: [
@@ -178,8 +175,7 @@ defmodule Reactor.Dsl.Argument do
           required: false,
           default: nil,
           doc: """
-          An optional transformation function which can be used to modify the
-          argument before it is passed to the step.
+          An optional transformation function which can be used to modify the argument before it is passed to the step.
           """
         ]
       ]

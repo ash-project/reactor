@@ -34,10 +34,7 @@ defmodule Reactor.Dsl.Compose do
           type: :atom,
           required: true,
           doc: """
-          A unique name for the step.
-
-          Allows the result of the composed reactor to be depended upon by steps
-          in this reactor.
+          A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor.
           """
         ],
         reactor: [

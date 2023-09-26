@@ -76,47 +76,35 @@ defmodule Reactor.Dsl.Step do
           type: :atom,
           required: true,
           doc: """
-          A unique name for the step.
-
-          This is used when choosing the return value of the Reactor and for arguments into
-          other steps.
+          A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps.
           """
         ],
         impl: [
           type: {:or, [{:spark_behaviour, Step}, nil]},
           required: false,
           doc: """
-          The step implementation.
-
-          Provides an implementation for the step with the named module.  The
-          module must implement the `Reactor.Step` behaviour.
+          A module that implements the `Reactor.Step` behaviour that provides the implementation.
           """
         ],
         run: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `run/3` callback.
-
-          You cannot provide this option at the same time as the `impl` argument.
+          Provide an anonymous function which implements the `run/3` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         undo: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `undo/4` callback.
-
-          You cannot provide this option at the same time as the `impl` argument.
+          Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         compensate: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `undo/4` callback.
-
-          You cannot provide this option at the same time as the `impl` argument.
+          Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         max_retries: [
@@ -124,10 +112,7 @@ defmodule Reactor.Dsl.Step do
           required: false,
           default: :infinity,
           doc: """
-          The maximum number of times that the step can be retried before failing.
-
-          This is only used when the result of the `compensate/4` callback is
-          `:retry`.
+          The maximum number of times that the step can be retried before failing. Only used when the result of the `compensate/4` callback is `:retry`.
           """
         ],
         async?: [
@@ -135,8 +120,7 @@ defmodule Reactor.Dsl.Step do
           required: false,
           default: true,
           doc: """
-          When set to true the step will be executed asynchronously via Reactor's
-          `TaskSupervisor`.
+          When set to true the step will be executed asynchronously via Reactor's `TaskSupervisor`.
           """
         ],
         transform: [
@@ -144,8 +128,7 @@ defmodule Reactor.Dsl.Step do
           required: false,
           default: nil,
           doc: """
-          An optional transformation function which can be used to modify the
-          entire argument map before it is passed to the step.
+          An optional transformation function which can be used to modify the entire argument map before it is passed to the step.
           """
         ]
       ]
