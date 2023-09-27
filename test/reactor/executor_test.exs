@@ -424,5 +424,117 @@ defmodule Reactor.ExecutorTest do
       assert elapsed >= 200
       assert elapsed < 300
     end
+
+    test "reactors running inside async steps with shared concurrency don't cause a deadlock" do
+      defmodule MaybeDeadlockedReactor.Inner do
+        @moduledoc false
+        use Reactor
+
+        step :sleep do
+          run(fn _ ->
+            Process.sleep(100)
+            {:ok, nil}
+          end)
+        end
+      end
+
+      defmodule MaybeDeadlockedReactor do
+        @moduledoc false
+        use Reactor
+
+        for i <- 0..16 do
+          step :"sleep_#{i}" do
+            run(fn _, context ->
+              Reactor.run(
+                MaybeDeadlockedReactor.Inner,
+                %{},
+                %{},
+                concurrency_key: context.concurrency_key
+              )
+            end)
+          end
+        end
+      end
+
+      Reactor.run(MaybeDeadlockedReactor, %{}, %{}, max_concurrency: 8)
+    end
+
+    test "lots of reactors sharing a concurrency key do not deadlock" do
+      defmodule OversharingReactor do
+        @moduledoc false
+        use Reactor
+
+        step :sleep do
+          run fn _ ->
+            Process.sleep(100)
+            {:ok, nil}
+          end
+        end
+      end
+
+      pool = ConcurrencyTracker.allocate_pool(8)
+
+      0..16
+      |> Enum.map(fn _ ->
+        Task.async(fn ->
+          Reactor.run(OversharingReactor, %{}, %{}, concurrency_key: pool)
+        end)
+      end)
+      |> Enum.map(&Task.await/1)
+    end
+
+    test "Zach's hunch" do
+      defmodule GrandchildReactor do
+        @moduledoc false
+        use Reactor
+
+        step :sleep do
+          run fn _ ->
+            Process.sleep(1000)
+            {:ok, nil}
+          end
+        end
+      end
+
+      defmodule ChildReactor do
+        @moduledoc false
+        use Reactor
+
+        step :splode do
+          run fn _, context ->
+            0..16
+            |> Enum.map(fn _ ->
+              Task.async(fn ->
+                Reactor.run(GrandchildReactor, %{}, %{}, concurrency_key: context.concurrency_key)
+              end)
+            end)
+            |> Enum.map(&Task.await/1)
+
+            {:ok, nil}
+          end
+        end
+      end
+
+      defmodule ParentReactor do
+        @moduledoc false
+        use Reactor
+
+        step :splode do
+          run fn _ ->
+            pool = ConcurrencyTracker.allocate_pool(16)
+
+            0..16
+            |> Enum.map(fn _ ->
+              Task.async(fn -> Reactor.run(ChildReactor, %{}, %{}, concurrency_key: pool) end)
+            end)
+            |> Enum.map(&Task.await/1)
+
+            {:ok, nil}
+          end
+        end
+      end
+    end
+
+    Reactor.run(ParentReactor)
   end
 end

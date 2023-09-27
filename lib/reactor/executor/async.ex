@@ -24,18 +24,14 @@ defmodule Reactor.Executor.Async do
   def start_steps(reactor, state, [], _supervisor), do: {:continue, reactor, state}
 
   def start_steps(reactor, state, steps, supervisor) do
-    available_concurrency = state.max_concurrency - map_size(state.current_tasks)
+    available_steps = length(steps)
 
-    start_steps(reactor, state, steps, supervisor, available_concurrency)
-  end
+    locked_concurrency =
+      acquire_concurrency_resource_from_pool(state.concurrency_key, available_steps)
 
-  defp start_steps(reactor, state, _steps, _supervisor, 0), do: {:continue, reactor, state}
-
-  defp start_steps(reactor, state, steps, supervisor, available_concurrency) do
     started =
       steps
-      |> Enum.take(available_concurrency)
-      |> Enum.take_while(&acquire_concurrency_resource_from_pool(state.concurrency_key, &1))
+      |> Enum.take(locked_concurrency)
       |> Enum.reduce_while(%{}, fn step, started ->
         case start_task_for_step(reactor, state, step, supervisor, state.concurrency_key) do
           {:ok, task} -> {:cont, Map.put(started, task, step)}
@@ -362,17 +358,12 @@ defmodule Reactor.Executor.Async do
     %{reactor | steps: Enum.concat(steps, reactor.steps)}
   end
 
-  defp release_concurrency_resources_to_pool(_pool_key, 0), do: :ok
-
-  defp release_concurrency_resources_to_pool(pool_key, n) when n > 0 do
-    ConcurrencyTracker.release(pool_key)
-    release_concurrency_resources_to_pool(pool_key, n - 1)
+  defp release_concurrency_resources_to_pool(pool_key, how_many) do
+    ConcurrencyTracker.release(pool_key, how_many)
   end
 
-  defp acquire_concurrency_resource_from_pool(pool_key, _) do
-    case ConcurrencyTracker.acquire(pool_key) do
-      :ok -> true
-      :error -> false
-    end
+  defp acquire_concurrency_resource_from_pool(pool_key, requested) do
+    {:ok, actual} = ConcurrencyTracker.acquire(pool_key, requested)
+    actual
   end
 end

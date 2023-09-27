@@ -19,8 +19,20 @@ defmodule Reactor.Executor.StepRunner do
          {module, options} <- module_and_opts(step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
-      do_run(module, options, arguments, context)
+      metadata = %{
+        current_step: step,
+        pid: self(),
+        reactor: reactor,
+        concurrency_key: concurrency_key
+      }
+
+      metadata_stack = Process.get(:__reactor__, [])
+      Process.put(:__reactor__, [metadata | metadata_stack])
+      result = do_run(module, options, arguments, context)
+      Process.put(:__reactor__, metadata_stack)
+      result
     end
+  after
   end
 
   @doc """
