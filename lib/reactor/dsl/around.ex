@@ -46,9 +46,7 @@ defmodule Reactor.Dsl.Around do
           type: {:mfa_or_fun, 4},
           required: true,
           doc: """
-          The around function.
-
-          See `Reactor.Step.Around` for more information.
+          The around function. See `Reactor.Step.Around` for more information.
           """
         ],
         allow_async?: [
@@ -57,8 +55,6 @@ defmodule Reactor.Dsl.Around do
           default: false,
           doc: """
           Whether the emitted steps should be allowed to run asynchronously.
-
-          Passed to the child Reactor as it's `async?` option.
           """
         ]
       ]

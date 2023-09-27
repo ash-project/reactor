@@ -34,20 +34,6 @@ defmodule Reactor do
       ...> {:ok, reactor} = Builder.return(reactor, :greet)
       ...> Reactor.run(reactor, %{whom: nil})
       {:ok, "Hello, World!"}
-
-  <!--- ash-hq-hide-start --> <!--- -->
-
-  ## DSL Documentation
-
-  ### Index
-
-  #{Spark.Dsl.Extension.doc_index(Dsl.sections())}
-
-  ### Docs
-
-  #{Spark.Dsl.Extension.doc(Dsl.sections())}
-
-  <!--- ash-hq-hide-stop --> <!--- -->
   """
 
   defstruct context: %{},

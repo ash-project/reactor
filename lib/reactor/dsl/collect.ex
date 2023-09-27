@@ -50,9 +50,7 @@ defmodule Reactor.Dsl.Collect do
           type: :atom,
           required: true,
           doc: """
-          A unique name for the step.
-
-          This is used when choosing the return value of the Reactor and for arguments into other steps.
+          A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps.
           """
         ],
         transform: [
@@ -60,8 +58,7 @@ defmodule Reactor.Dsl.Collect do
           required: false,
           default: nil,
           doc: """
-          An optional transformation function which can be used to modify the
-          entire argument map before it is returned.
+          An optional transformation function which can be used to modify the entire argument map before it is returned.
           """
         ]
       ]

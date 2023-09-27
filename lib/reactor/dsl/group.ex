@@ -48,18 +48,14 @@ defmodule Reactor.Dsl.Group do
           type: {:mfa_or_fun, 3},
           required: true,
           doc: """
-          The before function.
-
-          See `Reactor.Step.Group` for more information.
+          The before function. See `Reactor.Step.Group` for more information.
           """
         ],
         after_all: [
           type: {:mfa_or_fun, 3},
           required: true,
           doc: """
-          The after function.
-
-          See `Reactor.Step.Group` for more information.
+          The after function. See `Reactor.Step.Group` for more information.
           """
         ],
         allow_async?: [
@@ -68,8 +64,6 @@ defmodule Reactor.Dsl.Group do
           default: true,
           doc: """
           Whether the emitted steps should be allowed to run asynchronously.
-
-          Passed to the child Reactor as it's `async?` option.
           """
         ]
       ]
