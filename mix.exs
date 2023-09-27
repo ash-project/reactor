@@ -79,7 +79,7 @@ defmodule Reactor.MixProject do
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
+      {:ex_doc, github: "elixir-lang/ex_doc", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.15.0", only: [:dev, :test]},
       {:git_ops, "~> 2.6.0", only: [:dev, :test]},
       {:mimic, "~> 1.7", only: :test},
@@ -102,7 +102,8 @@ defmodule Reactor.MixProject do
       docs: [
         "spark.cheat_sheets",
         "docs",
-        "spark.cheat_sheets_in_search"
+        "spark.cheat_sheets_in_search",
+        "spark.replace_doc_links"
       ],
       "spark.formatter": "spark.formatter --extensions Reactor.Dsl",
       "spark.cheat_sheets": "spark.cheat_sheets --extensions Reactor.Dsl",
