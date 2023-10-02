@@ -22,6 +22,13 @@ defmodule Reactor.MixProject do
         main: "readme",
         extras: extra_documentation(),
         groups_for_extras: extra_documentation_groups(),
+        before_closing_head_tag: fn type ->
+          if type == :html do
+            """
+            <script defer data-domain="ashhexdocs" src="https://plausible.io/js/script.js"></script>
+            """
+          end
+        end,
         groups_for_modules: [
           DSL: ~r/^Reactor\.Dsl$/,
           Steps: ~r/^Reactor\.Step.*/,
