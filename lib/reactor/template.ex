@@ -3,11 +3,11 @@ defmodule Reactor.Template do
   Templates used to refer to some sort of computed value.
   """
 
-  alias __MODULE__.{Input, Result, Value}
+  alias __MODULE__.{Element, Input, Result, Value}
 
   @type t :: Input.t() | Result.t() | Value.t()
 
   @doc "The type for use in option schemas"
   @spec type :: Spark.OptionsHelpers.type()
-  def type, do: {:or, [{:struct, Input}, {:struct, Result}, {:struct, Value}]}
+  def type, do: {:or, [{:struct, Element}, {:struct, Input}, {:struct, Result}, {:struct, Value}]}
 end

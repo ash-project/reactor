@@ -6,22 +6,24 @@ defmodule Reactor.Dsl.Iterate do
   """
   defstruct __identifier__: nil,
             arguments: [],
+            for_each: nil,
             map: nil,
             name: nil,
             reduce: nil,
-            source_from: nil,
-            source: nil
+            source: nil,
+            steps: []
 
   alias Reactor.{Builder, Dsl, Step}
 
   @type t :: %__MODULE__{
           __identifier__: any,
           arguments: [Dsl.Argument.t()],
+          for_each: nil | __MODULE__.ForEach.t(),
           map: nil | __MODULE__.Map.t(),
           name: atom,
           reduce: nil | __MODULE__.Reduce.t(),
-          source_from: nil | atom,
-          source: nil | __MODULE__.Source.t()
+          source: nil | __MODULE__.Source.t(),
+          steps: []
         }
 
   @doc false
@@ -37,7 +39,7 @@ defmodule Reactor.Dsl.Iterate do
       """,
       examples: [
         """
-        # Iterate over a string, reversing every word.
+        # Iterate over a string, reversing every word using manual iteration.
 
         iterate :reverse_words do
           argument :words, input(:words)
@@ -80,6 +82,22 @@ defmodule Reactor.Dsl.Iterate do
             end
           end
         end
+        """,
+        """
+        # Summing an enumerable.
+
+        iterate :sum do
+          argument :numbers, input(:numbers)
+
+          for_each do
+            source :numbers
+            as :number
+          end
+
+          reduce do
+            accumulator value(0)
+            reducer &{:ok, &1 + &2}
+          end
         """
       ],
       target: __MODULE__,
@@ -87,11 +105,12 @@ defmodule Reactor.Dsl.Iterate do
       identifier: :name,
       entities: [
         arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        for_each: [__MODULE__.ForEach.__entity__()],
         map: [__MODULE__.Map.__entity__()],
         reduce: [__MODULE__.Reduce.__entity__()],
-        source: [__MODULE__.Source.__entity__()],
-        steps: []
+        source: [__MODULE__.Source.__entity__()]
       ],
+      singleton_entity_keys: [:for_each, :map, :reduce, :source],
       imports: [Dsl.Argument],
       recursive_as: :steps,
       schema: [
@@ -99,11 +118,6 @@ defmodule Reactor.Dsl.Iterate do
           type: :atom,
           required: true,
           doc: "A unique name for this step."
-        ],
-        source_from: [
-          type: :atom,
-          required: false,
-          doc: "Directly iterate a named argument."
         ]
       ]
     }
@@ -112,104 +126,79 @@ defmodule Reactor.Dsl.Iterate do
     import Reactor.Utils
     alias Spark.{Dsl.Transformer, Error.DslError}
 
-    def build(map, reactor) do
-      sub_reactor = Builder.new(reactor.id)
+    def build(iterate, reactor) do
+      {:ok, reactor}
+    end
 
-      with {:ok, sub_reactor} <- build_inputs(sub_reactor, map),
-           {:ok, sub_reactor} <- build_steps(sub_reactor, map) do
-        options =
-          map
-          |> Map.take([
-            :accumulator,
-            :finisher,
-            :generator,
-            :initialiser,
-            :reducer,
-            :return
-          ])
-          |> Map.put(:steps, sub_reactor.steps)
-          |> Enum.to_list()
-
-        Builder.add_step(reactor, map.name, {Step.Map, options}, map.arguments,
-          async?: true,
-          max_retries: 0,
-          ref: :step_name
-        )
+    def verify(iterate, dsl_state) do
+      with :ok <- verify_source_or_for_each(iterate.source, iterate.for_each, dsl_state),
+           :ok <- verify_map_and_or_reduce(iterate.map, iterate.reduce, dsl_state),
+           :ok <- verify_at_least_one_argument(iterate.arguments, dsl_state),
+           :ok <- verify_map(iterate.map, dsl_state),
+           :ok <- verify_reduce(iterate.reduce, dsl_state),
+           :ok <- verify_source(iterate.source, dsl_state) do
+        :ok
       end
     end
 
-    def verify(map, dsl_state) do
-      module = Transformer.get_persisted(dsl_state, :module)
+    def transform(_map, dsl_state), do: {:ok, dsl_state}
 
-      with :ok <- validate_accumulator_and_reducer(map, module),
-           :ok <- validate_steps_present(map, module) do
-        validate_return_value(map, module)
-      end
+    defp verify_source_or_for_each(nil, nil, dsl_state) do
+      {:error,
+       DslError.exception(
+         module: Transformer.get_persisted(dsl_state, :module),
+         path: [:iterate],
+         message: "Must provide either a `source` or `for_each` entity."
+       )}
     end
 
-    def transform(map, dsl_state) do
-      with {:ok, map} <- maybe_set_return_value(map) do
-        {:ok, Transformer.replace_entity(dsl_state, [:reactor], map)}
-      end
+    defp verify_source_or_for_each(_source, nil, _dsl_state), do: :ok
+    defp verify_source_or_for_each(nil, _from, _dsl_state), do: :ok
+
+    defp verify_source_or_for_each(_source, _for_each, dsl_state) do
+      {:error,
+       DslError.exception(
+         module: Transformer.get_persisted(dsl_state, :module),
+         path: [:iterate],
+         message: "Must provide either a `source` or `for_each` entity - not both."
+       )}
     end
 
-    defp maybe_set_return_value(map) when is_nil(map.return) do
-      return =
+    defp verify_map_and_or_reduce(nil, nil, dsl_state) do
+      {:error,
+       DslError.exception(
+         module: Transformer.get_persisted(dsl_state, :module),
+         path: [:iterate],
+         message: "Must provide a `map` or `reduce` entity."
+       )}
+    end
+
+    defp verify_map_and_or_reduce(_map, _reduce, _dsl_state), do: :ok
+
+    defp verify_at_least_one_argument([], dsl_state) do
+      {:error,
+       DslError.exception(
+         module: Transformer.get_persisted(dsl_state, :module),
+         path: [:iterate],
+         message: "Must provide at least one argument to iterate over."
+       )}
+    end
+
+    defp verify_at_least_one_argument(_, _dsl_state), do: :ok
+
+    defp verify_map(nil, _dsl_state), do: :ok
+    defp verify_map(map, _dsl_state) when map.return, do: :ok
+
+    defp verify_map(map, dsl_state) do
+      step_names =
         map.steps
-        |> List.first(%{})
-        |> Map.get(:name)
+        |> Enum.map(& &1.name)
 
-      {:ok, %{map | return: return}}
-    end
-
-    defp maybe_set_return_value(map), do: {:ok, map}
-
-    defp validate_accumulator_and_reducer(map, module)
-         when is_nil(map.accumulator) and not is_nil(map.reducer) do
-      {:error,
-       DslError.exception(
-         module: module,
-         path: [:reactor, :map, map.name],
-         message: "When providing a `reducer` function you must specify the initial accumulator."
-       )}
-    end
-
-    defp validate_accumulator_and_reducer(_, _), do: :ok
-
-    defp validate_steps_present(map, module) when map.steps == [] do
-      {:error,
-       DslError.exception(
-         module: module,
-         path: [:reactor, :map, map.name],
-         message: "Map steps must contain nested steps."
-       )}
-    end
-
-    defp validate_steps_present(_, _), do: :ok
-
-    defp validate_return_value(map, module) do
-      if Enum.any?(map.steps, &(&1.name == map.return)) do
+      if map.return in step_names do
         :ok
       else
-        {:error,
-         DslError.exception(
-           module: module,
-           path: [:reactor, :map, map.name],
-           message:
-             "The cannot find a nested step named `#{inspect(map.return)}` to satisfy the provided return name."
-         )}
+        # TODO WAT
       end
-    end
-
-    defp build_inputs(reactor, map) do
-      map.arguments
-      |> Enum.map(& &1.name)
-      |> reduce_while_ok(reactor, &Builder.add_input(&2, &1))
-    end
-
-    defp build_steps(reactor, map) do
-      map.steps
-      |> reduce_while_ok(reactor, &Dsl.Build.build/2)
     end
   end
 end

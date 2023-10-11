@@ -9,7 +9,7 @@ defmodule Reactor.Dsl.Iterate.Map do
             steps: [],
             return: nil
 
-  alias Reactor.{Builder, Dsl, Step}
+  alias Reactor.{Builder, Dsl, Step, Template.Element}
 
   @type t :: %__MODULE__{
           __identifier__: any,
@@ -26,6 +26,7 @@ defmodule Reactor.Dsl.Iterate.Map do
       """,
       target: __MODULE__,
       identifier: {:auto, :unique_integer},
+      imports: [Element],
       entities: [
         steps: []
       ],
