@@ -92,8 +92,7 @@ Wrap a function around a group of steps.
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -107,7 +106,7 @@ Wrap a function around a group of steps.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-fun-name" href="#name-fun-name">
+    <a id="reactor-around-name" href="#reactor-around-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -129,7 +128,7 @@ Wrap a function around a group of steps.
 
 <tr>
   <td style="text-align: left">
-    <a id="name-fun-fun" href="#name-fun-fun">
+    <a id="reactor-around-fun" href="#reactor-around-fun">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         fun
       </span>
@@ -149,9 +148,23 @@ Wrap a function around a group of steps.
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-fun-allow_async?" href="#name-fun-allow_async?">
+    <a id="reactor-around-allow_async?" href="#reactor-around-allow_async?">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         allow_async?
       </span>
@@ -225,8 +238,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -240,7 +252,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-around-argument-name" href="#reactor-around-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -262,7 +274,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-around-argument-source" href="#reactor-around-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -282,9 +294,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-around-argument-transform" href="#reactor-around-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -334,8 +360,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -349,7 +374,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-around-wait_for-names" href="#reactor-around-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -371,6 +396,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -418,8 +444,7 @@ end
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -433,7 +458,7 @@ end
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-name" href="#name-name">
+    <a id="reactor-collect-name" href="#reactor-collect-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -453,9 +478,23 @@ end
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-transform" href="#name-transform">
+    <a id="reactor-collect-transform" href="#reactor-collect-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -529,8 +568,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -544,7 +582,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-collect-argument-name" href="#reactor-collect-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -566,7 +604,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-collect-argument-source" href="#reactor-collect-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -586,9 +624,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-collect-argument-transform" href="#reactor-collect-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -638,8 +690,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -653,7 +704,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-collect-wait_for-names" href="#reactor-collect-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -675,6 +726,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -723,7 +775,29 @@ Allows place another Reactor into this one as if it were a single step.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-reactor-reactor" href="#name-reactor-reactor">
+    <a id="reactor-compose-name" href="#reactor-compose-name">
+      <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
+        name
+      </span>
+    </a>
+      <sup style="color: red">*</sup>
+
+  </td>
+  <td style="text-align: left">
+    <code class="inline">atom</code>
+  </td>
+  <td style="text-align: left">
+    
+  </td>
+  <td style="text-align: left" colspan=2>
+    A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor.
+
+  </td>
+</tr>
+
+<tr>
+  <td style="text-align: left">
+    <a id="reactor-compose-reactor" href="#reactor-compose-reactor">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         reactor
       </span>
@@ -745,42 +819,7 @@ Allows place another Reactor into this one as if it were a single step.
 
   </tbody>
 </table>
-### Options
 
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Default</th>
-      <th colspan=2>Docs</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-  <td style="text-align: left">
-    <a id="name-reactor-name" href="#name-reactor-name">
-      <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
-        name
-      </span>
-    </a>
-      <sup style="color: red">*</sup>
-
-  </td>
-  <td style="text-align: left">
-    <code class="inline">atom</code>
-  </td>
-  <td style="text-align: left">
-    
-  </td>
-  <td style="text-align: left" colspan=2>
-    A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor.
-
-  </td>
-</tr>
-
-  </tbody>
-</table>
 
 
 ## reactor.compose.argument
@@ -834,8 +873,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -849,7 +887,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-compose-argument-name" href="#reactor-compose-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -871,7 +909,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-compose-argument-source" href="#reactor-compose-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -891,9 +929,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-compose-argument-transform" href="#reactor-compose-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -943,8 +995,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -958,7 +1009,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-compose-wait_for-names" href="#reactor-compose-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -980,6 +1031,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -1020,8 +1072,7 @@ end
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1035,7 +1086,7 @@ end
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-name" href="#name-name">
+    <a id="reactor-debug-name" href="#reactor-debug-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1055,9 +1106,23 @@ end
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-level" href="#name-level">
+    <a id="reactor-debug-level" href="#reactor-debug-level">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         level
       </span>
@@ -1131,8 +1196,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1146,7 +1210,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-debug-argument-name" href="#reactor-debug-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1168,7 +1232,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-debug-argument-source" href="#reactor-debug-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -1188,9 +1252,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-debug-argument-transform" href="#reactor-debug-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -1240,8 +1318,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1255,7 +1332,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-debug-wait_for-names" href="#reactor-debug-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -1277,6 +1354,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -1309,8 +1387,7 @@ Call functions before and after a group of steps.
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1324,7 +1401,7 @@ Call functions before and after a group of steps.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-name" href="#name-name">
+    <a id="reactor-group-name" href="#reactor-group-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1344,9 +1421,23 @@ Call functions before and after a group of steps.
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-before_all" href="#name-before_all">
+    <a id="reactor-group-before_all" href="#reactor-group-before_all">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         before_all
       </span>
@@ -1368,7 +1459,7 @@ Call functions before and after a group of steps.
 
 <tr>
   <td style="text-align: left">
-    <a id="name-after_all" href="#name-after_all">
+    <a id="reactor-group-after_all" href="#reactor-group-after_all">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         after_all
       </span>
@@ -1390,7 +1481,7 @@ Call functions before and after a group of steps.
 
 <tr>
   <td style="text-align: left">
-    <a id="name-allow_async?" href="#name-allow_async?">
+    <a id="reactor-group-allow_async?" href="#reactor-group-allow_async?">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         allow_async?
       </span>
@@ -1464,8 +1555,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1479,7 +1569,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-group-argument-name" href="#reactor-group-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1501,7 +1591,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-group-argument-source" href="#reactor-group-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -1521,9 +1611,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-group-argument-transform" href="#reactor-group-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -1573,8 +1677,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1588,7 +1691,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-group-wait_for-names" href="#reactor-group-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -1610,6 +1713,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -1658,8 +1762,7 @@ end
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1673,7 +1776,7 @@ end
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-name" href="#name-name">
+    <a id="reactor-input-name" href="#reactor-input-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1693,9 +1796,23 @@ end
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-transform" href="#name-transform">
+    <a id="reactor-input-transform" href="#reactor-input-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -1767,8 +1884,7 @@ end
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -1782,7 +1898,7 @@ end
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-impl-name" href="#name-impl-name">
+    <a id="reactor-step-name" href="#reactor-step-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -1804,7 +1920,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-impl" href="#name-impl-impl">
+    <a id="reactor-step-impl" href="#reactor-step-impl">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         impl
       </span>
@@ -1823,9 +1939,23 @@ end
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-impl-run" href="#name-impl-run">
+    <a id="reactor-step-run" href="#reactor-step-run">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         run
       </span>
@@ -1846,7 +1976,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-undo" href="#name-impl-undo">
+    <a id="reactor-step-undo" href="#reactor-step-undo">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         undo
       </span>
@@ -1867,7 +1997,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-compensate" href="#name-impl-compensate">
+    <a id="reactor-step-compensate" href="#reactor-step-compensate">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         compensate
       </span>
@@ -1888,7 +2018,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-max_retries" href="#name-impl-max_retries">
+    <a id="reactor-step-max_retries" href="#reactor-step-max_retries">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         max_retries
       </span>
@@ -1909,7 +2039,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-async?" href="#name-impl-async?">
+    <a id="reactor-step-async?" href="#reactor-step-async?">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         async?
       </span>
@@ -1930,7 +2060,7 @@ end
 
 <tr>
   <td style="text-align: left">
-    <a id="name-impl-transform" href="#name-impl-transform">
+    <a id="reactor-step-transform" href="#reactor-step-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -2004,8 +2134,7 @@ argument :three, value(3)
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -2019,7 +2148,7 @@ argument :three, value(3)
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-source-name" href="#name-source-name">
+    <a id="reactor-step-argument-name" href="#reactor-step-argument-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -2041,7 +2170,7 @@ argument :three, value(3)
 
 <tr>
   <td style="text-align: left">
-    <a id="name-source-source" href="#name-source-source">
+    <a id="reactor-step-argument-source" href="#reactor-step-argument-source">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         source
       </span>
@@ -2061,9 +2190,23 @@ argument :three, value(3)
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-source-transform" href="#name-source-transform">
+    <a id="reactor-step-argument-transform" href="#reactor-step-argument-transform">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         transform
       </span>
@@ -2113,8 +2256,7 @@ wait_for :create_user
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -2128,7 +2270,7 @@ wait_for :create_user
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="names-names" href="#names-names">
+    <a id="reactor-step-wait_for-names" href="#reactor-step-wait_for-names">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         names
       </span>
@@ -2150,6 +2292,7 @@ wait_for :create_user
 
   </tbody>
 </table>
+
 
 
 
@@ -2184,8 +2327,7 @@ Use a predicate to determine which steps should be executed.
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -2199,7 +2341,7 @@ Use a predicate to determine which steps should be executed.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="name-name" href="#name-name">
+    <a id="reactor-switch-name" href="#reactor-switch-name">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         name
       </span>
@@ -2219,9 +2361,23 @@ Use a predicate to determine which steps should be executed.
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="name-on" href="#name-on">
+    <a id="reactor-switch-on" href="#reactor-switch-on">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         on
       </span>
@@ -2243,7 +2399,7 @@ Use a predicate to determine which steps should be executed.
 
 <tr>
   <td style="text-align: left">
-    <a id="name-allow_async?" href="#name-allow_async?">
+    <a id="reactor-switch-allow_async?" href="#reactor-switch-allow_async?">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         allow_async?
       </span>
@@ -2279,8 +2435,7 @@ A group of steps to run when the predicate matches.
 
 
 
-
-### Options
+### Arguments
 
 <table>
   <thead>
@@ -2294,7 +2449,7 @@ A group of steps to run when the predicate matches.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="predicate-predicate" href="#predicate-predicate">
+    <a id="reactor-switch-matches?-predicate" href="#reactor-switch-matches?-predicate">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         predicate
       </span>
@@ -2314,9 +2469,23 @@ A group of steps to run when the predicate matches.
   </td>
 </tr>
 
-<tr>
+  </tbody>
+</table>
+### Options
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default</th>
+      <th colspan=2>Docs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
   <td style="text-align: left">
-    <a id="predicate-allow_async?" href="#predicate-allow_async?">
+    <a id="reactor-switch-matches?-allow_async?" href="#reactor-switch-matches?-allow_async?">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         allow_async?
       </span>
@@ -2337,7 +2506,7 @@ A group of steps to run when the predicate matches.
 
 <tr>
   <td style="text-align: left">
-    <a id="predicate-return" href="#predicate-return">
+    <a id="reactor-switch-matches?-return" href="#reactor-switch-matches?-return">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         return
       </span>
@@ -2393,7 +2562,7 @@ steps will be run if provided.
   <tbody>
     <tr>
   <td style="text-align: left">
-    <a id="return" href="#return">
+    <a id="reactor-switch-default-return" href="#reactor-switch-default-return">
       <span style="font-family: Inconsolata, Menlo, Courier, monospace;">
         return
       </span>
