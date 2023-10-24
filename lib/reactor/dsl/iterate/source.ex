@@ -10,8 +10,6 @@ defmodule Reactor.Dsl.Iterate.Source do
             generator: nil,
             initialiser: nil
 
-  alias Reactor.{Builder, Dsl.Step}
-
   @type state :: any
   @type element :: Reactor.inputs()
   @type finaliser ::

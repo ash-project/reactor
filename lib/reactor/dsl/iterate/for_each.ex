@@ -73,4 +73,10 @@ defmodule Reactor.Dsl.Iterate.ForEach do
       end
     end
   end
+
+  @doc """
+  Default finaliser for an enumerable.
+  """
+  @spec default_finaliser(any) :: :ok
+  def default_finaliser(_), do: :ok
 end

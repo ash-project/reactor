@@ -10,8 +10,6 @@ defmodule Reactor.Dsl.Iterate.Reduce do
             finaliser: nil,
             reducer: nil
 
-  alias Reactor.{Builder, Dsl, Step}
-
   @type acc :: any
   @type element :: any
   @type accumulator ::
@@ -98,4 +96,16 @@ defmodule Reactor.Dsl.Iterate.Reduce do
         ]
       ]
     }
+
+  @doc "The default accumulator."
+  @spec default_accumulator :: {:ok, acc}
+  def default_accumulator, do: {:ok, []}
+
+  @doc "The default reducer."
+  @spec default_reducer(element(), acc()) :: {:cont, acc}
+  def default_reducer(element, acc), do: {:cont, [element | acc]}
+
+  @doc "The default finaliser."
+  @spec default_finaliser(acc) :: {:ok, acc}
+  def default_finaliser(acc), do: {:ok, Enum.reverse(acc)}
 end

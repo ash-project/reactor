@@ -6,6 +6,7 @@ defmodule Reactor.Dsl.Iterate do
   """
   defstruct __identifier__: nil,
             arguments: [],
+            async?: true,
             for_each: nil,
             map: nil,
             name: nil,
@@ -13,16 +14,17 @@ defmodule Reactor.Dsl.Iterate do
             source: nil,
             steps: []
 
-  alias Reactor.{Builder, Dsl, Step}
+  alias Reactor.{Dsl, Dsl.Iterate}
 
-  @type t :: %__MODULE__{
+  @type t :: %Iterate{
           __identifier__: any,
           arguments: [Dsl.Argument.t()],
-          for_each: nil | __MODULE__.ForEach.t(),
-          map: nil | __MODULE__.Map.t(),
+          async?: boolean,
+          for_each: nil | Iterate.ForEach.t(),
+          map: nil | Iterate.Map.t(),
           name: atom,
-          reduce: nil | __MODULE__.Reduce.t(),
-          source: nil | __MODULE__.Source.t(),
+          reduce: nil | Iterate.Reduce.t(),
+          source: nil | Iterate.Source.t(),
           steps: []
         }
 
@@ -100,15 +102,15 @@ defmodule Reactor.Dsl.Iterate do
           end
         """
       ],
-      target: __MODULE__,
+      target: Iterate,
       args: [:name],
       identifier: :name,
       entities: [
         arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
-        for_each: [__MODULE__.ForEach.__entity__()],
-        map: [__MODULE__.Map.__entity__()],
-        reduce: [__MODULE__.Reduce.__entity__()],
-        source: [__MODULE__.Source.__entity__()]
+        for_each: [Iterate.ForEach.__entity__()],
+        map: [Iterate.Map.__entity__()],
+        reduce: [Iterate.Reduce.__entity__()],
+        source: [Iterate.Source.__entity__()]
       ],
       singleton_entity_keys: [:for_each, :map, :reduce, :source],
       imports: [Dsl.Argument],
@@ -118,87 +120,20 @@ defmodule Reactor.Dsl.Iterate do
           type: :atom,
           required: true,
           doc: "A unique name for this step."
+        ],
+        async?: [
+          type: :boolean,
+          required: false,
+          default: true,
+          doc: "Allow the iteration to perform steps asynchronously."
         ]
       ]
     }
 
   defimpl Dsl.Build do
-    import Reactor.Utils
-    alias Spark.{Dsl.Transformer, Error.DslError}
+    defdelegate build(iterate, reactor), to: Iterate.Builder
+    defdelegate verify(iterate, dsl_state), to: Iterate.Verifier
 
-    def build(iterate, reactor) do
-      {:ok, reactor}
-    end
-
-    def verify(iterate, dsl_state) do
-      with :ok <- verify_source_or_for_each(iterate.source, iterate.for_each, dsl_state),
-           :ok <- verify_map_and_or_reduce(iterate.map, iterate.reduce, dsl_state),
-           :ok <- verify_at_least_one_argument(iterate.arguments, dsl_state),
-           :ok <- verify_map(iterate.map, dsl_state),
-           :ok <- verify_reduce(iterate.reduce, dsl_state),
-           :ok <- verify_source(iterate.source, dsl_state) do
-        :ok
-      end
-    end
-
-    def transform(_map, dsl_state), do: {:ok, dsl_state}
-
-    defp verify_source_or_for_each(nil, nil, dsl_state) do
-      {:error,
-       DslError.exception(
-         module: Transformer.get_persisted(dsl_state, :module),
-         path: [:iterate],
-         message: "Must provide either a `source` or `for_each` entity."
-       )}
-    end
-
-    defp verify_source_or_for_each(_source, nil, _dsl_state), do: :ok
-    defp verify_source_or_for_each(nil, _from, _dsl_state), do: :ok
-
-    defp verify_source_or_for_each(_source, _for_each, dsl_state) do
-      {:error,
-       DslError.exception(
-         module: Transformer.get_persisted(dsl_state, :module),
-         path: [:iterate],
-         message: "Must provide either a `source` or `for_each` entity - not both."
-       )}
-    end
-
-    defp verify_map_and_or_reduce(nil, nil, dsl_state) do
-      {:error,
-       DslError.exception(
-         module: Transformer.get_persisted(dsl_state, :module),
-         path: [:iterate],
-         message: "Must provide a `map` or `reduce` entity."
-       )}
-    end
-
-    defp verify_map_and_or_reduce(_map, _reduce, _dsl_state), do: :ok
-
-    defp verify_at_least_one_argument([], dsl_state) do
-      {:error,
-       DslError.exception(
-         module: Transformer.get_persisted(dsl_state, :module),
-         path: [:iterate],
-         message: "Must provide at least one argument to iterate over."
-       )}
-    end
-
-    defp verify_at_least_one_argument(_, _dsl_state), do: :ok
-
-    defp verify_map(nil, _dsl_state), do: :ok
-    defp verify_map(map, _dsl_state) when map.return, do: :ok
-
-    defp verify_map(map, dsl_state) do
-      step_names =
-        map.steps
-        |> Enum.map(& &1.name)
-
-      if map.return in step_names do
-        :ok
-      else
-        # TODO WAT
-      end
-    end
+    def transform(_iterate, dsl_state), do: {:ok, dsl_state}
   end
 end
