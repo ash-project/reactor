@@ -383,7 +383,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
@@ -713,7 +713,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
@@ -1018,7 +1018,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
@@ -1341,7 +1341,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
@@ -1700,7 +1700,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
@@ -2279,7 +2279,7 @@ wait_for :create_user
 
   </td>
   <td style="text-align: left">
-    <code class="inline">list(atom) | atom</code>
+    <code class="inline">atom | list(atom)</code>
   </td>
   <td style="text-align: left">
     
