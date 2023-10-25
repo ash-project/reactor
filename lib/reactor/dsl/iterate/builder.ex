@@ -3,6 +3,7 @@ defmodule Reactor.Dsl.Iterate.Builder do
 
   alias Reactor.{Builder, Step.Iterator}
   alias Reactor.Dsl.{Iterate, Iterate.ForEach, Iterate.Reduce, Iterate.Source}
+  require ForEach
 
   @doc false
   @spec build(Iterate.t(), Reactor.t()) :: {:ok, Reactor.t()} | {:error, any}
@@ -36,10 +37,13 @@ defmodule Reactor.Dsl.Iterate.Builder do
     do: {:ok, iterate}
 
   defp maybe_convert_for_each_into_source(iterate) do
+    source_name = iterate.for_each.source
+    as_name = iterate.for_each.as
+
     source = %Source{
       finaliser: &ForEach.default_finaliser/1,
-      initialiser: ForEach.generate_initialiser(iterate.for_each.source),
-      generator: ForEach.generate_generator(iterate.for_each.as)
+      initialiser: ForEach.generate_initialiser(source_name),
+      generator: ForEach.generate_generator(as_name)
     }
 
     {:ok, %{iterate | source: source, for_each: nil}}
