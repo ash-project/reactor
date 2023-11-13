@@ -5,7 +5,8 @@ defmodule Reactor.Template do
 
   alias __MODULE__.{Element, Input, Result, Value}
 
-  @type t :: Element.t | Input.t() | Result.t() | Value.t()
+  @type t :: Element.t() | Input.t() | Result.t() | Value.t()
+  @type sub_path :: [atom | non_neg_integer()]
 
   @doc "The type for use in option schemas"
   @spec type :: Spark.OptionsHelpers.type()

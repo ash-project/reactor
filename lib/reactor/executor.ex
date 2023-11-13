@@ -24,8 +24,9 @@ defmodule Reactor.Executor do
     a. If the step is undoable (ie `Step.can?(module, :undo)?` returns `true`)
        then the step and the result are stored in the Reactor's undo stack.
     b. If the result is depended upon by another step (the graph has out-edges
-       for the step) _or_ the step is asking the reactor to halt then the
-       result is stored in the Reactor's intermediate results.
+       for the step) _or_ the step is asking the reactor to halt _or_ it emits
+       a new step that depends on it then the result is stored in the Reactor's
+       intermediate results.
     c. The step is removed from the graph (along with it's out-edges, freeing
        up it's dependents to run).
   2. When the step is unsuccessful (returns an error tuple or raises):

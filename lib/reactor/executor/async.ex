@@ -216,8 +216,8 @@ defmodule Reactor.Executor.Async do
         {step, {:ok, _, []}} ->
           Graph.out_degree(reactor.plan, step) > 0 || reactor.return == step.name
 
-        {_step, {:ok, _, _}} ->
-          true
+        {step, {:ok, _, new_steps}} ->
+          any_new_step_depends_on_this_step?(step, new_steps)
 
         {_step, {:halt, _}} ->
           true
@@ -234,6 +234,18 @@ defmodule Reactor.Executor.Async do
       reactor
       | intermediate_results: Map.merge(reactor.intermediate_results, intermediate_results)
     }
+  end
+
+  defp append_steps(reactor, steps), do: %{reactor | steps: Enum.concat(steps, reactor.steps)}
+
+  defp any_new_step_depends_on_this_step?(_step, []), do: false
+
+  defp any_new_step_depends_on_this_step?(step, new_steps) do
+    Enum.any?(new_steps, fn new_step ->
+      Enum.any?(new_step.arguments, fn argument ->
+        is_struct(argument.source, Reactor.Template.Result) && argument.source.name == step.name
+      end)
+    end)
   end
 
   defp increment_retry_counts(state, retry_steps) do

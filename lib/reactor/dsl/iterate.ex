@@ -132,8 +132,7 @@ defmodule Reactor.Dsl.Iterate do
 
   defimpl Dsl.Build do
     defdelegate build(iterate, reactor), to: Iterate.Builder
-    defdelegate verify(iterate, dsl_state), to: Iterate.Verifier
-
-    def transform(_iterate, dsl_state), do: {:ok, dsl_state}
+    def verify(_iterate, _dsl_state), do: :ok
+    defdelegate transform(iterate, dsl_state), to: Iterate.Transformer
   end
 end

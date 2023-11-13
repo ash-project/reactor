@@ -48,63 +48,19 @@ defmodule Reactor.Dsl.Iterate.ForEach do
       ]
     }
 
-  @doc """
-  Generates a default initialiser for an enumerable.
-  """
-  defmacro generate_initializer(source) do
-    quote do
-      def unquote(":__initialise_source_from_#{source}__")(args) do
-        case Map.fetch(args, unquote(source)) do
-          {:ok, value} -> {:ok, value}
-          :error -> {:error, "Cannot iterate: `#{unquote(source)}` not present in args."}
-        end
-      end
-
-      Function.capture(__MODULE__, unquote(":__initialise_source_from_#{source}__"), 1)
+  def default_initializer(source, args) do
+    case Map.fetch(args, source) do
+      {:ok, value} -> {:ok, value}
+      :error -> {:error, "Cannot iterate: `#{source}` not present in args."}
     end
   end
 
-  # @spec generate_initialiser(atom) :: Source.initialiser()
-  # def generate_initialiser(source) do
-  #   fn args ->
-  #     case Map.fetch(args, source) do
-  #       {:ok, value} -> {:ok, value}
-  #       :error -> {:error, "Cannot iterate: `#{source}` not present in args."}
-  #     end
-  #   end
-  # end
-
-  @doc """
-  Generates a default generator for an enumerable.
-  """
-  defmacro generate_generator(as) do
-    fn_name =
-      as
-      |> Macro.expand(__CALLER__)
-      |> dbg()
-      |> then(&:"__generate_source_as_#{&1}__")
-
-    quote do
-      def unquote(fn_name)(enumerable) do
-        case Enum.take(enumerable, 1) do
-          [] -> {:halt, []}
-          [value] -> {:cont, [%{unquote(as) => value}], Stream.drop(enumerable, 1)}
-        end
-      end
-
-      Function.capture(__MODULE__, unquote(fn_name), 1)
+  def default_generator(as, enumerable) do
+    case Enum.take(enumerable, 1) do
+      [] -> {:halt, []}
+      [value] -> {:cont, [%{as => value}], Stream.drop(enumerable, 1)}
     end
   end
-
-  # @spec generate_generator(atom) :: Source.generator()
-  # def generate_generator(as) do
-  #   fn enumerable ->
-  #     case Enum.take(enumerable, 1) do
-  #       [] -> {:halt, []}
-  #       [value] -> {:cont, [%{as => value}], Stream.drop(enumerable, 1)}
-  #     end
-  #   end
-  # end
 
   @doc """
   Default finaliser for an enumerable.

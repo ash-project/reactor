@@ -17,10 +17,18 @@ defmodule Reactor.Dsl.IterateTest do
           source :words
           as :word
         end
+
+        map do
+          step :reverse_word do
+            argument :word, element(:word)
+
+            run fn %{word: word} -> {:ok, String.reverse(word)} end
+          end
+        end
       end
     end
 
-    assert {:ok, [iterate]} = Info.reactor()
+    assert {:ok, ["ytraM", "ylFcM"]} = Reactor.run(ForEachReactor, %{words: ["Marty", "McFly"]})
   end
 
   # test "wat" do
