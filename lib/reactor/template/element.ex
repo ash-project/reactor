@@ -5,7 +5,7 @@ defmodule Reactor.Template.Element do
 
   defstruct name: nil, sub_path: []
 
-  @type t :: %__MODULE__{name: atom, sub_path: [atom]}
+  @type t :: %__MODULE__{name: atom, sub_path: Reactor.Template.sub_path()}
 
   @doc ~S"""
   The `element` template helper for the Reactor DSL.
@@ -28,7 +28,7 @@ defmodule Reactor.Template.Element do
   end
   ```
   """
-  @spec element(atom, atom | [atom]) :: t
+  @spec element(atom, atom | Reactor.Template.sub_path()) :: t
   def element(name, sub_path \\ [])
 
   def element(name, sub_path),

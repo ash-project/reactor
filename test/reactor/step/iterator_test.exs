@@ -1,7 +1,7 @@
-defmodule Reactor.Step.Iterator.SourceTest do
+defmodule Reactor.Step.IteratorTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Builder, Step.Iterator.Source}
+  alias Reactor.{Builder, Step.AnonFn, Step.Iterator}
 
   setup do
     context = %{current_step: %{name: :marty, async?: true}}
@@ -15,12 +15,17 @@ defmodule Reactor.Step.Iterator.SourceTest do
     {:ok, context: context, options: options}
   end
 
+  test "it is a step" do
+    assert Spark.implements_behaviour?(Iterator, Reactor.Step)
+  end
+
   describe "run/3" do
     test "when passed an incorrect state, it returns an error", %{
       context: context,
       options: options
     } do
-      assert {:error, error} = Source.run(%{}, context, Keyword.put(options, :state, :marty))
+      assert {:error, error} =
+               Iterator.run(%{}, context, Keyword.put(options, :iterator_state, :marty))
 
       assert Exception.message(error) =~ ~r/invalid state/i
     end
@@ -33,26 +38,26 @@ defmodule Reactor.Step.Iterator.SourceTest do
         |> Keyword.put(:initialiser, fn args, con ->
           assert args == arguments
           assert con == context
-          {:ok, :acc}
+          {:ok, :state_argument}
         end)
 
-      assert {:ok, result, [recurse]} = Source.run(arguments, context, options)
+      assert {:ok, result, [recurse]} = Iterator.run(arguments, context, options)
 
-      assert result == %{accumulator: :acc}
+      assert result == %{state: :state_argument}
 
       assert recurse.name == {:marty, 1}
       assert [argument] = recurse.arguments
-      assert argument.name == :accumulator
+      assert argument.name == :state
       assert is_struct(argument.source, Reactor.Template.Result)
       assert argument.source.name == :marty
-      assert argument.source.sub_path == [:accumulator]
+      assert argument.source.sub_path == [:state]
 
       options = elem(recurse.impl, 1)
 
       # the default generator below generates no values
-      assert options[:state] == :finalising
+      assert options[:iterator_state] == :finalising
 
-      assert options[:acc] == :accumulator
+      assert options[:state_argument] == :state
 
       assert options[:elements] == 0
       assert options[:iterations] == 1
@@ -63,30 +68,30 @@ defmodule Reactor.Step.Iterator.SourceTest do
 
       options =
         options
-        |> Keyword.put(:state, :generating)
+        |> Keyword.put(:iterator_state, :generating)
         |> Keyword.put(:iterations, 2)
         |> Keyword.put(:elements, 27)
-        |> Keyword.put(:acc, :accumulator)
+        |> Keyword.put(:state_argument, :state)
         |> Keyword.put(:generator, fn acc ->
           {:cont, [acc * 2, (acc + 1) * 2], acc + 2}
         end)
 
-      arguments = %{accumulator: 123}
+      arguments = %{state: 123}
 
-      assert {:ok, result, [recurse]} = Source.run(arguments, context, options)
+      assert {:ok, result, [recurse]} = Iterator.run(arguments, context, options)
 
       assert Map.get(result, {:element, 27}) == 246
       assert Map.get(result, {:element, 28}) == 248
-      assert Map.get(result, :accumulator) == 125
+      assert Map.get(result, :state) == 125
 
       assert recurse.name == {:marty, 3}
       assert [argument] = recurse.arguments
       assert argument.source.name == {:marty, 2}
-      assert argument.source.sub_path == [:accumulator]
+      assert argument.source.sub_path == [:state]
 
       options = elem(recurse.impl, 1)
 
-      assert options[:state] == :generating
+      assert options[:iterator_state] == :generating
       assert options[:elements] == 29
       assert options[:iterations] == 3
     end
@@ -97,35 +102,35 @@ defmodule Reactor.Step.Iterator.SourceTest do
     } do
       options =
         options
-        |> Keyword.put(:state, :generating)
-        |> Keyword.put(:acc, :accumulator)
+        |> Keyword.put(:iterator_state, :generating)
+        |> Keyword.put(:state_argument, :state)
         |> Keyword.put(:generator, fn acc -> {:halt, acc} end)
 
-      arguments = %{accumulator: 123}
+      arguments = %{state: 123}
 
-      assert {:ok, result, [recurse]} = Source.run(arguments, context, options)
+      assert {:ok, result, [recurse]} = Iterator.run(arguments, context, options)
 
       assert result == arguments
 
       assert [argument] = recurse.arguments
       assert argument.source.name == :marty
-      assert argument.source.sub_path == [:accumulator]
+      assert argument.source.sub_path == [:state]
 
       options = elem(recurse.impl, 1)
-      assert options[:state] == :finalising
+      assert options[:iterator_state] == :finalising
     end
 
     test "when finalising the finaliser is run", %{context: context, options: options} do
       options =
         options
-        |> Keyword.put(:state, :finalising)
-        |> Keyword.put(:acc, :accumulator)
+        |> Keyword.put(:iterator_state, :finalising)
+        |> Keyword.put(:state_argument, :state)
         |> Keyword.put(:finaliser, fn acc ->
           assert acc == 123
           :ok
         end)
 
-      assert {:ok, :ok} = Source.run(%{accumulator: 123}, context, options)
+      assert {:ok, :ok} = Iterator.run(%{state: 123}, context, options)
     end
   end
 
@@ -145,29 +150,42 @@ defmodule Reactor.Step.Iterator.SourceTest do
         {:cont, [current], {current + 1, finish}}
       end
 
+      def step_generator(element_template, _) do
+        {:ok,
+         [
+           Builder.new_step!(
+             {:puts, element_template.name},
+             {AnonFn, run: fn %{element: element} -> IO.puts(element) end},
+             [element: element_template],
+             []
+           )
+         ]}
+      end
+
       def finaliser(finish, _) do
         IO.puts("finished at #{finish}")
         :ok
       end
     end
 
-    defmodule SourceReactor do
+    defmodule IteratorReactor do
       @moduledoc false
       use Reactor
 
       input :start
 
       step :iterate,
-           {Source,
+           {Iterator,
             initialiser: &Callbacks.initialiser/2,
             generator: &Callbacks.generator/2,
-            finaliser: &Callbacks.finaliser/2} do
+            finaliser: &Callbacks.finaliser/2,
+            step_generator: &Callbacks.step_generator/2} do
         argument :start, input(:start)
       end
     end
 
     test "it emits 10 values" do
-      assert :wat = Reactor.run(SourceReactor, %{start: 27})
+      assert :wat = Reactor.run(IteratorReactor, %{start: 27})
     end
   end
 

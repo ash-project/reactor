@@ -366,10 +366,6 @@ defmodule Reactor.Executor.Async do
     delete_vertices(reactor, task_vertices)
   end
 
-  defp append_steps(reactor, steps) do
-    %{reactor | steps: Enum.concat(steps, reactor.steps)}
-  end
-
   defp release_concurrency_resources_to_pool(pool_key, how_many) do
     ConcurrencyTracker.release(pool_key, how_many)
   end
