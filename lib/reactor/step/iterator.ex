@@ -206,19 +206,16 @@ defmodule Reactor.Step.Iterator do
   end
 
   defp recurse(context, options) do
-    {:ok, recurse} =
-      Builder.new_step(
-        step_name(context, options[:iterations]),
-        {__MODULE__, options},
-        [
-          {options[:state_argument],
-           {:result, context.current_step.name, [options[:state_argument]]}}
-        ],
-        max_retries: 1,
-        async?: context.current_step.async?
-      )
-
-    recurse
+    Builder.new_step!(
+      step_name(context, options[:iterations]),
+      {__MODULE__, options},
+      [
+        {options[:state_argument],
+         {:result, context.current_step.name, [options[:state_argument]]}}
+      ],
+      max_retries: 1,
+      async?: context.current_step.async?
+    )
   end
 
   defp call_fun(fun, arguments, context) when is_function(fun, 2), do: fun.(arguments, context)
