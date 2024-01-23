@@ -48,7 +48,7 @@ defmodule Reactor.Dsl.Iterate.ForEach do
       ]
     }
 
-  def default_initializer(source, args) do
+  def default_initialiser(source, args) do
     case Map.fetch(args, source) do
       {:ok, value} -> {:ok, value}
       :error -> {:error, "Cannot iterate: `#{source}` not present in args."}

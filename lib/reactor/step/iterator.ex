@@ -111,6 +111,7 @@ defmodule Reactor.Step.Iterator do
 
   defp call_initialiser(arguments, context, options) do
     options
+    |> Keyword.fetch!(:source)
     |> Keyword.fetch!(:initialiser)
     |> call_fun(arguments, context)
     |> handle_initialiser_result(arguments, context, options)
@@ -145,6 +146,7 @@ defmodule Reactor.Step.Iterator do
     generator_state = Map.fetch!(arguments, options[:state_argument])
 
     options
+    |> Keyword.fetch!(:source)
     |> Keyword.fetch!(:generator)
     |> call_fun(generator_state, context)
     |> handle_generator_result(options, context)
@@ -196,7 +198,11 @@ defmodule Reactor.Step.Iterator do
 
   defp call_finaliser(arguments, context, options) do
     generator_state = Map.fetch!(arguments, options[:state_argument])
-    finaliser = Keyword.fetch!(options, :finaliser)
+
+    finaliser =
+      options
+      |> Keyword.fetch!(:source)
+      |> Keyword.fetch!(:finaliser)
 
     case call_fun(finaliser, generator_state, context) do
       :ok -> {:ok, :ok}

@@ -1,7 +1,7 @@
 defmodule Reactor.Dsl.Iterate.Transformer do
   @moduledoc false
 
-  alias Reactor.Dsl.{Iterate, Iterate.ForEach, Iterate.Reduce, Iterate.Source}
+  alias Reactor.Dsl.{Iterate, Iterate.ForEach, Iterate.Map, Iterate.Reduce, Iterate.Source}
   alias Spark.{Dsl, Dsl.Transformer, Error.DslError}
 
   @doc false
@@ -121,7 +121,7 @@ defmodule Reactor.Dsl.Iterate.Transformer do
 
     source = %Source{
       finaliser: &ForEach.default_finaliser/1,
-      initialiser: {ForEach, :default_initializer, [source_name]},
+      initialiser: {ForEach, :default_initialiser, [source_name]},
       generator: {ForEach, :default_generator, [as_name]}
     }
 
