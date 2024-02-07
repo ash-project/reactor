@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.0](https://github.com/ash-project/reactor/compare/v0.4.1...v0.5.0) (2024-02-07)
+
+
+
+
+### Features:
+
+* Add lifecycle hooks to Reactor (#83)
+
+### Bug Fixes:
+
+* don't deadlock when lots of async reactors are sharing a concurrency pool. (#36)
+
+* weird issue with aliases sometimes not being expanded in generated reactors. (#58)
+
+### Improvements:
+
+* Add ability for steps to decide at runtime whether they should be run asyncronously. (#84)
+
 ## [v0.4.1](https://github.com/ash-project/reactor/compare/v0.4.0...v0.4.1) (2023-09-26)
 
 
