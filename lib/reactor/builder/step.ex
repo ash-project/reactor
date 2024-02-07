@@ -96,6 +96,9 @@ defmodule Reactor.Builder.Step do
       value when is_boolean(value) ->
         {:ok, value}
 
+      fun when is_function(fun, 1) ->
+        {:ok, fun}
+
       value ->
         {:error, argument_error(:options, "Invalid value for the `async?` option.", value)}
     end

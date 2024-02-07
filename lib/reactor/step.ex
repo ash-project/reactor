@@ -18,7 +18,7 @@ defmodule Reactor.Step do
 
   @type t :: %Step{
           arguments: [Argument.t()],
-          async?: boolean,
+          async?: boolean | (keyword -> boolean),
           context: %{optional(atom) => any},
           impl: module | {module, keyword},
           name: any,
@@ -211,6 +211,21 @@ defmodule Reactor.Step do
 
   def undo(%{impl: module}, value, arguments, context) when is_atom(module),
     do: module.undo(value, arguments, context, [])
+
+  @spec __using__(any()) ::
+          {:@, [{:column, 7} | {:context, Reactor.Step} | {:imports, [...]}, ...],
+           [{:behaviour, [...], [...]}, ...]}
+  @doc """
+  Is the step able to be run asynchronously?
+  """
+  @spec async?(Step.t()) :: boolean
+  def async?(%{async?: async}) when is_boolean(async), do: async
+
+  def async?(%{async?: fun, impl: {_, opts}}) when is_function(fun, 1),
+    do: fun.(opts)
+
+  def async?(%{async?: fun}) when is_function(fun, 1), do: fun.([])
+  def async?(_), do: false
 
   defmacro __using__(_opts) do
     quote do

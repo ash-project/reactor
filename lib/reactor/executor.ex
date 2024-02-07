@@ -140,21 +140,26 @@ defmodule Reactor.Executor do
   defp start_ready_async_steps(reactor, state, []), do: {:continue, reactor, state}
 
   defp start_ready_async_steps(reactor, state, steps) do
-    steps = Enum.filter(steps, &(&1.async? == true))
+    steps = Enum.filter(steps, &Step.async?/1)
 
     Executor.Async.start_steps(reactor, state, steps)
   end
 
   defp run_ready_sync_step(reactor, state, []), do: {:continue, reactor, state}
 
-  defp run_ready_sync_step(reactor, state, [step | _]) when state.async? == false do
-    Executor.Sync.run(reactor, state, step)
-  end
+  defp run_ready_sync_step(reactor, state, [step | _]) when state.async? == false,
+    do: Executor.Sync.run(reactor, state, step)
 
   defp run_ready_sync_step(reactor, state, steps) do
-    step = Enum.find(steps, &(&1.async? == false))
+    steps
+    |> Enum.find(&(!Step.async?(&1)))
+    |> case do
+      nil ->
+        {:continue, reactor, state}
 
-    Executor.Sync.run(reactor, state, step)
+      step ->
+        Executor.Sync.run(reactor, state, step)
+    end
   end
 
   # This seems a little unintuitive, but this is what allows reactors who are
