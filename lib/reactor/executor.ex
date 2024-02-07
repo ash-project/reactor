@@ -54,9 +54,9 @@ defmodule Reactor.Executor do
     do: {:error, ArgumentError.exception("`reactor` has no return value")}
 
   def run(reactor, inputs, context, options) when reactor.state in ~w[pending halted]a do
-    case Executor.Init.init(reactor, inputs, context, options) do
-      {:ok, reactor, state} -> execute(reactor, state)
-      {:error, reason} -> {:error, reason}
+    with {:ok, context} <- Executor.Hooks.init(reactor, context),
+         {:ok, reactor, state} <- Executor.Init.init(reactor, inputs, context, options) do
+      execute(reactor, state)
     end
   end
 
@@ -88,15 +88,21 @@ defmodule Reactor.Executor do
 
       {:halt, reactor, _state} ->
         maybe_release_pool(state)
-        {:halted, %{reactor | state: :halted}}
+
+        case Executor.Hooks.halt(reactor, reactor.context) do
+          {:ok, context} -> {:halted, %{reactor | context: context, state: :halted}}
+          {:error, reason} -> {:error, reason}
+        end
 
       {:ok, result} ->
         maybe_release_pool(state)
-        {:ok, result}
+
+        Executor.Hooks.complete(reactor, result, reactor.context)
 
       {:error, reason} ->
         maybe_release_pool(state)
-        {:error, reason}
+
+        Executor.Hooks.error(reactor, reason, reactor.context)
     end
   end
 
@@ -207,7 +213,9 @@ defmodule Reactor.Executor do
     handle_undo(%{reactor | state: :failed, undo: []}, state, Enum.reverse(reactor.undo))
   end
 
-  defp handle_undo(_reactor, state, []), do: {:error, state.errors}
+  defp handle_undo(reactor, state, []) do
+    Executor.Hooks.error(reactor, state.errors, reactor.context)
+  end
 
   defp handle_undo(reactor, state, [{step, value} | tail]) do
     case Executor.StepRunner.undo(reactor, state, step, value, state.concurrency_key) do

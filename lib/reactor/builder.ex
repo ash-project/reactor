@@ -224,4 +224,110 @@ defmodule Reactor.Builder do
       {:error, reason} -> raise reason
     end
   end
+
+  @doc """
+  Add an initialiser hook to the Reactor.
+  """
+  @spec on_init(Reactor.t(), Reactor.init_hook()) :: {:ok, Reactor.t()} | {:error, any}
+  def on_init(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
+    do: add_hook(reactor, :init, {m, f, a})
+
+  def on_init(reactor, hook) when is_function(hook, 1),
+    do: add_hook(reactor, :init, hook)
+
+  def on_init(_reactor, hook),
+    do: {:error, argument_error(:hook, "Not a valid initialisation hook", hook)}
+
+  @doc """
+  Raising version of `on_init/2`.
+  """
+  @spec on_init!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
+  def on_init!(reactor, hook) do
+    case on_init(reactor, hook) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
+  Add an error hook to the Reactor.
+  """
+  @spec on_error(Reactor.t(), Reactor.init_hook()) :: {:ok, Reactor.t()} | {:error, any}
+  def on_error(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
+    do: add_hook(reactor, :error, {m, f, a})
+
+  def on_error(reactor, hook) when is_function(hook, 2),
+    do: add_hook(reactor, :error, hook)
+
+  def on_error(_reactor, hook),
+    do: {:error, argument_error(:hook, "Not a valid error hook", hook)}
+
+  @doc """
+  Raising version of `on_error/2`.
+  """
+  @spec on_error!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
+  def on_error!(reactor, hook) do
+    case on_error(reactor, hook) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
+  Add a completion hook to the Reactor.
+  """
+  @spec on_complete(Reactor.t(), Reactor.complete_hook()) :: {:ok, Reactor.t()} | {:error, any}
+  def on_complete(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
+    do: add_hook(reactor, :complete, {m, f, a})
+
+  def on_complete(reactor, hook) when is_function(hook, 2),
+    do: add_hook(reactor, :complete, hook)
+
+  def on_complete(_reactor, hook),
+    do: {:error, argument_error(:hook, "Not a valid completion hook", hook)}
+
+  @doc """
+  Raising version of `on_complete/2`.
+  """
+  @spec on_complete!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
+  def on_complete!(reactor, hook) do
+    case on_complete(reactor, hook) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
+  Add a halt hook to the Reactor.
+  """
+  @spec on_halt(Reactor.t(), Reactor.halt_hook()) :: {:ok, Reactor.t()} | {:error, any}
+  def on_halt(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
+    do: add_hook(reactor, :halt, {m, f, a})
+
+  def on_halt(reactor, hook) when is_function(hook, 1),
+    do: add_hook(reactor, :halt, hook)
+
+  def on_halt(_reactor, hook),
+    do: {:error, argument_error(:hook, "Not a valid completion hook", hook)}
+
+  @doc """
+  Raising version of `on_halt/2`.
+  """
+  @spec on_halt!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
+  def on_halt!(reactor, hook) do
+    case on_halt(reactor, hook) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
+  end
+
+  defp add_hook(reactor, type, hook) when is_reactor(reactor) do
+    hooks =
+      reactor.hooks
+      |> Map.update(type, [hook], &Enum.concat(&1, [hook]))
+
+    {:ok, %{reactor | hooks: hooks}}
+  end
+
+  defp add_hook(reactor, _, _), do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 end
