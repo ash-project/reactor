@@ -44,4 +44,34 @@ defmodule Reactor.StepTest do
       assert :ok = Step.undo(step, :marty, %{}, %{})
     end
   end
+
+  describe "async?/1" do
+    test "when the step is marked as async it returns true" do
+      step = Builder.new_step!(:greet, Example.Step.Greeter, [], async?: true)
+
+      assert Step.async?(step)
+    end
+
+    test "when the step is marked as sync it returns false" do
+      step = Builder.new_step!(:greet, Example.Step.Greeter, [], async?: false)
+
+      refute Step.async?(step)
+    end
+
+    test "when the step has options, they is passed to the async callback" do
+      step =
+        Builder.new_step!(:greet, {Example.Step.Greeter, [wat?: true]}, [],
+          async?: fn opts -> opts[:wat?] end
+        )
+
+      assert Step.async?(step)
+    end
+
+    test "when the step has no options, an empty list is passed to the async callback" do
+      step =
+        Builder.new_step!(:greet, Example.Step.Greeter, [], async?: fn opts -> opts[:wat?] end)
+
+      refute Step.async?(step)
+    end
+  end
 end

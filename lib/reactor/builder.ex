@@ -25,7 +25,7 @@ defmodule Reactor.Builder do
   @type step_options :: [async? | max_retries() | arguments_transform | context | ref]
 
   @typedoc "Should the step be run asynchronously?"
-  @type async? :: {:async?, boolean}
+  @type async? :: {:async?, boolean | (keyword -> boolean)}
 
   @typedoc "How many times is the step allowed to retry?"
   @type max_retries :: {:max_retries, :infinity | non_neg_integer()}
