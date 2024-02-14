@@ -159,32 +159,55 @@ defmodule Reactor.Step do
               options :: keyword
             ) :: undo_result
 
+  @doc """
+  Detect the capabilities of the step at runtime.
+
+  > This callback is automatically defined by `use Reactor.Step` however you're
+  > free to override it if you need specific behaviour.
+
+  Whenever Reactor would like to either undo a change made by the step, or
+  compensate a step failure this callback is called to detect whether the step
+  module is capable of the desired action.
+
+  The default implementation of this callback checks to see if the optional
+  callback is defined on the current module.
+  """
+  @callback can?(step :: Step.t(), capability()) :: boolean
+
+  @doc """
+  Detect if the step can be run asynchronously at runtime.
+
+  > This callback is automatically defined by `use Reactor.Step` however you're
+  > free to override it if you need a specific behaviour.
+
+  This callback is called when Reactor is deciding whether to run a step
+  asynchronously.
+
+  The default implementation of this callback checks returns the the value of
+  the steps's `async?` key if it is boolean, or calls it with the steps's
+  options if it is a function.
+  """
+  @callback async?(step) :: boolean
+
   @optional_callbacks compensate: 4, undo: 4
 
   @doc """
   Find out of a step has a capability.
   """
-  @spec can?(module | Step.t(), capability()) :: boolean
-  def can?(%Step{impl: {module, _opts}}, capability) when is_atom(module),
-    do: can?(module, capability)
-
-  def can?(%Step{impl: module}, capability) when is_atom(module),
-    do: can?(module, capability)
-
-  def can?(module, capability) when is_atom(module) and capability in ~w[undo compensate]a,
-    do: function_exported?(module, capability, 4)
-
-  def can?(_step, _capability), do: false
+  @spec can?(Step.t(), capability()) :: boolean
+  def can?(step, capability) when is_struct(step, Step) and capability in ~w[undo compensate]a,
+    do:
+      module_and_options_from_step(step, fn module, _options -> module.can?(step, capability) end)
 
   @doc """
   Execute a step.
   """
   @spec run(Step.t(), arguments :: Reactor.inputs(), context :: Reactor.context()) :: run_result()
-  def run(%{impl: {module, options}}, arguments, context) when is_atom(module),
-    do: module.run(arguments, context, options)
-
-  def run(%{impl: module}, arguments, context) when is_atom(module),
-    do: module.run(arguments, context, [])
+  def run(step, arguments, context),
+    do:
+      module_and_options_from_step(step, fn module, options ->
+        module.run(arguments, context, options)
+      end)
 
   @doc """
   Compensate a step
@@ -195,41 +218,59 @@ defmodule Reactor.Step do
           arguments :: Reactor.inputs(),
           context :: Reactor.context()
         ) :: compensate_result()
-  def compensate(%{impl: {module, options}}, reason, arguments, context) when is_atom(module),
-    do: module.compensate(reason, arguments, context, options)
-
-  def compensate(%{impl: module}, reason, arguments, context) when is_atom(module),
-    do: module.compensate(reason, arguments, context, [])
+  def compensate(step, reason, arguments, context),
+    do:
+      module_and_options_from_step(step, fn module, options ->
+        module.compensate(reason, arguments, context, options)
+      end)
 
   @doc """
   Undo a step
   """
   @spec undo(Step.t(), value :: any, arguments :: Reactor.inputs(), context :: Reactor.context()) ::
           undo_result()
-  def undo(%{impl: {module, options}}, value, arguments, context) when is_atom(module),
-    do: module.undo(value, arguments, context, options)
+  def undo(step, value, arguments, context),
+    do:
+      module_and_options_from_step(step, fn module, options ->
+        module.undo(value, arguments, context, options)
+      end)
 
-  def undo(%{impl: module}, value, arguments, context) when is_atom(module),
-    do: module.undo(value, arguments, context, [])
-
-  @spec __using__(any()) ::
-          {:@, [{:column, 7} | {:context, Reactor.Step} | {:imports, [...]}, ...],
-           [{:behaviour, [...], [...]}, ...]}
   @doc """
   Is the step able to be run asynchronously?
   """
   @spec async?(Step.t()) :: boolean
-  def async?(%{async?: async}) when is_boolean(async), do: async
+  def async?(step),
+    do: module_and_options_from_step(step, fn module, _opts -> module.async?(step) end)
 
-  def async?(%{async?: fun, impl: {_, opts}}) when is_function(fun, 1),
-    do: fun.(opts)
+  defp module_and_options_from_step(%{impl: {module, options}} = step, fun)
+       when is_struct(step, Step) and is_atom(module) and is_list(options) and is_function(fun, 2),
+       do: fun.(module, options)
 
-  def async?(%{async?: fun}) when is_function(fun, 1), do: fun.([])
-  def async?(_), do: false
+  defp module_and_options_from_step(%{impl: module} = step, fun)
+       when is_struct(step, Step) and is_atom(module) and is_function(fun, 2),
+       do: fun.(module, [])
 
+  @doc false
+  @spec __using__(keyword) :: Macro.output()
   defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
+
+      @doc false
+      @impl unquote(__MODULE__)
+      def can?(_step, capability), do: function_exported?(__MODULE__, capability, 4)
+
+      @doc false
+      @impl unquote(__MODULE__)
+      def async?(step) when is_boolean(step.async?), do: step.async?
+
+      def async?(%{async?: fun, impl: {_, opts}}) when is_function(fun, 1),
+        do: fun.(opts)
+
+      def async?(%{async?: fun}) when is_function(fun, 1), do: fun.([])
+      def async?(_), do: false
+
+      defoverridable can?: 2, async?: 1
     end
   end
 end
