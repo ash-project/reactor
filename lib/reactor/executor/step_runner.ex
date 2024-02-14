@@ -16,7 +16,6 @@ defmodule Reactor.Executor.StepRunner do
           {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
   def run(reactor, state, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
-         {module, options} <- module_and_opts(step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
       metadata = %{
@@ -28,11 +27,10 @@ defmodule Reactor.Executor.StepRunner do
 
       metadata_stack = Process.get(:__reactor__, [])
       Process.put(:__reactor__, [metadata | metadata_stack])
-      result = do_run(module, options, arguments, context)
+      result = do_run(step, arguments, context)
       Process.put(:__reactor__, metadata_stack)
       result
     end
-  after
   end
 
   @doc """
@@ -42,53 +40,47 @@ defmodule Reactor.Executor.StepRunner do
           :ok | {:error, any}
   def undo(reactor, state, step, value, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
-         {module, options} <- module_and_opts(step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
-      do_undo(value, module, options, arguments, context)
+      do_undo(value, step, arguments, context)
     end
   end
 
-  defp module_and_opts(%{impl: {module, options}}) when is_atom(module) and is_list(options),
-    do: {module, options}
+  defp do_undo(value, step, arguments, context, undo_count \\ 0)
 
-  defp module_and_opts(%{impl: module}) when is_atom(module), do: {module, []}
+  defp do_undo(_value, step, _arguments, _context, @max_undo_count),
+    do: {:error, "`undo/4` retried #{@max_undo_count} times on step `#{inspect(step.name)}`."}
 
-  defp do_undo(value, module, options, arguments, context, undo_count \\ 0)
-
-  defp do_undo(_value, module, _options, _arguments, _context, @max_undo_count),
-    do: {:error, "`#{inspect(module)}.undo/4` retried #{@max_undo_count} times."}
-
-  defp do_undo(value, module, options, arguments, context, undo_count) do
-    case module.undo(value, arguments, context, options) do
+  defp do_undo(value, step, arguments, context, undo_count) do
+    case Step.undo(step, value, arguments, context) do
       :ok -> :ok
-      :retry -> do_undo(value, module, options, arguments, context, undo_count + 1)
+      :retry -> do_undo(value, step, arguments, context, undo_count + 1)
     end
   end
 
-  defp do_run(module, options, arguments, context) do
-    case module.run(arguments, context, options) do
+  defp do_run(step, arguments, context) do
+    case Step.run(step, arguments, context) do
       {:ok, value} -> {:ok, value, []}
       {:ok, value, steps} when is_list(steps) -> {:ok, value, steps}
       {:retry, reason} -> {:retry, reason}
       :retry -> :retry
-      {:error, reason} -> maybe_compensate(module, reason, arguments, context, options)
+      {:error, reason} -> maybe_compensate(step, reason, arguments, context)
       {:halt, value} -> {:halt, value}
     end
   rescue
-    reason -> maybe_compensate(module, reason, arguments, context, options)
+    reason -> maybe_compensate(step, reason, arguments, context)
   end
 
-  defp maybe_compensate(module, reason, arguments, context, options) do
-    if Step.can?(module, :compensate) do
-      compensate(module, reason, arguments, context, options)
+  defp maybe_compensate(step, reason, arguments, context) do
+    if Step.can?(step, :compensate) do
+      compensate(step, reason, arguments, context)
     else
       {:error, reason}
     end
   end
 
-  defp compensate(module, reason, arguments, context, options) do
-    case module.compensate(reason, arguments, context, options) do
+  defp compensate(step, reason, arguments, context) do
+    case Step.compensate(step, reason, arguments, context) do
       {:continue, value} -> {:ok, value}
       {:retry, reason} -> {:retry, reason}
       :retry -> {:retry, reason}
@@ -98,7 +90,7 @@ defmodule Reactor.Executor.StepRunner do
   rescue
     error ->
       Logger.error(fn ->
-        "Warning: `#{inspect(module)}.compensate/4` raised an error:\n" <>
+        "Warning: step `#{inspect(step.name)}` `compensate/4` raised an error:\n" <>
           Exception.format(:error, error, __STACKTRACE__)
       end)
 

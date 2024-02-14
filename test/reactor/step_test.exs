@@ -4,20 +4,30 @@ defmodule Reactor.StepTest do
   alias Reactor.{Builder, Step}
 
   describe "can/2" do
-    test "when the module defines `undo/4`, it can undo" do
-      assert Step.can?(Example.Step.Undoable, :undo)
+    defp step_for_module(module), do: %Step{impl: module}
+
+    test "when the step defines `undo/4`, it can undo" do
+      assert Example.Step.Undoable
+             |> step_for_module()
+             |> Step.can?(:undo)
     end
 
-    test "when the module does not define `undo/4`, it cannot undo" do
-      refute Step.can?(Example.Step.Greeter, :undo)
+    test "when the step does not define `undo/4`, it cannot undo" do
+      refute Example.Step.Greeter
+             |> step_for_module()
+             |> Step.can?(:undo)
     end
 
-    test "when the module defines `compensate/4`, it can compensate" do
-      assert Step.can?(Example.Step.Compensable, :compensate)
+    test "when the step defines `compensate/4`, it can compensate" do
+      assert Example.Step.Compensable
+             |> step_for_module()
+             |> Step.can?(:compensate)
     end
 
-    test "when the module does not defined `compensate/4`, it cannot compensate" do
-      refute Step.can?(Example.Step.Greeter, :compensate)
+    test "when the step does not defined `compensate/4`, it cannot compensate" do
+      refute Example.Step.Greeter
+             |> step_for_module()
+             |> Step.can?(:compensate)
     end
   end
 
