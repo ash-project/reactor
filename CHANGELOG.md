@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.1](https://github.com/ash-project/reactor/compare/v0.5.0...v0.5.1) (2024-02-14)
+
+
+
+
+### Improvements:
+
+* Move `can?/2` and `async?/1` into `Reactor.Step` behaviour. (#87)
+
 ## [v0.5.0](https://github.com/ash-project/reactor/compare/v0.4.1...v0.5.0) (2024-02-07)
 
 
