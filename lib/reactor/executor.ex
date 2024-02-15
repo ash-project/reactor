@@ -73,7 +73,7 @@ defmodule Reactor.Executor do
     with {:continue, reactor, state} <- maybe_timeout(reactor, state),
          {:continue, reactor, state} <- handle_unplanned_steps(reactor, state),
          {:continue, reactor, state} <- handle_completed_async_steps(reactor, state),
-         {:continue, ready_steps} <- find_ready_steps(reactor),
+         {:continue, ready_steps} <- find_ready_steps(reactor, state),
          {:continue, reactor, state} <- start_ready_async_steps(reactor, state, ready_steps),
          {:continue, reactor, state} <- run_ready_sync_step(reactor, state, ready_steps),
          {:continue, reactor, state} <- maybe_run_any_step_sync(reactor, state, ready_steps),
@@ -239,16 +239,29 @@ defmodule Reactor.Executor do
     end
   end
 
-  defp find_ready_steps(reactor) do
+  defp find_ready_steps(reactor, state) when state.max_concurrency > 0 do
     steps =
       reactor.plan
       |> Graph.vertices()
-      |> Enum.filter(fn
+      |> Stream.filter(fn
+        step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
+        _ -> false
+      end)
+      |> Enum.take(state.max_concurrency)
+
+    {:continue, steps}
+  end
+
+  defp find_ready_steps(reactor, _state) do
+    step =
+      reactor.plan
+      |> Graph.vertices()
+      |> Enum.find(fn
         step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
         _ -> false
       end)
 
-    {:continue, steps}
+    {:continue, [step]}
   end
 
   defp maybe_release_pool(state) when state.pool_owner == true do
