@@ -187,7 +187,7 @@ defmodule Reactor.Step do
   the steps's `async?` key if it is boolean, or calls it with the steps's
   options if it is a function.
   """
-  @callback async?(step) :: boolean
+  @callback async?(step :: Step.t()) :: boolean
 
   @optional_callbacks compensate: 4, undo: 4
 
