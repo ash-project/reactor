@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.5.2](https://github.com/ash-project/reactor/compare/v0.5.1...v0.5.2) (2024-02-18)
+
+
+
+
+### Bug Fixes:
+
+* callback spec for `Reactor.Step.async?/1`.
+
+### Performance Improvements:
+
+* Don't iterate the entire graph every time through the loop. (#88)
+
 ## [v0.5.1](https://github.com/ash-project/reactor/compare/v0.5.0...v0.5.1) (2024-02-14)
 
 
