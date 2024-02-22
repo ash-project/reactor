@@ -147,6 +147,7 @@ defmodule Reactor.MixProject do
   defp extra_documentation_groups do
     [
       Tutorials: ~r'documentation/tutorials',
+      Topics: ~r'documentation/topics',
       DSLs: ~r'documentation/dsls'
     ]
   end

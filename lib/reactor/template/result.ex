@@ -5,5 +5,5 @@ defmodule Reactor.Template.Result do
 
   defstruct name: nil, sub_path: []
 
-  @type t :: %__MODULE__{name: atom, sub_path: [atom]}
+  @type t :: %__MODULE__{name: atom, sub_path: Reactor.Template.sub_path()}
 end

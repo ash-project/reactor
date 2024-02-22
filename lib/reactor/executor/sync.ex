@@ -46,7 +46,7 @@ defmodule Reactor.Executor.Sync do
         reactor =
           reactor
           |> maybe_store_undo(step, value)
-          |> maybe_store_intermediate_result(step, value)
+          |> maybe_store_intermediate_result(step, value, new_steps)
           |> drop_from_plan(step)
           |> append_steps(new_steps)
 
@@ -83,12 +83,15 @@ defmodule Reactor.Executor.Sync do
     end
   end
 
-  defp maybe_store_intermediate_result(reactor, step, value) do
+  defp maybe_store_intermediate_result(reactor, step, value, new_steps) do
     cond do
       Graph.out_degree(reactor.plan, step) > 0 ->
         store_intermediate_result(reactor, step, value)
 
       reactor.return == step.name ->
+        store_intermediate_result(reactor, step, value)
+
+      any_new_step_depends_on_this_step?(step, new_steps) ->
         store_intermediate_result(reactor, step, value)
 
       true ->
@@ -100,4 +103,14 @@ defmodule Reactor.Executor.Sync do
     do: %{reactor | intermediate_results: Map.put(reactor.intermediate_results, step.name, value)}
 
   defp append_steps(reactor, steps), do: %{reactor | steps: Enum.concat(steps, reactor.steps)}
+
+  defp any_new_step_depends_on_this_step?(_step, []), do: false
+
+  defp any_new_step_depends_on_this_step?(step, new_steps) do
+    Enum.any?(new_steps, fn new_step ->
+      Enum.any?(new_step.arguments, fn argument ->
+        is_struct(argument.source, Reactor.Template.Result) && argument.source.name == step.name
+      end)
+    end)
+  end
 end

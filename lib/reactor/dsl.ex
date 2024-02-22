@@ -23,6 +23,7 @@ defmodule Reactor.Dsl do
       Dsl.Debug.__entity__(),
       Dsl.Group.__entity__(),
       Dsl.Input.__entity__(),
+      Dsl.Iterate.__entity__(),
       Dsl.Step.__entity__(),
       Dsl.Switch.__entity__()
     ],

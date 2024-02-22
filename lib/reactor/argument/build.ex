@@ -22,8 +22,21 @@ defimpl Reactor.Argument.Build, for: Tuple do
   alias Reactor.Argument
   import Reactor.Utils
 
-  def build({name, {:input, source}}), do: {:ok, [Argument.from_input(name, source)]}
-  def build({name, {:result, source}}), do: {:ok, [Argument.from_result(name, source)]}
-  def build({name, value}), do: {:ok, [Argument.from_value(name, value)]}
-  def build(tuple), do: {:error, argument_error(:tuple, "contains a non-argument value", tuple)}
+  def build({name, {:input, source}}),
+    do: {:ok, [Argument.from_input(name, source)]}
+
+  def build({name, {:input, source, transform}}),
+    do: {:ok, Argument.from_input(name, source, transform)}
+
+  def build({name, {:result, source}}),
+    do: {:ok, [Argument.from_result(name, source)]}
+
+  def build({name, {:result, source, transform}}),
+    do: {:ok, [Argument.from_result(name, source, transform)]}
+
+  def build({name, value}),
+    do: {:ok, [Argument.from_value(name, value)]}
+
+  def build(tuple),
+    do: {:error, argument_error(:tuple, "contains a non-argument value", tuple)}
 end

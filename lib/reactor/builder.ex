@@ -40,7 +40,11 @@ defmodule Reactor.Builder do
   @typedoc "Optional context which will be merged with the reactor context when calling this step."
   @type context :: Reactor.context()
 
-  @type step_argument :: Argument.t() | {atom, {:input | :result, any}}
+  @type step_argument ::
+          Argument.t()
+          | {atom,
+             {:input | :result, any}
+             | {:input | :result, any, Argument.sub_path() | Argument.transformer()}}
   @type impl :: module | {module, keyword}
 
   @doc """

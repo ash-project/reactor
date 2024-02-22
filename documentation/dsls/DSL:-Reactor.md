@@ -25,6 +25,14 @@ The top-level reactor DSL
    * argument
    * wait_for
  * [input](#reactor-input)
+ * [iterate](#reactor-iterate)
+   * argument
+   * wait_for
+   * for_each
+   * map
+
+   * reduce
+   * source
  * [step](#reactor-step)
    * argument
    * wait_for
@@ -131,7 +139,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-around-argument-name){: #reactor-around-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-around-argument-source){: #reactor-around-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-around-argument-source){: #reactor-around-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -287,7 +295,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-collect-argument-name){: #reactor-collect-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-collect-argument-source){: #reactor-collect-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-collect-argument-source){: #reactor-collect-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -427,7 +435,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-compose-argument-name){: #reactor-compose-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-compose-argument-source){: #reactor-compose-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-compose-argument-source){: #reactor-compose-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -576,7 +584,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-debug-argument-name){: #reactor-debug-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-debug-argument-source){: #reactor-debug-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-debug-argument-source){: #reactor-debug-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -719,7 +727,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-group-argument-name){: #reactor-group-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-group-argument-source){: #reactor-group-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-group-argument-source){: #reactor-group-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -826,6 +834,435 @@ end
 ### Introspection
 
 Target: `Reactor.Dsl.Input`
+
+## reactor.iterate
+```elixir
+iterate name
+```
+
+
+Repeatedly execute a group of steps by emitting values from a generator
+and consolidate their results with a reducer.
+
+For more information about the semantics of the iterate step see the
+`Reactor.Step.Iterate` moduledocs.
+
+
+### Nested DSLs
+ * [argument](#reactor-iterate-argument)
+ * [wait_for](#reactor-iterate-wait_for)
+ * [for_each](#reactor-iterate-for_each)
+ * [map](#reactor-iterate-map)
+
+ * [reduce](#reactor-iterate-reduce)
+ * [source](#reactor-iterate-source)
+
+
+### Examples
+```
+# Iterate over a string, reversing every word using manual iteration.
+
+iterate :reverse_words do
+  argument :words, input(:words)
+
+  source do
+    initialiser fn args ->
+      {:ok, args.words}
+    end
+
+    generator fn words ->
+      case String.split(words, ~r/ +/, parts: 2, trim: true) do
+        [] -> {:halt, ""}
+        [word] -> {:cont, [%{word: word}], ""}
+        [word, remaining] -> {:cont, [%{word: word}], remaining}
+      end
+    end
+  end
+
+  map do
+    step :reverse_word do
+      argument :word, element(:word)
+
+      run fn %{word: word} ->
+        {:ok, String.reverse(word)}
+      end
+    end
+  end
+
+  reduce do
+    accumulator fn ->
+      {:ok, []}
+    end
+
+    reducer fn word, acc ->
+      {:cont, [word | acc]}
+    end
+
+    finaliser fn words ->
+      {:ok, Enum.reverse(words)}
+    end
+  end
+end
+
+```
+
+```
+# Summing an enumerable.
+
+iterate :sum do
+  argument :numbers, input(:numbers)
+
+  for_each do
+    source :numbers
+    as :number
+  end
+
+  reduce do
+    accumulator value(0)
+    reducer &{:ok, &1 + &2}
+  end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-iterate-name){: #reactor-iterate-name .spark-required} | `atom` |  | A unique name for this step. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`async?`](#reactor-iterate-async?){: #reactor-iterate-async? } | `boolean` | `true` | Allow the iteration to perform steps asynchronously. |
+
+
+## reactor.iterate.argument
+```elixir
+argument name, source \\ nil
+```
+
+
+Specifies an argument to a Reactor step.
+
+Each argument is a value which is either the result of another step, or an input value.
+
+Individual arguments can be transformed with an arbitrary function before
+being passed to any steps.
+
+
+
+
+### Examples
+```
+argument :name, input(:name)
+
+```
+
+```
+argument :year, input(:date, [:year])
+
+```
+
+```
+argument :user, result(:create_user)
+
+```
+
+```
+argument :user_id, result(:create_user) do
+  transform & &1.id
+end
+
+```
+
+```
+argument :user_id, result(:create_user, [:id])
+
+```
+
+```
+argument :three, value(3)
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-iterate-argument-name){: #reactor-iterate-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
+| [`source`](#reactor-iterate-argument-source){: #reactor-iterate-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`transform`](#reactor-iterate-argument-transform){: #reactor-iterate-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Argument`
+
+## reactor.iterate.wait_for
+```elixir
+wait_for names
+```
+
+
+Wait for the named step to complete before allowing this one to start.
+
+Desugars to `argument :_, result(step_to_wait_for)`
+
+
+
+
+### Examples
+```
+wait_for :create_user
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`names`](#reactor-iterate-wait_for-names){: #reactor-iterate-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.WaitFor`
+
+## reactor.iterate.for_each
+
+
+Given an input which implements Elixir's `Enumerable` protocol use it as
+the source for the iteration.
+
+
+
+
+### Examples
+```
+for_each do
+  source :numbers
+  as: :number
+end
+
+```
+
+
+
+
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`as`](#reactor-iterate-for_each-as){: #reactor-iterate-for_each-as .spark-required} | `atom` |  | The name to use for each value in the element map. |
+| [`source`](#reactor-iterate-for_each-source){: #reactor-iterate-for_each-source .spark-required} | `atom` |  | The name of an argument provided to the parent `iterate` step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Iterate.ForEach`
+
+## reactor.iterate.map
+
+
+The steps to run for each iteration.
+
+
+
+
+
+
+
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`return`](#reactor-iterate-map-return){: #reactor-iterate-map-return } | `nil \| atom` |  | Use result of the named step as the return value. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Iterate.Map`
+
+## reactor.iterate.reduce
+
+
+Reduces the results into a single value.
+
+Similar in semantics to `Enum.reduce_while/3`, the `reduce` entity is
+responsible for collecting results into a single value which will be the
+result of the iterate step.
+
+#### Accumulator
+
+The accumulator function defines the value for the accumulator for the
+first reduction (or if iteration halts without any reduction).
+
+It can be initialised from an argument to the iterate step if needed.
+
+#### Reducer
+
+The reducer function takes the result of a previous map operation and
+uses it to generate a new accumulator value.
+
+#### Finaliser
+
+When the iterator halts iteration, the finaliser is called with allows
+you to perform a final operation on the accumulator before it is
+returned.
+
+> #### Warning {: .tip}
+>
+> You should not assume that these functions will all be called within
+> the same process, as they may be run asynchronously depending on the
+> configuration of the Reactor.
+
+
+
+
+### Examples
+```
+reduce do
+  accumulator fn -> {:ok, %{}} end
+
+  reducer fn word, counts ->
+    {:cont, Map.update(counts, word, 1, &(&1 + 1))}
+  end
+end
+
+```
+
+
+
+
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`accumulator`](#reactor-iterate-reduce-accumulator){: #reactor-iterate-reduce-accumulator .spark-required} | `(any, any -> any) \| mfa \| (any -> any) \| mfa \| (-> any) \| mfa` |  | The initial accumulator value. |
+| [`reducer`](#reactor-iterate-reduce-reducer){: #reactor-iterate-reduce-reducer .spark-required} | `(any, any, any -> any) \| mfa \| (any, any -> any) \| mfa` |  | A function which reduces values into an accumulator. |
+| [`finaliser`](#reactor-iterate-reduce-finaliser){: #reactor-iterate-reduce-finaliser } | `nil \| (any, any -> any) \| mfa \| (any -> any) \| mfa` |  | An optional final transformation function. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Iterate.Reduce`
+
+## reactor.iterate.source
+
+
+Provides the source of an iteration by lazily generating elements.
+
+Similar in semantics to `Stream.resource/3`, the `source` entity is
+responsible for generating values for use in iteration.
+
+#### Initialiser
+
+The initialiser is responsible for taking the arguments provided to the
+`iterate` step and returning a term which can be used as the input to the
+generator.
+
+You could use this to open a file for reading, or access an API endpoint.
+
+#### Generator
+
+The generator function takes the state from the initialiser and uses it
+to generate the next value(s) to map and reduce.
+
+Each element must be a map which can be accessed with the
+`element/1` helper.
+
+If your function returns more than one element the elements will be
+buffered inside the iterator.
+
+Your generator function will be called repeatedly until it returns a
+`:halt` tuple - even if it returns no elements.
+
+#### Finaliser
+
+When the generator halts iteration then the finaliser is called which
+allows you to clean up any resources in use if required.
+
+> #### Warning {: .tip}
+>
+> You should not assume that these functions will all be called within
+> the same process, as they may be run asynchronously depending on the
+> configuration of the Reactor.
+
+
+
+
+### Examples
+```
+source do
+  initialiser fn args ->
+    File.open(args.file, [:read])
+  end
+
+  generator fn file ->
+    case IO.read(file, :line) do
+      :eof -> {:halt, file}
+      {:error, reason} -> {:error, reason}
+      data -> {:cont, [%{line: data}], file}
+    end
+  end
+
+  finaliser fn file ->
+    File.close(file)
+  end
+end
+
+```
+
+
+
+
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`generator`](#reactor-iterate-source-generator){: #reactor-iterate-source-generator .spark-required} | `(any, any -> any) \| mfa \| (any -> any) \| mfa` |  | A function which emits the next value(s) for the iteration. |
+| [`initialiser`](#reactor-iterate-source-initialiser){: #reactor-iterate-source-initialiser .spark-required} | `(any, any -> any) \| mfa \| (any -> any) \| mfa` |  | A function which initialises the generator state. |
+| [`finaliser`](#reactor-iterate-source-finaliser){: #reactor-iterate-source-finaliser } | `nil \| (any, any -> any) \| mfa \| (any -> any) \| mfa` |  | An optional clean up function. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Iterate.Source`
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Iterate`
 
 ## reactor.step
 ```elixir
@@ -943,7 +1380,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-step-argument-name){: #reactor-step-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-step-argument-source){: #reactor-step-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-step-argument-source){: #reactor-step-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -1027,7 +1464,7 @@ Use a predicate to determine which steps should be executed.
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`on`](#reactor-switch-on){: #reactor-switch-on .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The value to match against. |
+| [`on`](#reactor-switch-on){: #reactor-switch-on .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The value to match against. |
 | [`allow_async?`](#reactor-switch-allow_async?){: #reactor-switch-allow_async? } | `boolean` | `true` | Whether the emitted steps should be allowed to run asynchronously. |
 
 
