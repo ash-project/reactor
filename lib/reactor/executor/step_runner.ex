@@ -2,7 +2,7 @@ defmodule Reactor.Executor.StepRunner do
   @moduledoc """
   Run an individual step, including compensation if possible.
   """
-  alias Reactor.{Executor.ConcurrencyTracker, Executor.State, Step}
+  alias Reactor.{Executor.ConcurrencyTracker, Executor.Hooks, Executor.State, Step}
   import Reactor.Utils
   import Reactor.Argument, only: :macros
   require Logger
@@ -12,9 +12,11 @@ defmodule Reactor.Executor.StepRunner do
   @doc """
   Collect the arguments and and run a step, with compensation if required.
   """
-  @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
+  @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key(), nil | map) ::
           {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
-  def run(reactor, state, step, concurrency_key) do
+  def run(reactor, state, step, concurrency_key, process_contexts \\ nil) do
+    if process_contexts, do: Hooks.set_process_contexts(process_contexts)
+
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do

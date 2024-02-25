@@ -284,7 +284,11 @@ defmodule Reactor.Builder do
 
   defp assert_is_middleware(middleware) do
     if Spark.implements_behaviour?(middleware, Middleware) do
-      :ok
+      assert_middleware_process_callbacks(
+        middleware,
+        function_exported?(middleware, :get_process_context, 0),
+        function_exported?(middleware, :set_process_context, 1)
+      )
     else
       {:error,
        argument_error(
@@ -294,4 +298,24 @@ defmodule Reactor.Builder do
        )}
     end
   end
+
+  defp assert_middleware_process_callbacks(middleware, true, false) do
+    {:error,
+     argument_error(
+       :middleware,
+       "When `get_process_context/0` is implemented `set_process_context/1` must also be implemented.",
+       middleware
+     )}
+  end
+
+  defp assert_middleware_process_callbacks(middleware, false, true) do
+    {:error,
+     argument_error(
+       :middleware,
+       "When `set_process_context/1` is implemented `get_process_context/0` must also be implemented.",
+       middleware
+     )}
+  end
+
+  defp assert_middleware_process_callbacks(_, _, _), do: :ok
 end

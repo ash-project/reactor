@@ -35,12 +35,41 @@ defmodule Reactor.Dsl.Middleware do
 
   defimpl Build do
     alias Reactor.Builder
+    alias Spark.{Dsl.Extension, Error.DslError}
 
     def build(middleware, reactor) do
       Builder.add_middleware(reactor, middleware.module)
     end
 
-    def verify(_, _), do: :ok
+    def verify(middleware, dsl_state) do
+      cond do
+        function_exported?(middleware.module, :get_process_context, 0) &&
+            !function_exported?(middleware.module, :set_process_context, 1) ->
+          {:error,
+           %DslError{
+             module: Extension.get_persisted(dsl_state, :module),
+             path: [:reactor, :middlewares, :middleware],
+             message: """
+             When `get_process_context/0` is defined you must also defined `set_process_context/1`.
+             """
+           }}
+
+        function_exported?(middleware.module, :set_process_context, 1) &&
+            !function_exported?(middleware.module, :get_process_context, 0) ->
+          {:error,
+           %DslError{
+             module: Extension.get_persisted(dsl_state, :module),
+             path: [:reactor, :middlewares, :middleware],
+             message: """
+             When `set_process_context/1` is defined you must also defined `get_process_context/0`.
+             """
+           }}
+
+        true ->
+          :ok
+      end
+    end
+
     def transform(_, dsl_state), do: {:ok, dsl_state}
   end
 end

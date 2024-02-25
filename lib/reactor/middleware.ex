@@ -7,6 +7,9 @@ defmodule Reactor.Middleware do
 
   Middlewares can be added to the reactor either with the `middlewares` DSL
   section or by the `add_middleware/2`, etc, functions in `Reactor.Builder`.
+
+  All callbacks in this behaviour are optional so you can define only the parts
+  you need for your feature.
   """
 
   @type t :: module
@@ -60,7 +63,30 @@ defmodule Reactor.Middleware do
   """
   @callback init(context) :: {:ok, context} | {:error, any}
 
-  @optional_callbacks complete: 2, error: 2, halt: 1, init: 1
+  @doc """
+  Called before starting an asynchronous step in order to retrieve any context
+  information that needs to be passed into the new process.
+
+  This is most likely used by tracers to copy span information from the parent
+  process to the child process.
+  """
+  @callback get_process_context :: any
+
+  @doc """
+  Called inside a new asynchronous step in order to set context information into
+  the new process.
+
+  This is most likely used by tracers to copy span information from the parent
+  process to the child process.
+  """
+  @callback set_process_context(any) :: :ok
+
+  @optional_callbacks complete: 2,
+                      error: 2,
+                      halt: 1,
+                      init: 1,
+                      get_process_context: 0,
+                      set_process_context: 1
 
   defmacro __using__(_env) do
     quote do
