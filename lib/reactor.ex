@@ -34,34 +34,13 @@ defmodule Reactor do
       ...> {:ok, reactor} = Builder.return(reactor, :greet)
       ...> Reactor.run(reactor, %{whom: nil})
       {:ok, "Hello, World!"}
-
-
-  ## Hooks
-
-  Reactor allows you to add lifecycle hooks using functions in
-  `Reactor.Builder`.  Lifecycle hooks will be called in the order that they are
-  added to the reactor.
-
-  Four kinds of lifecycle hooks are provided:
-
-  * `complete` - These hooks will be called with the result of the reactor run
-    when the run is successful.  If you return `{:ok, new_result}` then the
-    result is replaced with the new value.
-  * `error` - These hooks will be called with an error (or list of errors) which
-    were raised or returned during the reactor run.  You can either return `:ok`
-    or a new error tuple to replace the error result.
-  * `halt` - These hooks are called when the reactor is being halted and allows
-    you to mutate the context before the halted reactor is returned.
-  * `init` - These hooks are called when the reactor is first run or is resumed
-    from a previous halted state and allow you to mutate the context before the
-    reactor run is started.
   """
 
   defstruct context: %{},
-            hooks: %{},
             id: nil,
             inputs: [],
             intermediate_results: %{},
+            middleware: [],
             plan: nil,
             return: nil,
             state: :pending,
@@ -137,22 +116,12 @@ defmodule Reactor do
   @type state :: :pending | :executing | :halted | :failed | :successful
   @type inputs :: %{optional(atom) => any}
 
-  @type complete_hook :: mfa | (result :: any, context -> {:ok, result :: any} | {:error, any})
-  @type error_hook :: mfa | (error :: any, context -> :ok | {:error, any})
-  @type halt_hook :: mfa | (context -> {:ok, context} | {:error, any})
-  @type init_hook :: mfa | (context -> {:ok, context} | {:error, any})
-
   @type t :: %Reactor{
           context: context,
-          hooks: %{
-            optional(:complete) => [complete_hook],
-            optional(:error) => [error_hook],
-            optional(:halt) => [halt_hook],
-            optional(:init) => [init_hook]
-          },
           id: any,
           inputs: [atom],
           intermediate_results: %{any => any},
+          middleware: [Reactor.Middleware.t()],
           plan: nil | Graph.t(),
           undo: [{Step.t(), any}],
           return: any,

@@ -16,11 +16,18 @@ defmodule Reactor.Executor.HooksTest do
     end
 
     test "initialisation hooks can mutate the context" do
+      defmodule MutateInitMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def init(context) do
+          {:ok, Map.put(context, :mutated?, true)}
+        end
+      end
+
       reactor =
         ReturnContextReactor.reactor()
-        |> Builder.on_init!(fn context ->
-          {:ok, Map.put(context, :mutated?, true)}
-        end)
+        |> Builder.add_middleware!(MutateInitMiddleware)
 
       {:ok, context} = Reactor.run(reactor, %{}, %{mutated?: false})
       assert context.mutated?
@@ -40,11 +47,18 @@ defmodule Reactor.Executor.HooksTest do
     end
 
     test "halt hooks can mutate the context" do
+      defmodule MutateHaltMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def halt(context) do
+          {:ok, Map.put(context, :mutated?, true)}
+        end
+      end
+
       reactor =
         HaltingReactor.reactor()
-        |> Builder.on_halt!(fn context ->
-          {:ok, Map.put(context, :mutated?, true)}
-        end)
+        |> Builder.add_middleware!(MutateHaltMiddleware)
 
       {:halted, halted_reactor} = Reactor.run(reactor, %{}, %{mutated?: false})
       assert halted_reactor.context.mutated?
@@ -66,27 +80,41 @@ defmodule Reactor.Executor.HooksTest do
     end
 
     test "error hooks can mutate the error" do
-      reactor =
-        ErrorReactor.reactor()
-        |> Builder.on_error!(fn errors, _ ->
+      defmodule MutateErrorMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def error(errors, _context) do
           [error] = List.wrap(errors)
           assert is_exception(error, RuntimeError)
           assert Exception.message(error) == "hell"
 
           {:error, :wat}
-        end)
+        end
+      end
+
+      reactor =
+        ErrorReactor.reactor()
+        |> Builder.add_middleware!(MutateErrorMiddleware)
 
       assert {:error, :wat} = Reactor.run(reactor, %{}, %{})
     end
 
     test "error hooks can see the context" do
-      reactor =
-        ErrorReactor.reactor()
-        |> Builder.on_error!(fn _errors, context ->
+      defmodule ErrorContextMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def error(_errors, context) do
           assert context.is_context?
 
           :ok
-        end)
+        end
+      end
+
+      reactor =
+        ErrorReactor.reactor()
+        |> Builder.add_middleware!(ErrorContextMiddleware)
 
       assert {:error, [%RuntimeError{message: "hell"}]} =
                Reactor.run(reactor, %{}, %{is_context?: true})
@@ -104,22 +132,38 @@ defmodule Reactor.Executor.HooksTest do
     end
 
     test "completion hooks can change the result" do
+      defmodule CompleteMutateMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def complete(result, _context) do
+          assert result == :ok
+          {:ok, :wat}
+        end
+      end
+
       reactor =
         SimpleReactor.reactor()
-        |> Builder.on_complete!(fn :ok, _ ->
-          {:ok, :wat}
-        end)
+        |> Builder.add_middleware!(CompleteMutateMiddleware)
 
       assert {:ok, :wat} = Reactor.run(reactor, %{}, %{})
     end
 
     test "completion hooks can see the context" do
+      defmodule CompleteContextMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def complete(result, context) do
+          assert context.is_context?
+
+          {:ok, result}
+        end
+      end
+
       reactor =
         SimpleReactor.reactor()
-        |> Builder.on_complete!(fn result, context ->
-          assert context.is_context?
-          {:ok, result}
-        end)
+        |> Builder.add_middleware!(CompleteContextMiddleware)
 
       assert {:ok, :ok} = Reactor.run(reactor, %{}, %{is_context?: true})
     end

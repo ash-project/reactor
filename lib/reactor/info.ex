@@ -15,8 +15,9 @@ defmodule Reactor.Info do
   def to_struct(reactor) when is_struct(reactor, Reactor), do: {:ok, reactor}
 
   def to_struct(module) do
-    with {:ok, reactor} <- entities_to_struct(module) do
-      maybe_set_return(module, reactor)
+    with {:ok, reactor} <- entities_to_struct(module),
+         {:ok, reactor} <- maybe_set_return(module, reactor) do
+      add_middleware(module, reactor)
     end
   end
 
@@ -50,5 +51,11 @@ defmodule Reactor.Info do
       {:ok, value} -> {:ok, %{reactor | return: value}}
       :error -> {:ok, reactor}
     end
+  end
+
+  defp add_middleware(module, reactor) do
+    module
+    |> reactor_middlewares()
+    |> reduce_while_ok(reactor, &Dsl.Build.build/2)
   end
 end

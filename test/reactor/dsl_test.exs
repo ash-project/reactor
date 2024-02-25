@@ -138,4 +138,32 @@ defmodule Reactor.DslTest do
       end
     end
   end
+
+  describe "middlewares" do
+    test "middlewares can be added to a module" do
+      defmodule ExampleMiddleware do
+        @moduledoc false
+        use Reactor.Middleware
+      end
+
+      defmodule MiddlewareReactor do
+        @moduledoc false
+        use Reactor
+
+        middlewares do
+          middleware ExampleMiddleware
+        end
+
+        step :noop do
+          run fn _, _ -> {:ok, :noop} end
+        end
+      end
+
+      middlewares =
+        MiddlewareReactor.reactor()
+        |> Map.fetch!(:middleware)
+
+      assert middlewares == [ExampleMiddleware]
+    end
+  end
 end
