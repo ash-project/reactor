@@ -87,7 +87,7 @@ defmodule Reactor.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:spark, "~> 1.0"},
+      {:spark, "~> 2.0"},
       {:libgraph, "~> 0.16"},
 
       # Dev/Test dependencies
