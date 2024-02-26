@@ -4,6 +4,13 @@ defmodule Reactor.Dsl do
   alias Reactor.Dsl
   alias Spark.Dsl.{Extension, Section}
 
+  @middleware %Section{
+    name: :middlewares,
+    describe: "Middleware to be added to the Reactor",
+    entities: [Dsl.Middleware.__entity__()],
+    patchable?: true
+  }
+
   @reactor %Section{
     name: :reactor,
     describe: "The top-level reactor DSL",
@@ -26,6 +33,7 @@ defmodule Reactor.Dsl do
       Dsl.Step.__entity__(),
       Dsl.Switch.__entity__()
     ],
+    sections: [@middleware],
     top_level?: true,
     patchable?: true
   }

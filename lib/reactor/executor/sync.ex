@@ -68,7 +68,7 @@ defmodule Reactor.Executor.Sync do
   end
 
   defp increment_retries(state, step) do
-    %{state | retries: Map.update(state.retries, step.ref, 1, &(&1 + 1))}
+    %{state | retries: Map.update(state.retries, step.ref, 0, &(&1 + 1))}
   end
 
   defp drop_from_plan(reactor, step) do

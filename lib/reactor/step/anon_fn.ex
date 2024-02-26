@@ -70,4 +70,10 @@ defmodule Reactor.Step.AnonFn do
         :ok
     end
   end
+
+  @doc false
+  @impl true
+  def can?(%{impl: {_, opts}}, :undo), do: is_function(Keyword.get(opts, :undo))
+  def can?(%{impl: {_, opts}}, :compensate), do: is_function(Keyword.get(opts, :compensate))
+  def can?(_, _), do: false
 end

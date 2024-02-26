@@ -29,11 +29,20 @@ defmodule Reactor.Executor.Async do
     locked_concurrency =
       acquire_concurrency_resource_from_pool(state.concurrency_key, available_steps)
 
+    process_contexts = Executor.Hooks.get_process_contexts(reactor)
+
     started =
       steps
       |> Enum.take(locked_concurrency)
       |> Enum.reduce_while(%{}, fn step, started ->
-        case start_task_for_step(reactor, state, step, supervisor, state.concurrency_key) do
+        case start_task_for_step(
+               reactor,
+               state,
+               step,
+               supervisor,
+               state.concurrency_key,
+               process_contexts
+             ) do
           {:ok, task} -> {:cont, Map.put(started, task, step)}
           {:error, reason} -> {:halt, {:error, reason}}
         end
@@ -48,13 +57,13 @@ defmodule Reactor.Executor.Async do
     end
   end
 
-  defp start_task_for_step(reactor, state, step, supervisor, pool_key) do
+  defp start_task_for_step(reactor, state, step, supervisor, pool_key, process_contexts) do
     {:ok,
      Task.Supervisor.async_nolink(
        supervisor,
        Executor.StepRunner,
-       :run,
-       [reactor, state, step, pool_key]
+       :run_async,
+       [reactor, state, step, pool_key, process_contexts]
      )}
   rescue
     error -> {:error, error}

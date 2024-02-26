@@ -18,7 +18,7 @@ defmodule Reactor.Builder do
   ```
   """
 
-  alias Reactor.{Argument, Builder, Step}
+  alias Reactor.{Argument, Builder, Middleware, Step}
   import Reactor, only: :macros
   import Reactor.Utils
 
@@ -226,108 +226,96 @@ defmodule Reactor.Builder do
   end
 
   @doc """
-  Add an initialiser hook to the Reactor.
+  Add a middleware to the Reactor.
+
+  Returns an error if the middleware is already present on the Reactor.
   """
-  @spec on_init(Reactor.t(), Reactor.init_hook()) :: {:ok, Reactor.t()} | {:error, any}
-  def on_init(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
-    do: add_hook(reactor, :init, {m, f, a})
-
-  def on_init(reactor, hook) when is_function(hook, 1),
-    do: add_hook(reactor, :init, hook)
-
-  def on_init(_reactor, hook),
-    do: {:error, argument_error(:hook, "Not a valid initialisation hook", hook)}
+  @spec add_middleware(Reactor.t(), Middleware.t()) :: {:ok, Reactor.t()} | {:error, any}
+  def add_middleware(reactor, middleware) when is_reactor(reactor) and is_atom(middleware) do
+    with :ok <- assert_unique_middleware(reactor, middleware),
+         :ok <- assert_is_middleware(middleware) do
+      {:ok, %{reactor | middleware: [middleware | reactor.middleware]}}
+    end
+  end
 
   @doc """
-  Raising version of `on_init/2`.
+  Raising version of `add_middleware/2`.
   """
-  @spec on_init!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
-  def on_init!(reactor, hook) do
-    case on_init(reactor, hook) do
+  @spec add_middleware!(Reactor.t(), Middleware.t()) :: Reactor.t() | no_return
+  def add_middleware!(reactor, middleware) do
+    case add_middleware(reactor, middleware) do
       {:ok, reactor} -> reactor
       {:error, reason} -> raise reason
     end
   end
 
   @doc """
-  Add an error hook to the Reactor.
+  Ensure that a middleware is present on the Reactor.
   """
-  @spec on_error(Reactor.t(), Reactor.init_hook()) :: {:ok, Reactor.t()} | {:error, any}
-  def on_error(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
-    do: add_hook(reactor, :error, {m, f, a})
-
-  def on_error(reactor, hook) when is_function(hook, 2),
-    do: add_hook(reactor, :error, hook)
-
-  def on_error(_reactor, hook),
-    do: {:error, argument_error(:hook, "Not a valid error hook", hook)}
+  @spec ensure_middleware(Reactor.t(), Middleware.t()) :: {:ok, Reactor.t()} | {:error, any}
+  def ensure_middleware(reactor, middleware) when is_reactor(reactor) and is_atom(middleware) do
+    with false <- middleware in reactor.middleware,
+         :ok <- assert_is_middleware(middleware) do
+      {:ok, %{reactor | middleware: [middleware | reactor.middleware]}}
+    else
+      true -> {:ok, reactor}
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   @doc """
-  Raising version of `on_error/2`.
+  Raising version of `ensure_middleware/2`.
   """
-  @spec on_error!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
-  def on_error!(reactor, hook) do
-    case on_error(reactor, hook) do
+  @spec ensure_middleware!(Reactor.t(), Middleware.t()) :: Reactor.t() | no_return
+  def ensure_middleware!(reactor, middleware) do
+    case ensure_middleware(reactor, middleware) do
       {:ok, reactor} -> reactor
       {:error, reason} -> raise reason
     end
   end
 
-  @doc """
-  Add a completion hook to the Reactor.
-  """
-  @spec on_complete(Reactor.t(), Reactor.complete_hook()) :: {:ok, Reactor.t()} | {:error, any}
-  def on_complete(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
-    do: add_hook(reactor, :complete, {m, f, a})
-
-  def on_complete(reactor, hook) when is_function(hook, 2),
-    do: add_hook(reactor, :complete, hook)
-
-  def on_complete(_reactor, hook),
-    do: {:error, argument_error(:hook, "Not a valid completion hook", hook)}
-
-  @doc """
-  Raising version of `on_complete/2`.
-  """
-  @spec on_complete!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
-  def on_complete!(reactor, hook) do
-    case on_complete(reactor, hook) do
-      {:ok, reactor} -> reactor
-      {:error, reason} -> raise reason
+  defp assert_unique_middleware(reactor, middleware) do
+    if middleware in reactor.middleware do
+      argument_error(:middleware, "Middleware is already registered on this Reactor.", middleware)
+    else
+      :ok
     end
   end
 
-  @doc """
-  Add a halt hook to the Reactor.
-  """
-  @spec on_halt(Reactor.t(), Reactor.halt_hook()) :: {:ok, Reactor.t()} | {:error, any}
-  def on_halt(reactor, {m, f, a}) when is_atom(m) and is_atom(f) and is_list(a),
-    do: add_hook(reactor, :halt, {m, f, a})
-
-  def on_halt(reactor, hook) when is_function(hook, 1),
-    do: add_hook(reactor, :halt, hook)
-
-  def on_halt(_reactor, hook),
-    do: {:error, argument_error(:hook, "Not a valid completion hook", hook)}
-
-  @doc """
-  Raising version of `on_halt/2`.
-  """
-  @spec on_halt!(Reactor.t(), Reactor.init_hook()) :: Reactor.t() | no_return
-  def on_halt!(reactor, hook) do
-    case on_halt(reactor, hook) do
-      {:ok, reactor} -> reactor
-      {:error, reason} -> raise reason
+  defp assert_is_middleware(middleware) do
+    if Spark.implements_behaviour?(middleware, Middleware) do
+      assert_middleware_process_callbacks(
+        middleware,
+        function_exported?(middleware, :get_process_context, 0),
+        function_exported?(middleware, :set_process_context, 1)
+      )
+    else
+      {:error,
+       argument_error(
+         :middleware,
+         "Module does not implement the `Middleware` behaviour.",
+         middleware
+       )}
     end
   end
 
-  defp add_hook(reactor, type, hook) when is_reactor(reactor) do
-    hooks =
-      reactor.hooks
-      |> Map.update(type, [hook], &Enum.concat(&1, [hook]))
-
-    {:ok, %{reactor | hooks: hooks}}
+  defp assert_middleware_process_callbacks(middleware, true, false) do
+    {:error,
+     argument_error(
+       :middleware,
+       "When `get_process_context/0` is implemented `set_process_context/1` must also be implemented.",
+       middleware
+     )}
   end
 
-  defp add_hook(reactor, _, _), do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
+  defp assert_middleware_process_callbacks(middleware, false, true) do
+    {:error,
+     argument_error(
+       :middleware,
+       "When `set_process_context/1` is implemented `get_process_context/0` must also be implemented.",
+       middleware
+     )}
+  end
+
+  defp assert_middleware_process_callbacks(_, _, _), do: :ok
 end

@@ -27,6 +27,8 @@ spark_locals_without_parens = [
   matches?: 1,
   matches?: 2,
   max_retries: 1,
+  middleware: 1,
+  middleware: 2,
   on: 1,
   return: 1,
   run: 1,
