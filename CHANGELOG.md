@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.6.0](https://github.com/ash-project/reactor/compare/v0.5.2...v0.6.0) (2024-02-26)
+### Breaking Changes:
+
+* Remove hooks and replace with middleware behaviour. (#90)
+
+* Remove hooks and replace with middleware behaviour.
+
+
+
+### Improvements:
+
+* Middleware: Add `get_process_context/0` and `set_process_context/1` middleware hooks.
+
+* Add step event callback to middleware.
+
 ## [v0.5.2](https://github.com/ash-project/reactor/compare/v0.5.1...v0.5.2) (2024-02-18)
 
 
