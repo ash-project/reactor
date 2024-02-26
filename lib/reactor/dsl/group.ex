@@ -52,7 +52,7 @@ defmodule Reactor.Dsl.Group do
           """
         ],
         after_all: [
-          type: {:mfa_or_fun, 3},
+          type: {:mfa_or_fun, 1},
           required: true,
           doc: """
           The after function. See `Reactor.Step.Group` for more information.
