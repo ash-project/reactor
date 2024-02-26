@@ -62,7 +62,7 @@ defmodule Reactor.Executor.Async do
      Task.Supervisor.async_nolink(
        supervisor,
        Executor.StepRunner,
-       :run,
+       :run_async,
        [reactor, state, step, pool_key, process_contexts]
      )}
   rescue

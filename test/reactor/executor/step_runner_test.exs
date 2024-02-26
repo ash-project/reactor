@@ -174,7 +174,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> {:continue, :marty} end)
 
-      assert {:ok, :marty} = run(reactor, state, step, nil)
+      assert {:ok, :marty, []} = run(reactor, state, step, nil)
     end
 
     test "when a step returns an error and can be compensated and the compensation succeed it returns an error tuple",

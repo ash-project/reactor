@@ -7,16 +7,15 @@ defmodule Reactor.Executor.StepRunner do
   import Reactor.Argument, only: :macros
   require Logger
 
+  # In the future this could be moved into a step property.
   @max_undo_count 5
 
   @doc """
   Collect the arguments and and run a step, with compensation if required.
   """
-  @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key(), nil | map) ::
+  @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
           {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
-  def run(reactor, state, step, concurrency_key, process_contexts \\ nil) do
-    if process_contexts, do: Hooks.set_process_contexts(process_contexts)
-
+  def run(reactor, state, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
@@ -29,10 +28,26 @@ defmodule Reactor.Executor.StepRunner do
 
       metadata_stack = Process.get(:__reactor__, [])
       Process.put(:__reactor__, [metadata | metadata_stack])
-      result = do_run(step, arguments, context)
+      result = do_run(reactor, step, arguments, context)
       Process.put(:__reactor__, metadata_stack)
       result
     end
+  end
+
+  @doc """
+  Run a step inside a task.
+
+  This is a simple wrapper around `run/4` except that it emits more events.
+  """
+  @spec run_async(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key(), map) ::
+          {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
+  def run_async(reactor, state, step, concurrency_key, process_contexts) do
+    Hooks.set_process_contexts(process_contexts)
+    Hooks.event(reactor, {:process_start, self()}, step, reactor.context)
+
+    run(reactor, state, step, concurrency_key)
+  after
+    Hooks.event(reactor, {:process_terminate, self()}, step, reactor.context)
   end
 
   @doc """
@@ -44,59 +59,146 @@ defmodule Reactor.Executor.StepRunner do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
-      do_undo(value, step, arguments, context)
+      Hooks.event(reactor, :undo_start, step, context)
+
+      do_undo(reactor, value, step, arguments, context, 0)
     end
   end
 
-  defp do_undo(value, step, arguments, context, undo_count \\ 0)
+  defp do_undo(reactor, _value, step, _arguments, context, undo_count)
+       when undo_count == @max_undo_count do
+    reason = "`undo/4` retried #{@max_undo_count} times on step `#{inspect(step.name)}`."
 
-  defp do_undo(_value, step, _arguments, _context, @max_undo_count),
-    do: {:error, "`undo/4` retried #{@max_undo_count} times on step `#{inspect(step.name)}`."}
+    Hooks.event(reactor, {:undo_error, reason}, step, context)
 
-  defp do_undo(value, step, arguments, context, undo_count) do
+    {:error, reason}
+  end
+
+  defp do_undo(reactor, value, step, arguments, context, undo_count) do
     case Step.undo(step, value, arguments, context) do
-      :ok -> :ok
-      :retry -> do_undo(value, step, arguments, context, undo_count + 1)
+      :ok ->
+        Hooks.event(reactor, :undo_complete, step, context)
+
+        :ok
+
+      :retry ->
+        Hooks.event(reactor, :undo_retry, step, context)
+        do_undo(reactor, value, step, arguments, context, undo_count + 1)
+
+      {:retry, reason} ->
+        Hooks.event(reactor, {:undo_retry, reason}, step, context)
+        do_undo(reactor, value, step, arguments, context, undo_count + 1)
+
+      {:error, reason} ->
+        Hooks.event(reactor, {:undo_error, reason}, step, context)
+        {:error, reason}
     end
   end
 
-  defp do_run(step, arguments, context) do
-    case Step.run(step, arguments, context) do
-      {:ok, value} -> {:ok, value, []}
-      {:ok, value, steps} when is_list(steps) -> {:ok, value, steps}
-      {:retry, reason} -> {:retry, reason}
-      :retry -> :retry
-      {:error, reason} -> maybe_compensate(step, reason, arguments, context)
-      {:halt, value} -> {:halt, value}
-    end
+  defp do_run(reactor, step, arguments, context) do
+    Hooks.event(reactor, {:run_start, arguments}, step, context)
+
+    step
+    |> Step.run(arguments, context)
+    |> handle_run_result(reactor, step, arguments, context)
   rescue
-    reason -> maybe_compensate(step, reason, arguments, context)
+    reason ->
+      Hooks.event(reactor, {:run_error, reason}, step, context)
+
+      maybe_compensate(reactor, step, reason, arguments, context)
   end
 
-  defp maybe_compensate(step, reason, arguments, context) do
+  defp handle_run_result({:ok, value}, reactor, step, _arguments, context) do
+    Hooks.event(reactor, {:run_complete, value}, step, context)
+
+    {:ok, value, []}
+  end
+
+  defp handle_run_result({:ok, value, steps}, reactor, step, _arguments, context)
+       when is_list(steps) do
+    Hooks.event(reactor, {:run_complete, value}, step, context)
+
+    {:ok, value, steps}
+  end
+
+  defp handle_run_result({:retry, reason}, reactor, step, _arguments, context) do
+    Hooks.event(reactor, {:run_retry, reason}, step, context)
+
+    {:retry, reason}
+  end
+
+  defp handle_run_result(:retry, reactor, step, _arguments, context) do
+    Hooks.event(reactor, :run_retry, step, context)
+
+    :retry
+  end
+
+  defp handle_run_result({:error, reason}, reactor, step, arguments, context) do
+    Hooks.event(reactor, {:run_error, reason}, step, context)
+
+    maybe_compensate(reactor, step, reason, arguments, context)
+  end
+
+  defp handle_run_result({:halt, value}, reactor, step, _arguments, context) do
+    Hooks.event(reactor, {:run_halt, value}, step, context)
+
+    {:halt, value}
+  end
+
+  defp maybe_compensate(reactor, step, reason, arguments, context) do
     if Step.can?(step, :compensate) do
-      compensate(step, reason, arguments, context)
+      compensate(reactor, step, reason, arguments, context)
     else
       {:error, reason}
     end
   end
 
-  defp compensate(step, reason, arguments, context) do
-    case Step.compensate(step, reason, arguments, context) do
-      {:continue, value} -> {:ok, value}
-      {:retry, reason} -> {:retry, reason}
-      :retry -> {:retry, reason}
-      {:error, reason} -> {:error, reason}
-      :ok -> {:error, reason}
-    end
+  defp compensate(reactor, step, reason, arguments, context) do
+    Hooks.event(reactor, {:compensate_start, reason}, step, context)
+
+    step
+    |> Step.compensate(reason, arguments, context)
+    |> handle_compensate_result(reactor, step, context, reason)
   rescue
     error ->
+      Hooks.event(reactor, {:compensate_error, reason}, step, context)
+
       Logger.error(fn ->
         "Warning: step `#{inspect(step.name)}` `compensate/4` raised an error:\n" <>
           Exception.format(:error, error, __STACKTRACE__)
       end)
 
       {:error, reason}
+  end
+
+  defp handle_compensate_result({:continue, value}, reactor, step, context, _) do
+    Hooks.event(reactor, {:compensate_continue, value}, step, context)
+
+    {:ok, value, []}
+  end
+
+  defp handle_compensate_result({:retry, reason}, reactor, step, context, _) do
+    Hooks.event(reactor, {:compensate_retry, reason}, step, context)
+
+    {:retry, reason}
+  end
+
+  defp handle_compensate_result(:retry, reactor, step, context, reason) do
+    Hooks.event(reactor, :compensate_retry, step, context)
+
+    {:retry, reason}
+  end
+
+  defp handle_compensate_result({:error, reason}, reactor, step, context, _) do
+    Hooks.event(reactor, {:compensate_error, reason}, step, context)
+
+    {:error, reason}
+  end
+
+  defp handle_compensate_result(:ok, reactor, step, context, reason) do
+    Hooks.event(reactor, :compensate_complete, step, context)
+
+    {:error, reason}
   end
 
   defp get_step_arguments(reactor, step) do

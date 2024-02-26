@@ -18,6 +18,27 @@ defmodule Reactor.Middleware do
   @type result :: any
   @type error_or_errors :: Exception.t() | [Exception.t()]
 
+  @type step_event ::
+          :compensate_complete
+          | :compensate_retry
+          | :run_retry
+          | :undo_complete
+          | :undo_retry
+          | :undo_start
+          | {:compensate_continue, any}
+          | {:compensate_error, error_or_errors}
+          | {:compensate_retry, any}
+          | {:compensate_start, any}
+          | {:process_start, pid}
+          | {:process_terminate, pid}
+          | {:run_complete, result}
+          | {:run_error, error_or_errors()}
+          | {:run_halt, any}
+          | {:run_retry, any}
+          | {:run_start, arguments :: Reactor.inputs()}
+          | {:undo_error, error_or_errors()}
+          | {:undo_retry, any}
+
   @doc """
   The complete callback will be called with the successful result of the
   Reactor.
@@ -81,8 +102,17 @@ defmodule Reactor.Middleware do
   """
   @callback set_process_context(any) :: :ok
 
+  @doc """
+  Receive events about the execution of the Reactor.
+
+  This callback will block the Reactor, so it's encouraged that you do anything
+  expensive in another process.
+  """
+  @callback event(step_event, Reactor.Step.t(), Reactor.context()) :: :ok
+
   @optional_callbacks complete: 2,
                       error: 2,
+                      event: 3,
                       halt: 1,
                       init: 1,
                       get_process_context: 0,

@@ -68,9 +68,7 @@ defmodule Reactor.Executor.Hooks do
   end
 
   @doc "Run set_process_context hooks given the result of `get_process_contexts/1`"
-  @spec set_process_contexts(nil | %{optional(Middleware.t()) => any}) :: :ok
-  def set_process_contexts(nil), do: :ok
-
+  @spec set_process_contexts(%{optional(Middleware.t()) => any}) :: :ok
   def set_process_contexts(contexts) do
     for {middleware, context} <- contexts do
       if function_exported?(middleware, :set_process_context, 1) do
@@ -79,6 +77,18 @@ defmodule Reactor.Executor.Hooks do
         Logger.warning(
           "Unable to set process context for middleware `#{inspect(middleware)}`: `set_process_context/1` is not defined."
         )
+      end
+    end
+
+    :ok
+  end
+
+  @doc "Emit a step event."
+  @spec event(Reactor.t(), Middleware.step_event(), Reactor.Step.t(), Reactor.context()) :: :ok
+  def event(reactor, event, step, context) do
+    for middleware <- reactor.middleware do
+      if function_exported?(middleware, :event, 3) do
+        middleware.event(event, step, context)
       end
     end
 
