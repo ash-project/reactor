@@ -22,6 +22,7 @@ defmodule Reactor.Dsl.Middleware do
       target: __MODULE__,
       args: [:module],
       identifier: :module,
+      modules: [:module],
       schema: [
         module: [
           type: {:behaviour, Middleware},
