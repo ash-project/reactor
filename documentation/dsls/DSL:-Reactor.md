@@ -699,7 +699,7 @@ Call functions before and after a group of steps.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`before_all`](#reactor-group-before_all){: #reactor-group-before_all .spark-required} | `(any, any, any -> any) \| mfa` |  | The before function. See `Reactor.Step.Group` for more information. |
-| [`after_all`](#reactor-group-after_all){: #reactor-group-after_all .spark-required} | `(any, any, any -> any) \| mfa` |  | The after function. See `Reactor.Step.Group` for more information. |
+| [`after_all`](#reactor-group-after_all){: #reactor-group-after_all .spark-required} | `(any -> any) \| mfa` |  | The after function. See `Reactor.Step.Group` for more information. |
 | [`allow_async?`](#reactor-group-allow_async?){: #reactor-group-allow_async? } | `boolean` | `true` | Whether the emitted steps should be allowed to run asynchronously. |
 
 
