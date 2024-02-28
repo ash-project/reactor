@@ -8,6 +8,15 @@ defmodule Reactor.Executor.Hooks do
   @doc "Run the init hooks collecting the new context as it goes"
   @spec init(Reactor.t(), Reactor.context()) :: {:ok, Reactor.context()} | {:error, any}
   def init(reactor, context) do
+    context =
+      Map.put(context, :__reactor__, %{
+        id: reactor.id,
+        inputs: reactor.inputs,
+        middleware: reactor.middleware,
+        step_count: step_count(reactor),
+        initial_state: reactor.state
+      })
+
     Utils.reduce_while_ok(reactor.middleware, context, fn middleware, context ->
       if function_exported?(middleware, :init, 1) do
         middleware.init(context)
@@ -93,5 +102,12 @@ defmodule Reactor.Executor.Hooks do
     end
 
     :ok
+  end
+
+  defp step_count(reactor) when is_nil(reactor.plan), do: length(reactor.steps)
+
+  defp step_count(reactor) do
+    vertices = Graph.num_vertices(reactor.plan)
+    length(reactor.steps) + vertices
   end
 end

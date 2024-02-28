@@ -40,6 +40,8 @@ defmodule Reactor.MixProject do
         groups_for_modules: [
           DSL: ~r/^Reactor\.Dsl$/,
           Steps: ~r/^Reactor\.Step.*/,
+          Middleware: ~r/^Reactor\.Middleware.*/,
+          Builder: ~r/^Reactor\.Builder.*/,
           Internals: ~r/^Reactor\..*/
         ],
         extra_section: "GUIDES",
@@ -89,6 +91,7 @@ defmodule Reactor.MixProject do
     [
       {:spark, "~> 1.0"},
       {:libgraph, "~> 0.16"},
+      {:telemetry, "~> 1.2"},
 
       # Dev/Test dependencies
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
