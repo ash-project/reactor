@@ -5,6 +5,25 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.7.0](https://github.com/ash-project/reactor/compare/v0.6.0...v0.7.0) (2024-02-28)
+
+
+
+
+### Features:
+
+* Add telemetry middleware. (#93)
+
+* Add a middleware which emits telemetry events about Reactor.
+
+### Bug Fixes:
+
+* incorrect function arity for `Group.after_fun` DSL.
+
+### Improvements:
+
+* don't incur compile-time dependencies on middleware.
+
 ## [v0.6.0](https://github.com/ash-project/reactor/compare/v0.5.2...v0.6.0) (2024-02-26)
 ### Breaking Changes:
 
