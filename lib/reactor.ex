@@ -140,11 +140,11 @@ defmodule Reactor do
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, inputs, context, options) when is_atom(reactor) do
-    with Reactor <- reactor.spark_is() do
+    if Spark.Dsl.is?(reactor, Reactor) do
       run(reactor.reactor(), inputs, context, options)
+    else
+      {:error, "Module `#{inspect(reactor)}` is not a Reactor module"}
     end
-  rescue
-    UndefinedFunctionError -> {:error, "Module `#{inspect(reactor)}` is not a Reactor module"}
   end
 
   def run(reactor, inputs, context, options)
