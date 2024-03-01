@@ -8,6 +8,6 @@ defmodule Reactor.Template do
   @type t :: Input.t() | Result.t() | Value.t()
 
   @doc "The type for use in option schemas"
-  @spec type :: Spark.OptionsHelpers.type()
+  @spec type :: Spark.Options.type()
   def type, do: {:or, [{:struct, Input}, {:struct, Result}, {:struct, Value}]}
 end
