@@ -9,7 +9,7 @@ defmodule Reactor.Step.TransformTest do
 
   describe "run/3" do
     test "when the value argument is missing" do
-      assert {:error, error} = run(%{}, %{}, [])
+      assert {:error, error} = run(%{}, %{current_step: :current_step}, [])
       assert Exception.message(error) =~ "argument is missing"
     end
 

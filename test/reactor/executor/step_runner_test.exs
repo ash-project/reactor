@@ -1,7 +1,18 @@
 defmodule Reactor.Executor.StepRunnerTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Argument, Builder, Executor.State, Template}
+
+  alias Reactor.{
+    Argument,
+    Builder,
+    Error.Invalid.ArgumentSubpathError,
+    Error.Invalid.MissingResultError,
+    Error.Invalid.RunStepError,
+    Error.Invalid.UndoRetriesExceededError,
+    Executor.State,
+    Template
+  }
+
   import Reactor.Executor.StepRunner
   use Mimic
 
@@ -21,8 +32,8 @@ defmodule Reactor.Executor.StepRunnerTest do
       {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable, [argument])
       step = reactor.steps |> hd()
 
-      assert {:error, reason} = run(reactor, state, step, nil)
-      assert reason =~ "argument `:current_year` is missing"
+      assert {:error, %MissingResultError{argument: %{source: %{name: :time_circuits}}}} =
+               run(reactor, state, step, nil)
     end
 
     test "when the required argument cannot be subpathed, it returns an error", %{
@@ -40,8 +51,8 @@ defmodule Reactor.Executor.StepRunnerTest do
       step = reactor.steps |> hd()
       reactor = %{reactor | intermediate_results: %{time_circuits: 1985}}
 
-      assert {:error, reason} = run(reactor, state, step, nil)
-      assert reason == "Unable to resolve subpath for argument `:current_year` at key `[:year]`"
+      assert {:error, %ArgumentSubpathError{argument: %{name: :current_year}}} =
+               run(reactor, state, step, nil)
     end
 
     test "when the required argument can be subpathed, it calls the step with the correct arguments",
@@ -145,7 +156,7 @@ defmodule Reactor.Executor.StepRunnerTest do
         {:error, :doc}
       end)
 
-      assert {:error, :doc} = run(reactor, state, step, nil)
+      assert {:error, %RunStepError{error: :doc}} = run(reactor, state, step, nil)
     end
 
     test "when a step raises an error it returns an error tuple", %{
@@ -161,8 +172,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       end)
 
       assert {:error, error} = run(reactor, state, step, nil)
-      assert is_struct(error, RuntimeError)
-      assert Exception.message(error) == "Not enough plutonium!"
+      assert Exception.message(error) =~ "Not enough plutonium!"
     end
 
     test "when a step returns an error and can be compensated and the compensation says it can continue it returns an ok tuple",
@@ -186,7 +196,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> :ok end)
 
-      assert {:error, :doc} = run(reactor, state, step, nil)
+      assert {:error, %RunStepError{error: :doc}} = run(reactor, state, step, nil)
     end
   end
 
@@ -241,8 +251,8 @@ defmodule Reactor.Executor.StepRunnerTest do
       Example.Step.Undoable
       |> stub(:undo, fn _, _, _, _ -> :retry end)
 
-      assert {:error, message} = undo(reactor, state, step, :marty, nil)
-      assert message =~ "retried 5 times"
+      assert {:error, %UndoRetriesExceededError{step: :marty}} =
+               undo(reactor, state, step, :marty, nil)
     end
   end
 end

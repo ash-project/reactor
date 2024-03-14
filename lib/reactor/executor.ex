@@ -35,8 +35,15 @@ defmodule Reactor.Executor do
   3. When a step or compensation asks for a retry then the step is placed back
      in the graph to be run again next iteration.
   """
-  alias Reactor.Executor.ConcurrencyTracker
-  alias Reactor.{Executor, Planner, Step}
+  alias Reactor.{
+    Error.Internal.MissingReturnResultError,
+    Error.Validation.MissingReturnError,
+    Error.Validation.StateError,
+    Executor,
+    Executor.ConcurrencyTracker,
+    Planner,
+    Step
+  }
 
   @doc """
   Run a reactor.
@@ -51,7 +58,7 @@ defmodule Reactor.Executor do
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, _inputs, _context, _options) when is_nil(reactor.return),
-    do: {:error, ArgumentError.exception("`reactor` has no return value")}
+    do: {:error, MissingReturnError.exception(reactor: reactor)}
 
   def run(reactor, inputs, context, options) when reactor.state in ~w[pending halted]a do
     with {:ok, context} <- Executor.Hooks.init(reactor, context),
@@ -60,8 +67,14 @@ defmodule Reactor.Executor do
     end
   end
 
-  def run(_reactor, _inputs, _context, _options),
-    do: {:error, ArgumentError.exception("`reactor` is not in `pending` or `halted` state")}
+  def run(reactor, _inputs, _context, _options),
+    do:
+      {:error,
+       StateError.exception(
+         reactor: reactor,
+         state: reactor.state,
+         expected: ~w[pending halted]a
+       )}
 
   defp execute(reactor, state) when state.max_iterations == 0 do
     {reactor, _status} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
@@ -219,7 +232,8 @@ defmodule Reactor.Executor do
   end
 
   defp handle_undo(reactor, state, []) do
-    Executor.Hooks.error(reactor, state.errors, reactor.context)
+    error = Reactor.Error.to_class(state.errors)
+    Executor.Hooks.error(reactor, error, reactor.context)
   end
 
   defp handle_undo(reactor, state, [{step, value} | tail]) do
@@ -234,8 +248,11 @@ defmodule Reactor.Executor do
          {:ok, value} <- Map.fetch(reactor.intermediate_results, reactor.return) do
       {:ok, value}
     else
-      :error -> {:error, "Unable to find result for `#{inspect(reactor.return)}` step"}
-      n when is_integer(n) -> {:continue, reactor}
+      :error ->
+        {:error, MissingReturnResultError.exception(reactor: reactor)}
+
+      n when is_integer(n) ->
+        {:continue, reactor}
     end
   end
 

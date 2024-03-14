@@ -11,7 +11,7 @@ defmodule Reactor.Builder.Compose do
   import Reactor, only: :macros
   import Reactor.Argument, only: :macros
   import Reactor.Utils
-  alias Reactor.{Argument, Builder, Error.ComposeError, Step}
+  alias Reactor.{Argument, Builder, Error.Internal.ComposeError, Step}
 
   @doc """
   Compose another Reactor inside this one.

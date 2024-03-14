@@ -143,7 +143,8 @@ defmodule Reactor do
     if Spark.Dsl.is?(reactor, Reactor) do
       run(reactor.reactor(), inputs, context, options)
     else
-      {:error, "Module `#{inspect(reactor)}` is not a Reactor module"}
+      {:error,
+       ArgumentError.exception(message: "Module `#{inspect(reactor)}` is not a Reactor module")}
     end
   end
 

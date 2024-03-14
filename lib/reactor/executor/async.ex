@@ -3,8 +3,9 @@ defmodule Reactor.Executor.Async do
   Handle the asynchronous execution of a batch of steps, along with any
   mutations to the reactor or execution state.
   """
+  alias Reactor.Error.Invalid.RetriesExceededError, as: RetriesExceededError
   alias Reactor.Executor.ConcurrencyTracker
-  alias Reactor.{Error, Executor, Step}
+  alias Reactor.{Executor, Step}
   require Logger
 
   @doc """
@@ -276,7 +277,7 @@ defmodule Reactor.Executor.Async do
           reason
 
         {step, :retry} ->
-          Error.RetriesExceededError.exception(
+          RetriesExceededError.exception(
             step: step,
             retry_count: Map.get(state.retries, step.ref)
           )

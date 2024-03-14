@@ -1,6 +1,16 @@
 defmodule Reactor.Builder.ComposeTest do
   use ExUnit.Case, async: true
-  alias Reactor.{Argument, Builder, Builder.Compose, Error.ComposeError, Planner, Step, Template}
+
+  alias Reactor.{
+    Argument,
+    Builder,
+    Builder.Compose,
+    Error.Internal.ComposeError,
+    Planner,
+    Step,
+    Template
+  }
+
   require Reactor.Argument
 
   describe "compose/4" do

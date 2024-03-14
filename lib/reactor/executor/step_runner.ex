@@ -2,7 +2,20 @@ defmodule Reactor.Executor.StepRunner do
   @moduledoc """
   Run an individual step, including compensation if possible.
   """
-  alias Reactor.{Executor.ConcurrencyTracker, Executor.Hooks, Executor.State, Step}
+  alias Reactor.{
+    Error.Invalid.ArgumentSubpathError,
+    Error.Invalid.CompensateStepError,
+    Error.Invalid.MissingInputError,
+    Error.Invalid.MissingResultError,
+    Error.Invalid.RunStepError,
+    Error.Invalid.UndoRetriesExceededError,
+    Error.Invalid.UndoStepError,
+    Executor.ConcurrencyTracker,
+    Executor.Hooks,
+    Executor.State,
+    Step
+  }
+
   import Reactor.Utils
   import Reactor.Argument, only: :macros
   require Logger
@@ -67,11 +80,11 @@ defmodule Reactor.Executor.StepRunner do
 
   defp do_undo(reactor, _value, step, _arguments, context, undo_count)
        when undo_count == @max_undo_count do
-    reason = "`undo/4` retried #{@max_undo_count} times on step `#{inspect(step.name)}`."
+    error = UndoRetriesExceededError.exception(step: step.name, retry_count: undo_count)
 
-    Hooks.event(reactor, {:undo_error, reason}, step, context)
+    Hooks.event(reactor, {:undo_error, error}, step, context)
 
-    {:error, reason}
+    {:error, error}
   end
 
   defp do_undo(reactor, value, step, arguments, context, undo_count) do
@@ -90,8 +103,9 @@ defmodule Reactor.Executor.StepRunner do
         do_undo(reactor, value, step, arguments, context, undo_count + 1)
 
       {:error, reason} ->
-        Hooks.event(reactor, {:undo_error, reason}, step, context)
-        {:error, reason}
+        error = UndoStepError.exception(step: step.name, error: reason)
+        Hooks.event(reactor, {:undo_error, error}, step, context)
+        {:error, error}
     end
   end
 
@@ -103,9 +117,10 @@ defmodule Reactor.Executor.StepRunner do
     |> handle_run_result(reactor, step, arguments, context)
   rescue
     reason ->
-      Hooks.event(reactor, {:run_error, reason}, step, context)
+      error = RunStepError.exception(step: step.name, error: reason)
+      Hooks.event(reactor, {:run_error, error}, step, context)
 
-      maybe_compensate(reactor, step, reason, arguments, context)
+      maybe_compensate(reactor, step, error, arguments, context)
   end
 
   defp handle_run_result({:ok, value}, reactor, step, _arguments, context) do
@@ -134,9 +149,10 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp handle_run_result({:error, reason}, reactor, step, arguments, context) do
-    Hooks.event(reactor, {:run_error, reason}, step, context)
+    error = RunStepError.exception(step: step.name, error: reason)
+    Hooks.event(reactor, {:run_error, error}, step, context)
 
-    maybe_compensate(reactor, step, reason, arguments, context)
+    maybe_compensate(reactor, step, error, arguments, context)
   end
 
   defp handle_run_result({:halt, value}, reactor, step, _arguments, context) do
@@ -145,30 +161,38 @@ defmodule Reactor.Executor.StepRunner do
     {:halt, value}
   end
 
-  defp maybe_compensate(reactor, step, reason, arguments, context) do
+  defp maybe_compensate(reactor, step, error, arguments, context) do
     if Step.can?(step, :compensate) do
-      compensate(reactor, step, reason, arguments, context)
+      compensate(reactor, step, error, arguments, context)
     else
-      {:error, reason}
+      {:error, error}
     end
   end
 
-  defp compensate(reactor, step, reason, arguments, context) do
-    Hooks.event(reactor, {:compensate_start, reason}, step, context)
+  defp compensate(reactor, step, error, arguments, context) do
+    Hooks.event(reactor, {:compensate_start, error}, step, context)
 
     step
-    |> Step.compensate(reason, arguments, context)
-    |> handle_compensate_result(reactor, step, context, reason)
+    |> Step.compensate(error.error, arguments, context)
+    |> handle_compensate_result(reactor, step, context, error)
   rescue
     error ->
-      Hooks.event(reactor, {:compensate_error, reason}, step, context)
+      error =
+        CompensateStepError.exception(
+          reactor: reactor,
+          step: step,
+          error: error,
+          stacktrace: __STACKTRACE__
+        )
+
+      Hooks.event(reactor, {:compensate_error, error}, step, context)
 
       Logger.error(fn ->
         "Warning: step `#{inspect(step.name)}` `compensate/4` raised an error:\n" <>
           Exception.format(:error, error, __STACKTRACE__)
       end)
 
-      {:error, reason}
+      {:error, error}
   end
 
   defp handle_compensate_result({:continue, value}, reactor, step, context, _) do
@@ -190,15 +214,17 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp handle_compensate_result({:error, reason}, reactor, step, context, _) do
-    Hooks.event(reactor, {:compensate_error, reason}, step, context)
+    error = CompensateStepError.exception(reactor: reactor, step: step, error: reason)
 
-    {:error, reason}
+    Hooks.event(reactor, {:compensate_error, error}, step, context)
+
+    {:error, error}
   end
 
-  defp handle_compensate_result(:ok, reactor, step, context, reason) do
+  defp handle_compensate_result(:ok, reactor, step, context, error) do
     Hooks.event(reactor, :compensate_complete, step, context)
 
-    {:error, reason}
+    {:error, error}
   end
 
   defp get_step_arguments(reactor, step) do
@@ -208,7 +234,7 @@ defmodule Reactor.Executor.StepRunner do
 
       argument, arguments ->
         with {:ok, value} <- fetch_argument(reactor, step, argument),
-             {:ok, value} <- subpath_argument(value, argument) do
+             {:ok, value} <- subpath_argument(value, step, argument) do
           {:ok, Map.put(arguments, argument.name, value)}
         end
     end)
@@ -216,14 +242,13 @@ defmodule Reactor.Executor.StepRunner do
 
   defp fetch_argument(reactor, step, argument) when is_from_input(argument) do
     with :error <- Map.fetch(reactor.context.private.inputs, argument.source.name) do
-      {:error,
-       "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` relies on missing input `#{argument.source.name}`"}
+      {:error, MissingInputError.exception(reactor: reactor, step: step, argument: argument)}
     end
   end
 
   defp fetch_argument(reactor, step, argument) when is_from_result(argument) do
     with :error <- Map.fetch(reactor.intermediate_results, argument.source.name) do
-      {:error, "Step `#{inspect(step.name)}` argument `#{inspect(argument.name)}` is missing"}
+      {:error, MissingResultError.exception(reactor: reactor, step: step, argument: argument)}
     end
   end
 
@@ -231,44 +256,125 @@ defmodule Reactor.Executor.StepRunner do
     {:ok, argument.source.value}
   end
 
-  defp subpath_argument(value, argument) when has_sub_path(argument),
-    do: perform_argument_subpath(value, argument.name, argument.source.sub_path, [])
+  defp subpath_argument(value, step, argument) when has_sub_path(argument),
+    do: perform_argument_subpath(value, step, argument, argument.source.sub_path, [], value)
 
-  defp subpath_argument(value, _argument), do: {:ok, value}
+  defp subpath_argument(value, _step, _argument), do: {:ok, value}
 
-  defp perform_argument_subpath(value, _, [], _), do: {:ok, value}
+  defp perform_argument_subpath(
+         value,
+         step,
+         argument,
+         remaining_path,
+         done_path,
+         intermediate_value
+       )
 
-  defp perform_argument_subpath(value, name, remaining, done) when is_struct(value),
-    do: value |> Map.from_struct() |> perform_argument_subpath(name, remaining, done)
+  defp perform_argument_subpath(_value, _step, _argument, [], _, result), do: {:ok, result}
 
-  defp perform_argument_subpath(value, name, [head | tail], []) do
-    case access_fetch_with_rescue(value, head) do
-      {:ok, value} ->
-        perform_argument_subpath(value, name, tail, [head])
+  defp perform_argument_subpath(
+         value,
+         step,
+         argument,
+         [key | remaining_path],
+         done_path,
+         intermediate_value
+       )
+       when is_map(intermediate_value) do
+    case Map.fetch(intermediate_value, key) do
+      {:ok, intermediate_value} ->
+        perform_argument_subpath(
+          value,
+          step,
+          argument,
+          remaining_path,
+          [key | done_path],
+          intermediate_value
+        )
 
       :error ->
+        type = if is_struct(intermediate_value), do: "struct", else: "map"
+
         {:error,
-         "Unable to resolve subpath for argument `#{inspect(name)}` at key `[#{inspect(head)}]`"}
+         ArgumentSubpathError.exception(
+           step: step,
+           argument: argument,
+           culprit: intermediate_value,
+           culprit_path: done_path,
+           culprit_key: key,
+           value: value,
+           message:
+             "key `#{inspect(key)}` not present in #{type} at path `#{inspect(done_path)}`."
+         )}
     end
   end
 
-  defp perform_argument_subpath(value, name, [head | tail], done) do
-    case access_fetch_with_rescue(value, head) do
-      {:ok, value} ->
-        perform_argument_subpath(value, name, tail, [head])
+  defp perform_argument_subpath(
+         value,
+         step,
+         argument,
+         [key | remaining_path],
+         done_path,
+         intermediate_value
+       )
+       when is_list(intermediate_value) do
+    if Keyword.keyword?(intermediate_value) do
+      case Keyword.fetch(intermediate_value, key) do
+        {:ok, intermediate_value} ->
+          perform_argument_subpath(
+            value,
+            step,
+            argument,
+            remaining_path,
+            [key | done_path],
+            intermediate_value
+          )
 
-      :error ->
-        path = Enum.reverse([head | done])
-
-        {:error,
-         "Unable to resolve subpath for argument `#{inspect(name)}` at key `#{inspect(path)}`"}
+        :error ->
+          {:error,
+           ArgumentSubpathError.exception(
+             step: step,
+             argument: argument,
+             culprit: intermediate_value,
+             culprit_path: done_path,
+             culprit_key: key,
+             value: value,
+             message:
+               "key `#{inspect(key)}` not present in keyword list at path `#{inspect(done_path)}`."
+           )}
+      end
+    else
+      {:error,
+       ArgumentSubpathError.exception(
+         step: step,
+         argument: argument,
+         value: value,
+         culprit: intermediate_value,
+         culprit_key: List.first(done_path),
+         culprit_path: done_path,
+         message: "list at path `#{inspect(done_path)}` is not a keyword list."
+       )}
     end
   end
 
-  defp access_fetch_with_rescue(container, key) do
-    Access.fetch(container, key)
-  rescue
-    FunctionClauseError -> :error
+  defp perform_argument_subpath(
+         value,
+         step,
+         argument,
+         _remaining_path,
+         done_path,
+         intermediate_value
+       ) do
+    {:error,
+     ArgumentSubpathError.exception(
+       step: step,
+       argument: argument,
+       value: value,
+       culprit: intermediate_value,
+       culprit_path: done_path,
+       culprit_key: List.first(done_path),
+       message: "value is neither a map or keyword list."
+     )}
   end
 
   defp build_context(reactor, state, step, concurrency_key) do

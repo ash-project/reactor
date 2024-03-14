@@ -183,8 +183,10 @@ defmodule Reactor.ExecutorTest do
 
       {:ok, agent} = Agent.start_link(fn -> MapSet.new() end)
 
-      assert {:error, ["I fail"]} =
+      assert {:error, error} =
                Reactor.Executor.run(reactor, %{agent: agent}, %{}, max_iterations: 100)
+
+      assert Exception.message(error) =~ "I fail"
 
       effects = Agent.get(agent, & &1)
 

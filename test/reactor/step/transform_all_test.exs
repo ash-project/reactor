@@ -20,7 +20,7 @@ defmodule Reactor.Step.TransformAllTest do
 
     test "when the function raises, it returns an error" do
       assert {:error, error} = Step.TransformAll.run(%{a: 1}, %{}, fun: fn _ -> raise "hell" end)
-      assert Exception.message(error) == "hell"
+      assert Exception.message(error) =~ "hell"
     end
   end
 end
