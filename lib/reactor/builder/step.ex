@@ -9,9 +9,54 @@ defmodule Reactor.Builder.Step do
   import Reactor.Argument, only: :macros
   import Reactor.Utils
 
+  @option_schema [
+    async?: [
+      type: :boolean,
+      default: true,
+      required: false,
+      doc: "Allow the step to be run asynchronously?"
+    ],
+    max_retries: [
+      type: {:or, [:non_neg_integer, {:literal, :infinity}]},
+      default: 100,
+      required: false,
+      doc: "The maximum number of times the step can ask to be retried"
+    ],
+    transform: [
+      type: {:or, {:mfa_or_fun, 1}},
+      required: false,
+      doc: "A function which can modify all incoming arguments"
+    ],
+    context: [
+      type: :map,
+      required: false,
+      doc: "Context which will be merged with the reactor context when calling this step"
+    ],
+    ref: [
+      type: {:in, [:step_name, :make_ref]},
+      required: false,
+      default: :make_ref,
+      doc: "What sort of step reference to generate"
+    ]
+  ]
+
   @doc """
   Build and add a new step to a Reactor.
+
+  ## Arguments
+
+  * `reactor` - An existing Reactor struct to add the step to.
+  * `name` - The proposed name of the new step.
+  * `impl` - A module implementing the `Reactor.Step` behaviour (or a tuple
+    containing the module and options).
+  * `arguments` - A list of `Reactor.Argument` structs or shorthand keyword
+    lists.
+
+  ## Options
+
+  #{Spark.Options.docs(@option_schema)}
   """
+  @doc spark_opts: [{5, @option_schema}]
   @spec add_step(
           Reactor.t(),
           any,
@@ -65,7 +110,21 @@ defmodule Reactor.Builder.Step do
 
   You're most likely to use this when dynamically returning new steps from an
   existing step.
+
+
+  ## Arguments
+
+  * `name` - The name of the new step.
+  * `impl` - A module implementing the `Reactor.Step` behaviour (or a tuple
+    containing the module and options).
+  * `arguments` - A list of `Reactor.Argument` structs or shorthand keyword
+    lists.
+
+  ## Options
+
+  #{Spark.Options.docs(@option_schema)}
   """
+  @doc spark_opts: [{5, @option_schema}]
   @spec new_step(any, Builder.impl(), [Builder.step_argument()], Builder.step_options()) ::
           {:ok, Step.t()} | {:error, any}
   def new_step(name, impl, arguments, options) do

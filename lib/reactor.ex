@@ -1,5 +1,5 @@
 defmodule Reactor do
-  alias Reactor.{Dsl, Executor, Step}
+  alias Reactor.{Dsl, Error.Validation.StateError, Executor, Step}
 
   @moduledoc """
   Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
@@ -129,13 +129,58 @@ defmodule Reactor do
           steps: [Step.t()]
         }
 
-  @doc false
+  @doc "A guard which returns true if the value is a Reactor struct"
   @spec is_reactor(any) :: Macro.t()
   defguard is_reactor(reactor) when is_struct(reactor, __MODULE__)
 
+  @option_schema [
+    max_concurrency: [
+      type: :pos_integer,
+      required: false,
+      doc: "The maximum number of processes to use to run the Reactor"
+    ],
+    timeout: [
+      type: {:or, [:pos_integer, {:literal, :infinity}]},
+      required: false,
+      default: :infinity,
+      doc: "How long to allow the Reactor to run for"
+    ],
+    max_iterations: [
+      type: {:or, [:pos_integer, {:literal, :infinity}]},
+      required: false,
+      default: :infinity,
+      doc: "The maximum number of times to allow the Reactor to loop"
+    ],
+    async_option: [
+      type: :boolean,
+      required: false,
+      default: true,
+      doc: "Whether to allow the Reactor to start processes"
+    ],
+    concurrency_key_option: [
+      type: :reference,
+      required: false,
+      hide: true
+    ]
+  ]
+
   @doc """
-  Run a reactor.
+  Attempt to run a Reactor.
+
+  ## Arguments
+
+  * `reactor` - The Reactor to run, either a Reactor DSL module, or a Reactor
+    struct.
+  * `inputs` - A map of values passed in to satisfy the Reactor's expected
+    inputs.
+  * `context` - An arbitrary map that will be merged into the Reactor context
+    and passed into each step.
+
+  ## Options
+
+  #{Spark.Options.docs(@option_schema)}
   """
+  @doc spark_opts: [{4, @option_schema}]
   @spec run(t | module, inputs, context_arg, options) :: {:ok, any} | {:error, any} | {:halted, t}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
@@ -151,5 +196,25 @@ defmodule Reactor do
   def run(reactor, inputs, context, options)
       when is_reactor(reactor) and reactor.state in ~w[pending halted]a do
     Executor.run(reactor, inputs, context, options)
+  end
+
+  def run(reactor, _inputs, _context, _options) do
+    {:error,
+     StateError.exception(
+       reactor: reactor,
+       state: reactor.state,
+       expected: ~w[pending halted]a
+     )}
+  end
+
+  @doc "Raising version of `run/4`."
+  @spec run!(t | module, inputs, context_arg, options) :: any | no_return
+  def run!(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
+
+  def run!(reactor, inputs, context, options) do
+    case run(reactor, inputs, context, options) do
+      {:ok, value} -> {:ok, value}
+      {:error, reason} -> raise reason
+    end
   end
 end

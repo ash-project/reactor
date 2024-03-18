@@ -2,8 +2,14 @@ defmodule Reactor.Step.AnonFn do
   @moduledoc """
   The built-in step for executing in-line DSL anonymous functions.
 
-  This step assumes that it is being called as per the
-  `:spark_function_behaviour` semantics.
+  ## Options
+
+  * `run` - a one or two arity function or MFA which will be called as the run
+    function of the step.
+  * `compensate` - a one to three arity function or MFA which will be called as
+    the compensate function of the step.  Optional.
+  * `undo` - a one to three arity function or MFA which will be called as the
+    undo function of this step.  Optional.
   """
 
   use Reactor.Step

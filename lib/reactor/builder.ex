@@ -22,7 +22,7 @@ defmodule Reactor.Builder do
   import Reactor, only: :macros
   import Reactor.Utils
 
-  @type step_options :: [async? | max_retries() | arguments_transform | context | ref]
+  @type step_options :: [async? | max_retries | arguments_transform | context | ref]
 
   @typedoc "Should the step be run asynchronously?"
   @type async? :: {:async?, boolean | (keyword -> boolean)}

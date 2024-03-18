@@ -4,6 +4,14 @@ defmodule Reactor.Step.TransformAll do
 
   The returned map is used as the arguments to the step, instead of the step's
   defined arguments.
+
+
+  > #### Tip {: .tip}
+  >
+  > This step will be emitted by the builder when a step wants to transform all
+  > it's arguments.
+  >
+  > Most likely you will never need to use this step directly.
   """
 
   use Reactor.Step

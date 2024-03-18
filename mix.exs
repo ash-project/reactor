@@ -38,9 +38,10 @@ defmodule Reactor.MixProject do
           end
         end,
         groups_for_modules: [
-          DSL: ~r/^Reactor\.Dsl$/,
+          Dsl: ~r/^Reactor\.Dsl.*/,
           Steps: ~r/^Reactor\.Step.*/,
           Middleware: ~r/^Reactor\.Middleware.*/,
+          Errors: ~r/^Reactor\.Error.*/,
           Builder: ~r/^Reactor\.Builder.*/,
           Internals: ~r/^Reactor\..*/
         ],
