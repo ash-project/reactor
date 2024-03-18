@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.0](https://github.com/ash-project/reactor/compare/v0.7.0...v0.8.0) (2024-03-18)
+### Breaking Changes:
+
+* Use `Splode` for managing errors. (#97)
+
+
+
+### Bug Fixes:
+
+* Don't assume `UndefinedFunctionError` means the module is not a Reactor.
+
+### Improvements:
+
+* Add template guards.
+
 ## [v0.7.0](https://github.com/ash-project/reactor/compare/v0.6.0...v0.7.0) (2024-02-28)
 
 
