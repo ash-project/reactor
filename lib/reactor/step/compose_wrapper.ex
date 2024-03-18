@@ -5,13 +5,18 @@ defmodule Reactor.Step.ComposeWrapper do
 
   Yes, this gets hairy, fast.
 
-  This is dynamically injected into steps by `Reactor.Step.Compose` - you
-  probably don't want to use this unless you're sure what you're doing.
 
   ## Options
 
     * `original` - the original value of the Step's `impl` key.
-    * `prefix` - a list of values to be placed in the `name` before the original value.
+    * `prefix` - a list of values to be placed in the `name` before the original
+      value.
+
+  > #### Tip {: .tip}
+  >
+  > This is dynamically injected into steps by `Reactor.Step.Compose`.
+  >
+  > Most likely you will never need to use this step directly.
   """
 
   use Reactor.Step

@@ -2,8 +2,20 @@ defmodule Reactor.Step.Transform do
   @moduledoc """
   The built-in step for executing input and argument transformations.
 
-  This step assumes that it is being executed as per `:spark_function_behaviour`
-  semantics.
+  Expects a single argument named `value` which contains the value to be
+  transformed.
+
+  ## Options
+
+  * `fun` - a one or two arity function or MFA to use to modify the `value`
+    argument.
+
+  > #### Tip {: .tip}
+  >
+  > This step is emitted by the builder when an argument needs to be transformed
+  > before being passed into a step.
+  >
+  > Most likely you will never need to use this step directly.
   """
 
   alias Reactor.{Error.Invalid.MissingArgumentError, Error.Invalid.TransformError, Step}
