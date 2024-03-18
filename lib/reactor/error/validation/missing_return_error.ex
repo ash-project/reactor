@@ -10,7 +10,7 @@ defmodule Reactor.Error.Validation.MissingReturnError do
 
   @doc false
   @impl true
-  def splode_message(_error) do
+  def message(_error) do
     """
     # Missing Return Error
 

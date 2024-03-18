@@ -7,7 +7,7 @@ defmodule Reactor.Error.Invalid.MissingArgumentError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Missing Argument Error
 

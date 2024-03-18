@@ -9,7 +9,7 @@ defmodule Reactor.Error.Internal.ComposeError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     [
       """
       # Reactor Compose Error

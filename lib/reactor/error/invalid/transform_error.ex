@@ -6,7 +6,7 @@ defmodule Reactor.Error.Invalid.TransformError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     message = """
     # Transform Error
 
