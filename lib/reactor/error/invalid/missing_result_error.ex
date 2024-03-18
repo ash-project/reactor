@@ -7,7 +7,7 @@ defmodule Reactor.Error.Invalid.MissingResultError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     inputs =
       error.reactor.inputs
       |> Enum.map_join("\n", &"  * `#{inspect(&1)}`")

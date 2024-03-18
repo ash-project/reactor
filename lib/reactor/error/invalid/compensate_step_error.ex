@@ -10,7 +10,7 @@ defmodule Reactor.Error.Invalid.CompensateStepError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Compensate Step Error
 

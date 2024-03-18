@@ -9,7 +9,7 @@ defmodule Reactor.Error.Invalid.RunStepError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Run Step Error
 

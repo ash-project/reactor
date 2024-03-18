@@ -8,7 +8,7 @@ defmodule Reactor.Error.Unknown do
 
   @doc false
   @impl true
-  def splode_message(%{errors: errors}) do
+  def message(%{errors: errors}) do
     Splode.ErrorClass.error_messages(errors)
   end
 end

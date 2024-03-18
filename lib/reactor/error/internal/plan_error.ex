@@ -9,7 +9,7 @@ defmodule Reactor.Error.Internal.PlanError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     [
       """
       # Reactor Plan Error

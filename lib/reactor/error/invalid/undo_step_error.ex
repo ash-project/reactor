@@ -9,7 +9,7 @@ defmodule Reactor.Error.Invalid.UndoStepError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Undo Step Error
 

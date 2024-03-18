@@ -8,7 +8,7 @@ defmodule Reactor.Error.Invalid.ArgumentSubpathError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Argument Subpath Error
 

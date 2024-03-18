@@ -10,7 +10,7 @@ defmodule Reactor.Error.Internal.MissingReturnResultError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     intermediate_keys =
       error.reactor.intermediate_values
       |> Map.keys()

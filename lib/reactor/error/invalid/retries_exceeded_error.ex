@@ -7,7 +7,7 @@ defmodule Reactor.Error.Invalid.RetriesExceededError do
 
   @doc false
   @impl true
-  def splode_message(error) do
+  def message(error) do
     """
     # Retries Exceeded Error
 
