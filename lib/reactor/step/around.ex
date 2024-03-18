@@ -107,7 +107,6 @@ defmodule Reactor.Step.Around do
          {:ok, result} <- fun.(arguments, context, steps, &__MODULE__.around(&1, &2, &3, options)) do
       {:ok, result}
     else
-      :error -> {:error, "Missing `fun` option."}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -154,9 +153,12 @@ defmodule Reactor.Step.Around do
            end}
         end)
 
-      _ ->
+      {:ok, _} ->
         {:error,
          argument_error(:options, "Expected `fun` option to be a 4 arity function", options)}
+
+      :error ->
+        {:error, argument_error(:options, "The required option `fun` is not present", options)}
     end
   end
 
@@ -164,7 +166,12 @@ defmodule Reactor.Step.Around do
     if Code.ensure_loaded?(m) && function_exported?(m, f, arity) do
       callback.()
     else
-      {:error, "Expected `#{inspect(m)}.#{f}/#{arity}` to be exported."}
+      {:error,
+       argument_error(
+         :mfa,
+         "Expected `#{inspect(m)}.#{f}/#{arity}` to be exported.",
+         {m, f, arity}
+       )}
     end
   end
 

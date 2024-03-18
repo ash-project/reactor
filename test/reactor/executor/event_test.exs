@@ -1,6 +1,11 @@
 defmodule Reactor.Executor.EventTest do
   use ExUnit.Case, async: true
 
+  alias Reactor.Error.Invalid.CompensateStepError
+  alias Reactor.Error.Invalid.RunStepError
+  alias Reactor.Error.Invalid.UndoRetriesExceededError
+  alias Reactor.Error.Invalid.UndoStepError
+
   defmodule EventMiddleware do
     use Reactor.Middleware
 
@@ -58,7 +63,7 @@ defmodule Reactor.Executor.EventTest do
     test "fail step" do
       assert [
                {:run_start, _},
-               {:run_error, :marty}
+               {:run_error, %RunStepError{error: :marty}}
              ] =
                run(StepReactor, %{step_result: {:error, :marty}}, async?: false)
     end
@@ -96,8 +101,8 @@ defmodule Reactor.Executor.EventTest do
     test "successful compensation events" do
       assert [
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
                :compensate_complete
              ] =
                run(CompensateReactor, %{compensation_result: :ok}, async?: false)
@@ -106,12 +111,12 @@ defmodule Reactor.Executor.EventTest do
     test "compensation retries" do
       assert [
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
                :compensate_retry,
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
                :compensate_retry
              ] = run(CompensateReactor, %{compensation_result: :retry}, async?: false)
     end
@@ -119,9 +124,9 @@ defmodule Reactor.Executor.EventTest do
     test "compensation failure" do
       assert [
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
-               {:compensate_error, :cant_compensate}
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
+               {:compensate_error, %CompensateStepError{error: :cant_compensate}}
              ] =
                run(CompensateReactor, %{compensation_result: {:error, :cant_compensate}},
                  async?: false
@@ -131,8 +136,8 @@ defmodule Reactor.Executor.EventTest do
     test "compensation complete" do
       assert [
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
                :compensate_complete
              ] =
                run(CompensateReactor, %{compensation_result: :ok}, async?: false)
@@ -141,8 +146,8 @@ defmodule Reactor.Executor.EventTest do
     test "compensation continue" do
       assert [
                {:run_start, _},
-               {:run_error, :fail},
-               {:compensate_start, :fail},
+               {:run_error, %RunStepError{error: :fail}},
+               {:compensate_start, %RunStepError{error: :fail}},
                {:compensate_continue, :all_is_well}
              ] =
                run(CompensateReactor, %{compensation_result: {:continue, :all_is_well}},
@@ -181,7 +186,7 @@ defmodule Reactor.Executor.EventTest do
                {:run_start, _},
                {:run_complete, :marty},
                {:run_start, _},
-               {:run_error, :doc_brown},
+               {:run_error, %RunStepError{error: :doc_brown}},
                :undo_start,
                :undo_complete
              ] =
@@ -193,14 +198,14 @@ defmodule Reactor.Executor.EventTest do
                {:run_start, _},
                {:run_complete, :marty},
                {:run_start, _},
-               {:run_error, :doc_brown},
+               {:run_error, %RunStepError{error: :doc_brown}},
                :undo_start,
                :undo_retry,
                :undo_retry,
                :undo_retry,
                :undo_retry,
                :undo_retry,
-               {:undo_error, "`undo/4` retried 5 times on step `:undo_step`."}
+               {:undo_error, %UndoRetriesExceededError{}}
              ] =
                run(UndoReactor, %{undo_result: :retry}, async?: false)
     end
@@ -210,14 +215,14 @@ defmodule Reactor.Executor.EventTest do
                {:run_start, %{undo_result: {:retry, :einstein}}},
                {:run_complete, :marty},
                {:run_start, %{}},
-               {:run_error, :doc_brown},
+               {:run_error, %RunStepError{error: :doc_brown}},
                :undo_start,
                {:undo_retry, :einstein},
                {:undo_retry, :einstein},
                {:undo_retry, :einstein},
                {:undo_retry, :einstein},
                {:undo_retry, :einstein},
-               {:undo_error, "`undo/4` retried 5 times on step `:undo_step`."}
+               {:undo_error, %UndoRetriesExceededError{}}
              ] =
                run(UndoReactor, %{undo_result: {:retry, :einstein}}, async?: false)
     end
@@ -227,9 +232,9 @@ defmodule Reactor.Executor.EventTest do
                {:run_start, _},
                {:run_complete, :marty},
                {:run_start, _},
-               {:run_error, :doc_brown},
+               {:run_error, %RunStepError{error: :doc_brown}},
                :undo_start,
-               {:undo_error, :einstein}
+               {:undo_error, %UndoStepError{error: :einstein}}
              ] = run(UndoReactor, %{undo_result: {:error, :einstein}}, async?: false)
     end
   end

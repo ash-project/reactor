@@ -1,7 +1,7 @@
 defmodule Reactor.Executor.HooksTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.Builder
+  alias Reactor.{Builder, Error.Invalid.RunStepError}
 
   describe "init" do
     defmodule ReturnContextReactor do
@@ -84,10 +84,8 @@ defmodule Reactor.Executor.HooksTest do
         @moduledoc false
         @behaviour Reactor.Middleware
 
-        def error(errors, _context) do
-          [error] = List.wrap(errors)
-          assert is_exception(error, RuntimeError)
-          assert Exception.message(error) == "hell"
+        def error(error, _context) do
+          assert Exception.message(error) =~ "hell"
 
           {:error, :wat}
         end
@@ -116,7 +114,7 @@ defmodule Reactor.Executor.HooksTest do
         ErrorReactor.reactor()
         |> Builder.add_middleware!(ErrorContextMiddleware)
 
-      assert {:error, [%RuntimeError{message: "hell"}]} =
+      assert {:error, %{errors: [%RunStepError{error: %RuntimeError{message: "hell"}}]}} =
                Reactor.run(reactor, %{}, %{is_context?: true})
     end
   end

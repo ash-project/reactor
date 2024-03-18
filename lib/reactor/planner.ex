@@ -6,7 +6,7 @@ defmodule Reactor.Planner do
   between them representing their dependencies (arguments).
   """
 
-  alias Reactor.{Error.PlanError, Step}
+  alias Reactor.{Error.Internal.PlanError, Step}
   import Reactor, only: :macros
   import Reactor.Argument, only: :macros
   import Reactor.Utils

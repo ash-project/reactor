@@ -1,7 +1,7 @@
 defmodule Reactor.Step.GroupTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Builder, Step.Group, Step.ReturnAllArguments}
+  alias Reactor.{Builder, Error.Invalid.MissingInputError, Step.Group, Step.ReturnAllArguments}
 
   setup do
     context = %{current_step: %{name: :marty}}
@@ -63,8 +63,8 @@ defmodule Reactor.Step.GroupTest do
       context: context,
       options: options
     } do
-      assert {:error, [error]} = Group.run(%{}, context, options)
-      assert error =~ ~r/missing input `arg`/i
+      assert {:error, %{errors: [%MissingInputError{argument: %{name: :arg}}]}} =
+               Group.run(%{}, context, options)
     end
 
     test "when the before function fails, it returns an error", %{

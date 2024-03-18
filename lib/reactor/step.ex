@@ -118,7 +118,7 @@ defmodule Reactor.Step do
     - `:retry` or `{:retry, reason}` if you would like the reactor to attempt to
       re-run the step. You can optionally supply an error reason which will be
       used in the event that the step runs out of retries, otherwise a
-      `Reactor.Error.RetriesExceededError` will be used.
+      `Reactor.Error.Invalid.RetriesExceededError` will be used.
     - `{:error, reason}` if compensation was unsuccessful.
   """
   @callback compensate(

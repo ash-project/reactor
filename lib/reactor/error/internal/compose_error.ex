@@ -1,20 +1,18 @@
-defmodule Reactor.Error.ComposeError do
+defmodule Reactor.Error.Internal.ComposeError do
   @moduledoc """
-  An error used when attempting to compose to Reactors together.
+  This error is returned when two Reactors cannot be composed together.
   """
-  defexception [:outer_reactor, :inner_reactor, :message, :arguments]
-  import Reactor.Utils
+
+  use Reactor.Error,
+    fields: [:arguments, :inner_reactor, :message, :outer_reactor],
+    class: :reactor
 
   @doc false
   @impl true
-  def exception(attrs), do: struct(__MODULE__, attrs)
-
-  @doc false
-  @impl true
-  def message(error) do
+  def splode_message(error) do
     [
       """
-      # Unable to compose Reactors
+      # Reactor Compose Error
 
       #{error.message}
       """

@@ -1,7 +1,7 @@
 defmodule Reactor.PlannerTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Builder, Error.PlanError, Info, Planner}
+  alias Reactor.{Builder, Error.Internal.PlanError, Info, Planner}
 
   describe "plan/1" do
     test "when the argument is not a reactor, it returns an error" do

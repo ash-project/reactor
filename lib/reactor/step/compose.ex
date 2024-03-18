@@ -12,7 +12,7 @@ defmodule Reactor.Step.Compose do
   """
 
   use Reactor.Step
-  alias Reactor.{Argument, Builder, Error.ComposeError, Info, Step}
+  alias Reactor.{Argument, Builder, Error.Internal.ComposeError, Info, Step}
   import Reactor, only: :macros
   import Reactor.Argument, only: :macros
   import Reactor.Utils

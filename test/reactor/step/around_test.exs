@@ -1,7 +1,7 @@
 defmodule Reactor.Step.AroundTest do
   @moduledoc false
   use ExUnit.Case, async: true
-  alias Reactor.{Builder, Step.Around, Step.ReturnAllArguments}
+  alias Reactor.{Builder, Error.Invalid.MissingInputError, Step.Around, Step.ReturnAllArguments}
 
   setup do
     context = %{current_step: %{name: :marty}}
@@ -27,7 +27,7 @@ defmodule Reactor.Step.AroundTest do
       assert {:error, error} =
                Around.run(%{}, context, Keyword.put(options, :fun, {Marty, :marty, []}))
 
-      assert error =~ ~r/`Marty.marty\/4` to be exported/i
+      assert Exception.message(error) =~ ~r/`Marty.marty\/4` to be exported/i
     end
 
     test "when passed steps which are not steps, it returns an error", %{
@@ -42,8 +42,12 @@ defmodule Reactor.Step.AroundTest do
       context: context,
       options: options
     } do
-      assert {:error, [error]} = Around.run(%{}, context, options)
-      assert error =~ ~r/missing input `arg`/i
+      assert {:error,
+              %{
+                errors: [
+                  %MissingInputError{step: %{name: :example}, argument: %{source: %{name: :arg}}}
+                ]
+              }} = Around.run(%{}, context, options)
     end
 
     test "when the around function fails before calling the callback, it returns an error", %{

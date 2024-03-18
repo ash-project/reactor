@@ -90,6 +90,7 @@ defmodule Reactor.MixProject do
   defp deps do
     [
       {:spark, "~> 2.0"},
+      {:splode, "~> 0.1.0"},
       {:libgraph, "~> 0.16"},
       {:telemetry, "~> 1.2"},
 

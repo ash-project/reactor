@@ -1,20 +1,20 @@
-defmodule Reactor.Error.PlanError do
+defmodule Reactor.Error.Internal.PlanError do
   @moduledoc """
-  An error thrown during the planning of a Reactor.
+  This error is returned when the step graph cannot be built.
   """
-  defexception [:reactor, :graph, :step, :message]
-  import Reactor.Utils
+
+  use Reactor.Error,
+    fields: [:graph, :message, :reactor, :step],
+    class: :reactor
 
   @doc false
   @impl true
-  def exception(attrs), do: struct(__MODULE__, attrs)
-
-  @doc false
-  @impl true
-  def message(error) do
+  def splode_message(error) do
     [
       """
-      # Unable to plan Reactor
+      # Reactor Plan Error
+
+      An error occurred while building or updating the Reactor execution graph.
 
       #{error.message}
       """

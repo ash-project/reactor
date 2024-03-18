@@ -6,16 +6,24 @@ defmodule Reactor.Step.Transform do
   semantics.
   """
 
-  alias Reactor.Step
+  alias Reactor.{Error.Invalid.MissingArgumentError, Error.Invalid.TransformError, Step}
   use Step
 
   @doc false
   @impl true
   @spec run(Reactor.inputs(), Reactor.context(), keyword) :: {:ok | :error, any}
-  def run(arguments, _context, options) do
+  def run(arguments, context, options) do
     case Map.fetch(arguments, :value) do
-      {:ok, value} -> do_transform(value, options)
-      :error -> {:error, ArgumentError.exception("The `value` argument is missing")}
+      {:ok, value} ->
+        do_transform(value, options)
+
+      :error ->
+        {:error,
+         MissingArgumentError.exception(
+           step: context.current_step,
+           argument: :value,
+           arguments: arguments
+         )}
     end
   end
 
@@ -31,6 +39,6 @@ defmodule Reactor.Step.Transform do
         {:ok, apply(m, f, [value | a])}
     end
   rescue
-    error -> {:error, error}
+    error -> {:error, TransformError.exception(input: value, error: error)}
   end
 end

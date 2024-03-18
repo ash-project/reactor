@@ -4,7 +4,8 @@ defmodule Reactor.Executor.Sync do
   the reactor or execution state.
   """
 
-  alias Reactor.{Error, Executor, Step}
+  alias Reactor.Error.Invalid.RetriesExceededError, as: RetriesExceededError
+  alias Reactor.{Executor, Step}
 
   @doc """
   Try and run a step synchronously.
@@ -22,7 +23,7 @@ defmodule Reactor.Executor.Sync do
           reactor = drop_from_plan(reactor, step)
 
           error =
-            Error.RetriesExceededError.exception(
+            RetriesExceededError.exception(
               step: step,
               retry_count: Map.get(state.retries, step.ref)
             )

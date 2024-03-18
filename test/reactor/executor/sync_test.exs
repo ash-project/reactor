@@ -1,5 +1,6 @@
 defmodule Reactor.Executor.SyncTest do
-  alias Reactor.{Error, Executor}
+  alias Reactor.Error.Invalid.RetriesExceededError, as: RetriesExceededError
+  alias Reactor.Executor
   import Reactor.Executor.Sync
   use ExUnit.Case, async: true
   use Mimic
@@ -77,7 +78,9 @@ defmodule Reactor.Executor.SyncTest do
       |> stub(:run, fn _, _, _ -> :retry end)
 
       state = %{state | retries: Map.put(state.retries, step.ref, 100)}
-      assert {:undo, _, %{errors: [%Error.RetriesExceededError{}]}} = run(reactor, state, step)
+
+      assert {:undo, _, %{errors: [%RetriesExceededError{}]}} =
+               run(reactor, state, step)
     end
 
     test "when the step is successful it tells the reactor to recurse", %{
