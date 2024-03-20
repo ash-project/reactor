@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.1](https://github.com/ash-project/reactor/compare/v0.8.0...v0.8.1) (2024-03-20)
+
+
+
+
+### Bug Fixes:
+
+* RunStepError: pass entire step struct instead of just name when raising.
+
 ## [v0.8.0](https://github.com/ash-project/reactor/compare/v0.7.0...v0.8.0) (2024-03-18)
 ### Breaking Changes:
 
