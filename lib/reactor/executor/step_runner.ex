@@ -117,7 +117,7 @@ defmodule Reactor.Executor.StepRunner do
     |> handle_run_result(reactor, step, arguments, context)
   rescue
     reason ->
-      error = RunStepError.exception(step: step.name, error: reason)
+      error = RunStepError.exception(step: step, error: reason)
       Hooks.event(reactor, {:run_error, error}, step, context)
 
       maybe_compensate(reactor, step, error, arguments, context)
@@ -149,7 +149,7 @@ defmodule Reactor.Executor.StepRunner do
   end
 
   defp handle_run_result({:error, reason}, reactor, step, arguments, context) do
-    error = RunStepError.exception(step: step.name, error: reason)
+    error = RunStepError.exception(step: step, error: reason)
     Hooks.event(reactor, {:run_error, error}, step, context)
 
     maybe_compensate(reactor, step, error, arguments, context)
