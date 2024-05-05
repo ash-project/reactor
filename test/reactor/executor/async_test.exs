@@ -204,12 +204,14 @@ defmodule Reactor.Executor.AsyncTest do
       assert Graph.has_vertex?(reactor.plan, step)
     end
 
-    test "when one of the steps asks to retry, it increments the retry count for the step",
+    test "when one of the steps asks to retry, it sets the retry count for the step",
          %{reactor: reactor, state: state, doable: doable, supervisor: supervisor} do
       task = Task.Supervisor.async_nolink(supervisor, fn -> :retry end)
       state = %{state | current_tasks: %{task => doable}}
+      refute is_map_key(state.retries, doable.ref)
+
       assert {_, _reactor, state} = handle_completed_steps(reactor, state)
-      assert state.retries[doable.ref] == 1
+      assert state.retries[doable.ref] == 0
     end
 
     test "when one of the steps asks to retry (again), it increments the retry count for the step",

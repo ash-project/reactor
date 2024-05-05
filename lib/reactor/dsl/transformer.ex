@@ -11,7 +11,6 @@ defmodule Reactor.Dsl.Transformer do
     with {:ok, step_names} <- step_names(dsl_state),
          {:ok, dsl_state} <- maybe_set_return(dsl_state, step_names),
          {:ok, dsl_state} <- validate_return(dsl_state, step_names),
-         {:ok, dsl_state} <- do_entity_transform(dsl_state),
          {:ok, reactor} <- Info.to_struct(dsl_state),
          {:ok, reactor} <- Planner.plan(reactor) do
       dsl_state =
@@ -51,12 +50,6 @@ defmodule Reactor.Dsl.Transformer do
           {name, n}, _names -> {:error, "There are #{n} steps named `#{inspect(name)}`."}
         end)
     end
-  end
-
-  defp do_entity_transform(dsl_state) do
-    dsl_state
-    |> Transformer.get_entities([:reactor])
-    |> reduce_while_ok(dsl_state, &Dsl.Build.transform/2)
   end
 
   defp maybe_set_return(dsl_state, step_names) do

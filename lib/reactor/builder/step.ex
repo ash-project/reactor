@@ -224,7 +224,8 @@ defmodule Reactor.Builder.Step do
           {:ok, argument}
         end
 
-      argument when is_from_result(argument) or is_from_value(argument) ->
+      argument
+      when is_from_result(argument) or is_from_value(argument) or is_from_element(argument) ->
         {:ok, argument}
     end)
   end

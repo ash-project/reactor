@@ -99,6 +99,41 @@ defmodule Reactor.Utils do
   end
 
   @doc """
+  Perform a flat map over an enumerable provided that the mapper function
+  continues to return ok tuples.
+  """
+  @spec flat_map_while_ok(Enumerable.t(input), (input -> {:ok, output} | {:error, any}), boolean) ::
+          {:ok, Enumerable.t(output)} | {:error, any}
+        when input: any, output: any
+  def flat_map_while_ok(inputs, mapper, preserve_order? \\ false)
+
+  def flat_map_while_ok(inputs, mapper, false) do
+    reduce_while_ok(inputs, [], fn input, acc ->
+      case mapper.(input) do
+        {:ok, result} -> reduce_while_ok(result, acc, &[&1 | &2])
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
+  def flat_map_while_ok(inputs, mapper, true) do
+    inputs
+    |> flat_map_while_ok(mapper, false)
+    |> and_then(&{:ok, Enum.reverse(&1)})
+  end
+
+  @doc "Raising version of `flat_map_while_ok/3`"
+  @spec flat_map_while_ok!(Enumerable.t(input), (input -> {:ok, output} | {:error, any}), boolean) ::
+          Enumerable.t(output) | no_return
+        when input: any, output: any
+  def flat_map_while_ok!(inputs, mapper, preserve_order? \\ false) do
+    case flat_map_while_ok(inputs, mapper, preserve_order?) do
+      {:ok, result} -> result
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   Perform a reduction over an enumerable provided that the reduction function
   returns an ok tuple.
   """

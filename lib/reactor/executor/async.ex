@@ -71,105 +71,125 @@ defmodule Reactor.Executor.Async do
   end
 
   @doc """
-  Check to see if any steps are completed, and if so handle them.
+  Handle zero or one completed async steps and then decide what to do.
   """
   @spec handle_completed_steps(Reactor.t(), Executor.State.t()) ::
           {:recurse | :continue | :undo | :halt, Reactor.t(), Executor.State.t()}
   def handle_completed_steps(reactor, state) do
-    completed_task_results = get_normalised_task_results(state.current_tasks, 100)
-
-    reactor
-    |> delete_vertices(Map.keys(completed_task_results))
-    |> handle_completed_steps(state, completed_task_results)
+    completed_task_results = get_normalised_task_results(state, timeout: 100)
+    handle_completed_task_results(reactor, state, completed_task_results)
   end
 
-  defp handle_completed_steps(reactor, state, completed_task_results)
-       when map_size(completed_task_results) == 0,
-       do: {:continue, reactor, state}
+  defp handle_completed_task_results(reactor, state, []),
+    do: {:continue, reactor, state}
 
-  defp handle_completed_steps(reactor, state, completed_task_results) do
-    release_concurrency_resources_to_pool(state.concurrency_key, map_size(completed_task_results))
+  defp handle_completed_task_results(reactor, state, completed_task_results) do
+    Enum.reduce(
+      completed_task_results,
+      {:recurse, reactor, state},
+      fn task_result, {status, reactor, state} ->
+        {new_status, reactor, state} = handle_completed_step(reactor, state, task_result)
 
-    new_current_tasks = Map.drop(state.current_tasks, Map.keys(completed_task_results))
+        if got_worse?(status, new_status) do
+          {new_status, reactor, state}
+        else
+          {status, reactor, state}
+        end
+      end
+    )
+  end
 
-    completed_step_results =
-      completed_task_results
-      |> Map.values()
-      |> Map.new()
+  defp got_worse?(:recurse, :undo), do: true
+  defp got_worse?(:recurse, :halt), do: true
+  defp got_worse?(:undo, :halt), do: true
+  defp got_worse?(_old, _new), do: false
 
-    retry_steps =
-      completed_step_results
-      |> Enum.filter(fn
-        {_, :retry} -> true
-        {_, {:retry, _}} -> true
-        _ -> false
-      end)
-      |> Enum.map(&elem(&1, 0))
-
-    steps_to_remove =
-      completed_step_results
-      |> Map.keys()
-      |> MapSet.new()
-      |> MapSet.difference(MapSet.new(retry_steps))
-      |> Enum.to_list()
-
-    steps_to_append =
-      completed_step_results
-      |> Map.values()
-      |> Enum.flat_map(fn
-        {:ok, _, steps} -> steps
-        _ -> []
-      end)
+  defp handle_completed_step(reactor, state, {task, step, {:ok, value, new_steps}}) do
+    state =
+      state
+      |> drop_task(task)
 
     reactor =
       reactor
-      |> store_successful_results_in_the_undo_stack(completed_step_results)
-      |> store_intermediate_results(completed_step_results)
-      |> delete_vertices(steps_to_remove)
-      |> append_steps(steps_to_append)
+      |> drop_from_plan(task)
+      |> maybe_store_undo(step, value)
+      |> maybe_store_intermediate_result(step, value)
 
+    reactor =
+      case Enum.split_with(new_steps, &(&1.name == step.name)) do
+        {[], new_steps} ->
+          reactor
+          |> drop_from_plan(step)
+          |> append_steps(new_steps)
+
+        {recursive_steps, new_steps} ->
+          recursive_steps = Enum.map(recursive_steps, &%{&1 | ref: step.ref})
+
+          reactor
+          |> append_steps(recursive_steps)
+          |> append_steps(new_steps)
+      end
+
+    {:recurse, reactor, state}
+  end
+
+  defp handle_completed_step(reactor, state, {task, step, {:retry, error}}) do
     state =
       state
-      |> increment_retry_counts(retry_steps)
-      |> collect_errors(completed_step_results)
+      |> increment_retries(step)
+      |> drop_task(task)
 
-    status =
-      completed_task_results
-      |> Enum.find_value(:ok, fn
-        {_task, {_step, {:halt, _}}} ->
-          :halt
+    reactor =
+      reactor
+      |> drop_from_plan(task)
 
-        {_task, {_step, {:error, _}}} ->
-          :undo
+    if Map.get(state.retries, step.ref) >= step.max_retries do
+      error =
+        error ||
+          RetriesExceededError.exception(
+            step: step,
+            retry_count: Map.get(state.retries, step.ref)
+          )
 
-        {_task, {step, :retry}} ->
-          if Map.get(state.retries, step.ref) >= step.max_retries,
-            do: :undo
-
-        _ ->
-          nil
-      end)
-
-    state = %{state | current_tasks: new_current_tasks}
-
-    case status do
-      :ok ->
-        {:recurse, reactor, state}
-
-      :undo ->
-        {reactor, state} = collect_remaining_tasks_for_shutdown(reactor, state)
-        {:undo, reactor, state}
-
-      :halt ->
-        {reactor, state} = collect_remaining_tasks_for_shutdown(reactor, state)
-        {:halt, reactor, state}
+      reactor = drop_from_plan(reactor, step)
+      {:undo, reactor, add_error(state, error)}
+    else
+      {:recurse, reactor, state}
     end
   end
 
-  defp get_normalised_task_results(current_tasks, timeout) do
+  defp handle_completed_step(reactor, state, {task, step, {:error, error}}) do
+    state =
+      state
+      |> drop_task(task)
+      |> add_error(error)
+
+    reactor =
+      reactor
+      |> drop_from_plan(task)
+      |> drop_from_plan(step)
+
+    {:undo, reactor, state}
+  end
+
+  defp handle_completed_step(reactor, state, {task, step, {:halt, value}}) do
+    state =
+      state
+      |> drop_task(task)
+
+    reactor =
+      reactor
+      |> drop_from_plan(task)
+      |> drop_from_plan(step)
+      |> store_intermediate_result(step, value)
+
+    {:halt, reactor, state}
+  end
+
+  defp get_normalised_task_results(%{current_tasks: current_tasks}, opts) do
     current_tasks
     |> Map.keys()
-    |> Task.yield_many(timeout)
+    |> Task.yield_many(opts)
     |> Stream.reject(&is_nil(elem(&1, 1)))
     |> Stream.map(fn
       {task, {:ok, {:error, reason}}} ->
@@ -179,7 +199,7 @@ defmodule Reactor.Executor.Async do
         {task, {:halt, reason}}
 
       {task, {:ok, :retry}} ->
-        {task, :retry}
+        {task, {:retry, nil}}
 
       {task, {:ok, {:retry, reason}}} ->
         {task, {:retry, reason}}
@@ -190,9 +210,51 @@ defmodule Reactor.Executor.Async do
       {task, {:exit, reason}} ->
         {task, {:error, reason}}
     end)
-    |> Map.new(fn {task, result} ->
-      {task, {Map.fetch!(current_tasks, task), result}}
+    |> Enum.map(fn {task, result} ->
+      {task, Map.fetch!(current_tasks, task), result}
     end)
+  end
+
+  defp drop_task(state, task) do
+    ConcurrencyTracker.release(state.concurrency_key, 1)
+
+    %{state | current_tasks: Map.delete(state.current_tasks, task)}
+  end
+
+  defp increment_retries(state, step) do
+    %{state | retries: Map.update(state.retries, step.ref, 0, &(&1 + 1))}
+  end
+
+  defp drop_from_plan(reactor, step) do
+    %{reactor | plan: Graph.delete_vertex(reactor.plan, step)}
+  end
+
+  defp add_error(state, error) do
+    %{state | errors: [error | state.errors]}
+  end
+
+  defp store_intermediate_result(reactor, step, value) do
+    %{reactor | intermediate_results: Map.put(reactor.intermediate_results, step.name, value)}
+  end
+
+  defp maybe_store_undo(reactor, step, value) do
+    if Step.can?(step, :undo) do
+      %{reactor | undo: [{step, value} | reactor.undo]}
+    else
+      reactor
+    end
+  end
+
+  defp maybe_store_intermediate_result(reactor, step, value) when reactor.return == step.name do
+    store_intermediate_result(reactor, step, value)
+  end
+
+  defp maybe_store_intermediate_result(reactor, step, value) do
+    if Graph.out_degree(reactor.plan, step) > 0 do
+      store_intermediate_result(reactor, step, value)
+    else
+      reactor
+    end
   end
 
   defp store_successful_results_in_the_undo_stack(reactor, completed_step_results)
@@ -246,47 +308,6 @@ defmodule Reactor.Executor.Async do
     }
   end
 
-  defp increment_retry_counts(state, retry_steps) do
-    retries =
-      retry_steps
-      |> Enum.reduce(state.retries, fn step, retries ->
-        Map.update(retries, step.ref, 1, &(&1 + 1))
-      end)
-
-    %{state | retries: retries}
-  end
-
-  defp collect_errors(state, completed_step_results) do
-    errors =
-      completed_step_results
-      |> Enum.filter(fn
-        {_step, {:error, _}} ->
-          true
-
-        {step, {:retry, _}} ->
-          Map.get(state.retries, step.ref) >= step.max_retries
-
-        {step, :retry} ->
-          Map.get(state.retries, step.ref) >= step.max_retries
-
-        _ ->
-          false
-      end)
-      |> Enum.map(fn
-        {_step, {_, reason}} ->
-          reason
-
-        {step, :retry} ->
-          RetriesExceededError.exception(
-            step: step,
-            retry_count: Map.get(state.retries, step.ref)
-          )
-      end)
-      |> Enum.concat(state.errors)
-
-    %{state | errors: errors}
-  end
-
   @doc """
   When the Reactor needs to shut down for any reason, we need to await all the
   currently running asynchronous steps and delete any task vertices.
@@ -299,14 +320,16 @@ defmodule Reactor.Executor.Async do
   end
 
   def collect_remaining_tasks_for_shutdown(reactor, state) do
-    remaining_task_results = get_normalised_task_results(state.current_tasks, state.halt_timeout)
+    remaining_task_results =
+      get_normalised_task_results(state, timeout: state.halt_timeout, on_timeout: :ignore)
 
-    release_concurrency_resources_to_pool(state.concurrency_key, map_size(remaining_task_results))
+    release_concurrency_resources_to_pool(state.concurrency_key, length(remaining_task_results))
 
     remaining_step_results =
       remaining_task_results
-      |> Map.values()
-      |> Map.new()
+      |> Map.new(fn {_task, step, result} -> {step, result} end)
+
+    finished_tasks = remaining_step_results |> Enum.map(&elem(&1, 0))
 
     reactor =
       reactor
@@ -315,7 +338,7 @@ defmodule Reactor.Executor.Async do
 
     unfinished_tasks =
       state.current_tasks
-      |> Map.delete(Map.keys(remaining_task_results))
+      |> Map.delete(finished_tasks)
 
     unfinished_task_count = map_size(unfinished_tasks)
 
@@ -327,7 +350,7 @@ defmodule Reactor.Executor.Async do
           |> Enum.map_join("\n  * ", &inspect/1)
 
         """
-        Waited #{state.halt_timeout}ms for async steps to complete, however #{unfinished_task_count} are still running and will be abandoned and cannot be undone.
+        Waited #{state.halt_timeout}ms for async steps to complete, however #{unfinished_task_count} are still running, will be abandoned and cannot be undone.
 
           * #{unfinished_steps}
         """

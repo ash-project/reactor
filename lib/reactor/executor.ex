@@ -270,15 +270,16 @@ defmodule Reactor.Executor do
   end
 
   defp find_ready_steps(reactor, _state) do
-    step =
-      reactor.plan
-      |> Graph.vertices()
-      |> Enum.find(fn
-        step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
-        _ -> false
-      end)
-
-    {:continue, [step]}
+    reactor.plan
+    |> Graph.vertices()
+    |> Enum.find(fn
+      step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
+      _ -> false
+    end)
+    |> case do
+      nil -> {:continue, []}
+      step -> {:continue, [step]}
+    end
   end
 
   defp maybe_release_pool(state) when state.pool_owner == true do
