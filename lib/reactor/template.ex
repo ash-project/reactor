@@ -2,14 +2,13 @@ defmodule Reactor.Template do
   @moduledoc """
   Templates used to refer to some sort of computed value.
   """
+  alias __MODULE__.{Element, Input, Result, Value}
 
-  alias __MODULE__.{Input, Result, Value}
-
-  @type t :: Input.t() | Result.t() | Value.t()
+  @type t :: Element.t() | Input.t() | Result.t() | Value.t()
 
   @doc "The type for use in option schemas"
   @spec type :: Spark.Options.type()
-  def type, do: {:or, [{:struct, Input}, {:struct, Result}, {:struct, Value}]}
+  def type, do: {:or, [{:struct, Element}, {:struct, Input}, {:struct, Result}, {:struct, Value}]}
 
   @doc "A guard for input templates"
   @spec is_input_template(any) :: Macro.output()
@@ -23,9 +22,13 @@ defmodule Reactor.Template do
   @spec is_value_template(any) :: Macro.output()
   defguard is_value_template(template) when is_struct(template, Value)
 
+  @doc "A guard for element templates"
+  @spec is_element_template(any) :: Macro.output()
+  defguard is_element_template(template) when is_struct(template, Element)
+
   @doc "A guard to detect all template types"
   @spec is_template(any) :: Macro.output()
   defguard is_template(template)
            when is_input_template(template) or is_result_template(template) or
-                  is_value_template(template)
+                  is_value_template(template) or is_element_template(template)
 end

@@ -93,6 +93,7 @@ defmodule Reactor.MixProject do
       {:spark, "~> 2.0"},
       {:splode, "~> 0.2"},
       {:libgraph, "~> 0.16"},
+      {:iterex, "~> 0.1"},
       {:telemetry, "~> 1.2"},
 
       # Dev/Test dependencies

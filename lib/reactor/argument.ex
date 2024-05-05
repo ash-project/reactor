@@ -6,6 +6,7 @@ defmodule Reactor.Argument do
   defstruct name: nil, source: nil, transform: nil
 
   alias Reactor.{Argument, Template}
+  import Reactor.Template, only: :macros
 
   @type t :: %Argument{
           name: atom,
@@ -65,6 +66,49 @@ defmodule Reactor.Argument do
     do: %Argument{name: name, source: %Template.Value{value: value}, transform: transform}
 
   @doc """
+  Build an argument which refers to to an element within a map step with an optional transformation applied.
+
+  ## Example
+
+      iex> Argument.from_element(:argument_name, &Atom.to_string/1)
+
+  """
+  @spec from_element(atom, atom, nil | (any -> any)) :: Argument.t()
+  def from_element(name, element_name, transform \\ nil)
+      when is_atom(name) and maybe_transform(transform),
+      do: %Argument{
+        name: name,
+        source: %Template.Element{name: element_name},
+        transform: transform
+      }
+
+  @doc """
+  Build an argument directly from a template.
+
+  ## Example
+
+      iex> Argument.from_template(:argument_name, Reactor.Dsl.Argument.input(:input_name))
+
+  """
+  @spec from_template(atom, Template.t(), nil | (any -> any)) :: Argument.t()
+  def from_template(name, template, transform \\ nil)
+      when is_atom(name) and is_template(template) and maybe_transform(transform),
+      do: %Argument{name: name, source: template, transform: transform}
+
+  @doc """
+  Set a sub-path on the argument.
+
+  ## Example
+
+      iex> Argument.from_value(:example, :value)
+      ...> |> Argument.sub_path([:nested, :values])
+
+  """
+  @spec sub_path(Argument.t(), [any]) :: Argument.t()
+  def sub_path(argument, sub_path),
+    do: %{argument | source: %{argument.source | sub_path: sub_path}}
+
+  @doc """
   Validate that the argument is an Argument struct.
   """
   defguard is_argument(argument) when is_struct(argument, __MODULE__)
@@ -72,17 +116,26 @@ defmodule Reactor.Argument do
   @doc """
   Validate that the argument refers to a reactor input.
   """
-  defguard is_from_input(argument) when is_struct(argument.source, Template.Input)
+  defguard is_from_input(argument)
+           when is_argument(argument) and is_input_template(argument.source)
 
   @doc """
   Validate that the argument refers to a step result.
   """
-  defguard is_from_result(argument) when is_struct(argument.source, Template.Result)
+  defguard is_from_result(argument)
+           when is_argument(argument) and is_result_template(argument.source)
 
   @doc """
   Validate that the argument contains a static value.
   """
-  defguard is_from_value(argument) when is_struct(argument.source, Template.Value)
+  defguard is_from_value(argument)
+           when is_argument(argument) and is_value_template(argument.source)
+
+  @doc """
+  Validate that the argument contains an element.
+  """
+  defguard is_from_element(argument)
+           when is_argument(argument) and is_element_template(argument.source)
 
   @doc """
   Validate that the argument has a transform.

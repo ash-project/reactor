@@ -27,6 +27,9 @@ The top-level reactor DSL
    * argument
    * wait_for
  * [input](#reactor-input)
+ * [map](#reactor-map)
+   * argument
+   * wait_for
  * [step](#reactor-step)
    * argument
    * wait_for
@@ -106,7 +109,7 @@ Wrap a function around a group of steps.
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`name`](#reactor-around-name){: #reactor-around-name .spark-required} | `atom` |  | A unique name of the group of steps. |
+| [`name`](#reactor-around-name){: #reactor-around-name .spark-required} | `atom` |  | A unique name for the group of steps. |
 | [`fun`](#reactor-around-fun){: #reactor-around-fun .spark-required} | `(any, any, any, any -> any) \| mfa` |  | The around function. See `Reactor.Step.Around` for more information. |
 ### Options
 
@@ -171,7 +174,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-around-argument-name){: #reactor-around-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-around-argument-source){: #reactor-around-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-around-argument-source){: #reactor-around-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -327,7 +330,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-collect-argument-name){: #reactor-collect-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-collect-argument-source){: #reactor-collect-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-collect-argument-source){: #reactor-collect-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -467,7 +470,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-compose-argument-name){: #reactor-compose-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-compose-argument-source){: #reactor-compose-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-compose-argument-source){: #reactor-compose-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -616,7 +619,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-debug-argument-name){: #reactor-debug-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-debug-argument-source){: #reactor-debug-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-debug-argument-source){: #reactor-debug-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -759,7 +762,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-group-argument-name){: #reactor-group-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-group-argument-source){: #reactor-group-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-group-argument-source){: #reactor-group-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -866,6 +869,206 @@ end
 ### Introspection
 
 Target: `Reactor.Dsl.Input`
+
+## reactor.map
+```elixir
+map name
+```
+
+
+Execute nested steps for every item of an iterator.
+
+Allows you to "map over" a collection applying a some steps to each element,
+returning a list of new values.  The input collection must be bounded - ie you
+cannot pass infinite streams into this step or it will just loop forever - and
+because it has to keep the results from each batch will eventually just use up
+all available RAM.
+
+Under the hood we use `Iter` to handle lazy iteration of the collection.  This
+means that you can pass an `Iter.t` or any value for which `Iter.IntoIterable`
+is implemented.
+
+> #### A note on ordering {: .tip}
+>
+> If your application doesn't need the results back in the same order that they
+> were provided then setting `strict_ordering?` to `false` will increase
+> performance - especially on large input sets.
+
+
+### Nested DSLs
+ * [argument](#reactor-map-argument)
+ * [wait_for](#reactor-map-wait_for)
+
+
+### Examples
+```
+map :double_numbers do
+  input input(:numbers)
+
+  step :double do
+    argument :number, element(:double_numbers)
+
+    run %{number: number}, _, _ ->
+      {:ok, number * 2}
+    end
+  end
+end
+
+```
+
+```
+step :get_subscriptions do
+  run _, _, _ ->
+    Stripe.Subscription.list()
+  end
+end
+
+map :cancel_subscriptions do
+  input result(:get_subscriptions)
+
+  step :cancel do
+    argument :sub_id, element(:cancel_subscriptions, [:id])
+
+    run fn args, _, _ ->
+      Stripe.Subscription.cancel(arg.sub_id, %{prorate: true, invoice_now: true})
+    end
+  end
+
+  return :cancel
+end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-map-name){: #reactor-map-name .spark-required} | `atom` |  | A unique name for the step. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`source`](#reactor-map-source){: #reactor-map-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The iterator or enumerable to use as the source of the iteration. |
+| [`allow_async?`](#reactor-map-allow_async?){: #reactor-map-allow_async? } | `boolean` | `false` | Whether the emitted steps should be allowed to run asynchronously. |
+| [`batch_size`](#reactor-map-batch_size){: #reactor-map-batch_size } | `pos_integer` | `100` | The number of items to consume off the source when emitting steps. |
+| [`return`](#reactor-map-return){: #reactor-map-return } | `atom` |  | The name of the nested step to use as the return value. |
+| [`strict_ordering?`](#reactor-map-strict_ordering?){: #reactor-map-strict_ordering? } | `boolean` | `true` | Whether the mapped values must be returned in the same order that they were provided. |
+
+
+## reactor.map.argument
+```elixir
+argument name, source \\ nil
+```
+
+
+Specifies an argument to a Reactor step.
+
+Each argument is a value which is either the result of another step, or an input value.
+
+Individual arguments can be transformed with an arbitrary function before
+being passed to any steps.
+
+
+
+
+### Examples
+```
+argument :name, input(:name)
+
+```
+
+```
+argument :year, input(:date, [:year])
+
+```
+
+```
+argument :user, result(:create_user)
+
+```
+
+```
+argument :user_id, result(:create_user) do
+  transform & &1.id
+end
+
+```
+
+```
+argument :user_id, result(:create_user, [:id])
+
+```
+
+```
+argument :three, value(3)
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-map-argument-name){: #reactor-map-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
+| [`source`](#reactor-map-argument-source){: #reactor-map-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`transform`](#reactor-map-argument-transform){: #reactor-map-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Argument`
+
+## reactor.map.wait_for
+```elixir
+wait_for names
+```
+
+
+Wait for the named step to complete before allowing this one to start.
+
+Desugars to `argument :_, result(step_to_wait_for)`
+
+
+
+
+### Examples
+```
+wait_for :create_user
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`names`](#reactor-map-wait_for-names){: #reactor-map-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.WaitFor`
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Map`
 
 ## reactor.step
 ```elixir
@@ -983,7 +1186,7 @@ argument :three, value(3)
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`name`](#reactor-step-argument-name){: #reactor-step-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
-| [`source`](#reactor-step-argument-source){: #reactor-step-argument-source .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+| [`source`](#reactor-step-argument-source){: #reactor-step-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
 ### Options
 
 | Name | Type | Default | Docs |
@@ -1067,7 +1270,7 @@ Use a predicate to determine which steps should be executed.
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`on`](#reactor-switch-on){: #reactor-switch-on .spark-required} | `Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The value to match against. |
+| [`on`](#reactor-switch-on){: #reactor-switch-on .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The value to match against. |
 | [`allow_async?`](#reactor-switch-allow_async?){: #reactor-switch-allow_async? } | `boolean` | `true` | Whether the emitted steps should be allowed to run asynchronously. |
 
 
