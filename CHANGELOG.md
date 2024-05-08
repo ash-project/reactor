@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.2](https://github.com/ash-project/reactor/compare/v0.8.1...v0.8.2) (2024-05-08)
+
+
+
+
+### Bug Fixes:
+
+* initialisation issue with middlewares.
+
 ## [v0.8.1](https://github.com/ash-project/reactor/compare/v0.8.0...v0.8.1) (2024-03-20)
 
 
