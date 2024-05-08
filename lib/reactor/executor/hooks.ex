@@ -17,7 +17,10 @@ defmodule Reactor.Executor.Hooks do
         initial_state: reactor.state
       })
 
-    Utils.reduce_while_ok(reactor.middleware, context, fn middleware, context ->
+    reactor.middleware
+    |> Utils.reduce_while_ok(context, fn middleware, context ->
+      Code.ensure_loaded!(middleware)
+
       if function_exported?(middleware, :init, 1) do
         middleware.init(context)
       else
