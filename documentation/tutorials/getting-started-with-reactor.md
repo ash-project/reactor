@@ -3,8 +3,8 @@
 Reactor is a lot of things:
 
 - A [saga orchestrator](https://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf).
-- A [composable DSL](https://ash-hq.org/docs/dsl/reactor) for creating workflows.
-- A [builder](https://ash-hq.org/module/reactor/latest/reactor-builder) for dynamically creating workflows.
+- A [composable DSL](https://hexdocs.pm/reactor/Reactor.html) for creating workflows.
+- A [builder](https://hexdocs.pm/reactor/Reactor.Builder.html) for dynamically creating workflows.
 - Capable of mixing concurrent and serialised workflows.
 - Resolves dependencies between tasks using a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph).
 
@@ -58,7 +58,7 @@ How do you compose these steps together you ask? Let's discuss that in the next 
 
 ## Composing steps with the Reactor DSL
 
-Reactor uses [`spark`](https://ash-hq.org/docs/guides/spark/latest/tutorials/get-started-with-spark) to define an easy to use (and easy to extend) DSL for defining workflows. Let's start with an example:
+Reactor uses [`spark`](https://hexdocs.pm/spark/get-started-with-spark.html) to define an easy to use (and easy to extend) DSL for defining workflows. Let's start with an example:
 
 ```elixir
 defmodule MyApp.RegisterUserReactor do
