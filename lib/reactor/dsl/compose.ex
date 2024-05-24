@@ -4,11 +4,12 @@ defmodule Reactor.Dsl.Compose do
 
   See the `d:Reactor.compose`.
   """
-  defstruct arguments: [], name: nil, reactor: nil
+  defstruct __identifier__: nil, arguments: [], name: nil, reactor: nil
 
   alias Reactor.{Builder, Dsl}
 
   @type t :: %Dsl.Compose{
+          __identifier__: any,
           arguments: [Dsl.Argument.t()],
           name: any,
           reactor: module | Reactor.t()
