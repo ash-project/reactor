@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.3](https://github.com/ash-project/reactor/compare/v0.8.2...v0.8.3) (2024-05-24)
+
+
+
+
+### Bug Fixes:
+
+* Missing `__identifier__` field in `compose` DSL struct.
+
 ## [v0.8.2](https://github.com/ash-project/reactor/compare/v0.8.1...v0.8.2) (2024-05-08)
 
 
