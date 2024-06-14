@@ -20,6 +20,7 @@ defmodule Reactor.MixProject do
       dialyzer: [plt_add_apps: [:mix]],
       docs: [
         main: "readme",
+        logo: "logos/reactor-logo-light-small.png",
         extras: extra_documentation(),
         groups_for_extras: extra_documentation_groups(),
         before_closing_head_tag: fn type ->
