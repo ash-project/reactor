@@ -4,9 +4,11 @@
     "backoff",
     "casted",
     "Desugars",
+    "lvalue",
     "mappish",
     "noreply",
     "Planable",
+    "rvalue",
     "splode",
     "Splode"
   ]

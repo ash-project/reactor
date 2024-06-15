@@ -3,7 +3,7 @@ defmodule Reactor.Template.Value do
   A statically `value` template.
   """
 
-  defstruct value: nil
+  defstruct value: nil, sub_path: []
 
-  @type t :: %__MODULE__{value: any}
+  @type t :: %__MODULE__{value: any, sub_path: [any]}
 end

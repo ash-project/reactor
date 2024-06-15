@@ -14,15 +14,6 @@ defprotocol Reactor.Dsl.Build do
   def build(entity, reactor)
 
   @doc """
-  Perform any transformation that is needed to make the entity work in the
-  system before building.
-
-  See `Spark.Dsl.Transformer` for more information.
-  """
-  @spec transform(t, Spark.Dsl.t()) :: {:ok, Spark.Dsl.t()} | {:error, any}
-  def transform(entity, dsl_state)
-
-  @doc """
   Perform any after-compilation verification that is needed to make the entity
   work.
 

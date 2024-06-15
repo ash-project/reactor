@@ -15,57 +15,72 @@ defmodule Reactor.Executor.Sync do
   def run(reactor, state, nil), do: {:continue, reactor, state}
 
   def run(reactor, state, step) do
-    case Executor.StepRunner.run(reactor, state, step, state.concurrency_key) do
-      :retry ->
-        state = increment_retries(state, step)
+    result = Executor.StepRunner.run(reactor, state, step, state.concurrency_key)
 
-        if Map.get(state.retries, step.ref) >= step.max_retries do
-          reactor = drop_from_plan(reactor, step)
+    handle_completed_step(reactor, state, step, result)
+  end
 
-          error =
-            RetriesExceededError.exception(
-              step: step,
-              retry_count: Map.get(state.retries, step.ref)
-            )
+  defp handle_completed_step(reactor, state, step, :retry) do
+    handle_completed_step(reactor, state, step, {:retry, nil})
+  end
 
-          {:undo, reactor, %{state | errors: [error | state.errors]}}
-        else
-          {:recurse, reactor, state}
-        end
+  defp handle_completed_step(reactor, state, step, {:retry, error}) do
+    state = increment_retries(state, step)
 
-      {:retry, reason} ->
-        state = increment_retries(state, step)
+    if Map.get(state.retries, step.ref) >= step.max_retries do
+      reactor = drop_from_plan(reactor, step)
 
-        if Map.get(state.retries, step.ref) >= step.max_retries do
-          reactor = drop_from_plan(reactor, step)
-          {:undo, reactor, %{state | errors: [reason | state.errors]}}
-        else
-          {:recurse, reactor, state}
-        end
+      error =
+        error ||
+          RetriesExceededError.exception(
+            step: step,
+            retry_count: Map.get(state.retries, step.ref)
+          )
 
-      {:ok, value, new_steps} ->
-        reactor =
+      {:undo, reactor, %{state | errors: [error | state.errors]}}
+    else
+      {:recurse, reactor, state}
+    end
+  end
+
+  defp handle_completed_step(reactor, state, step, {:ok, value, new_steps}) do
+    reactor =
+      reactor
+      |> maybe_store_undo(step, value)
+      |> maybe_store_intermediate_result(step, value)
+
+    reactor =
+      case Enum.split_with(new_steps, &(&1.name == step.name)) do
+        {[], new_steps} ->
           reactor
-          |> maybe_store_undo(step, value)
-          |> maybe_store_intermediate_result(step, value)
           |> drop_from_plan(step)
           |> append_steps(new_steps)
 
-        {:recurse, reactor, state}
+        {recursive_steps, new_steps} ->
+          recursive_steps = Enum.map(recursive_steps, &%{&1 | ref: step.ref})
 
-      {:error, reason} ->
-        state = %{state | errors: [reason | state.errors]}
-        reactor = drop_from_plan(reactor, step)
-        {:undo, reactor, state}
-
-      {:halt, value} ->
-        reactor =
           reactor
-          |> drop_from_plan(step)
           |> store_intermediate_result(step, value)
+          |> append_steps(recursive_steps)
+          |> append_steps(new_steps)
+      end
 
-        {:halt, reactor, state}
-    end
+    {:recurse, reactor, state}
+  end
+
+  defp handle_completed_step(reactor, state, step, {:error, reason}) do
+    state = %{state | errors: [reason | state.errors]}
+    reactor = drop_from_plan(reactor, step)
+    {:undo, reactor, state}
+  end
+
+  defp handle_completed_step(reactor, state, step, {:halt, value}) do
+    reactor =
+      reactor
+      |> drop_from_plan(step)
+      |> store_intermediate_result(step, value)
+
+    {:halt, reactor, state}
   end
 
   defp increment_retries(state, step) do
@@ -84,16 +99,15 @@ defmodule Reactor.Executor.Sync do
     end
   end
 
+  defp maybe_store_intermediate_result(reactor, step, value) when reactor.return == step.name do
+    store_intermediate_result(reactor, step, value)
+  end
+
   defp maybe_store_intermediate_result(reactor, step, value) do
-    cond do
-      Graph.out_degree(reactor.plan, step) > 0 ->
-        store_intermediate_result(reactor, step, value)
-
-      reactor.return == step.name ->
-        store_intermediate_result(reactor, step, value)
-
-      true ->
-        reactor
+    if Graph.out_degree(reactor.plan, step) > 0 do
+      store_intermediate_result(reactor, step, value)
+    else
+      reactor
     end
   end
 
