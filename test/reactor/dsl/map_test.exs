@@ -2,20 +2,27 @@ defmodule Reactor.Dsl.MapTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  defmodule MapReactor do
+  defmodule MapOverNumbersReactor do
     @moduledoc false
     use Reactor
 
     input :numbers
 
+    step :multiplier do
+      run fn _ -> {:ok, 2} end
+    end
+
     map :map_over_numbers do
       source(input(:numbers))
+      argument :multiplier, result(:multiplier)
       batch_size(2)
 
       step :double do
         argument :input, element(:map_over_numbers)
 
-        run fn %{input: input}, _ -> {:ok, input * 2} end
+        run fn %{input: input, multiplier: multiplier}, _ ->
+          {:ok, input * multiplier}
+        end
       end
     end
   end
@@ -24,6 +31,6 @@ defmodule Reactor.Dsl.MapTest do
     numbers = [0, 2, 4, 6, 8, 10]
 
     assert {:ok, [0, 4, 8, 12, 16, 20]} =
-             Reactor.run!(MapReactor, %{numbers: numbers}, %{}, async?: false)
+             Reactor.run!(MapOverNumbersReactor, %{numbers: numbers}, %{}, async?: false)
   end
 end

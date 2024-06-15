@@ -59,6 +59,13 @@ defmodule Reactor.Step.Map do
       doc: """
       The cached names of all descendant steps to aid rewriting. You don't need to provide this value - it is calculated by the init pass.
       """
+    ],
+    extra_arguments: [
+      type: {:list, {:struct, Argument}},
+      required: false,
+      doc: """
+      Extra arguments to be passed by to every nested step.
+      """
     ]
   ]
 
@@ -82,16 +89,23 @@ defmodule Reactor.Step.Map do
   def run(arguments, context, options) do
     with {:ok, options} <- Options.validate(options, @option_schema) do
       case options[:state] do
-        :init -> do_init(arguments.source, options, context.current_step)
+        :init -> do_init(arguments.source, arguments, options, context.current_step)
         :iterating -> do_iterate(arguments, options, context.current_step)
       end
     end
   end
 
-  defp do_init(source, options, map_step) when Iter.is_iter(source) do
+  defp do_init(source, arguments, options, map_step) when Iter.is_iter(source) do
     source =
       source
       |> Iter.with_index()
+
+    extra_arguments =
+      arguments
+      |> Map.drop([:source, :result])
+      |> Enum.map(fn {name, value} ->
+        Argument.from_value(name, value)
+      end)
 
     options =
       options
@@ -99,14 +113,15 @@ defmodule Reactor.Step.Map do
         collect_all_step_names(options[:steps])
       end)
       |> Keyword.put(:state, :iterating)
+      |> Keyword.put(:extra_arguments, extra_arguments)
 
     emit_batch(source, options, map_step, [])
   end
 
-  defp do_init(source, options, map_step) do
+  defp do_init(source, arguments, options, map_step) do
     source
     |> Iter.from()
-    |> do_init(options, map_step)
+    |> do_init(arguments, options, map_step)
   end
 
   defp do_iterate(arguments, options, map_step) do
@@ -193,6 +208,7 @@ defmodule Reactor.Step.Map do
   defp steps_for_batch(batch, options, map_step) do
     steps = options[:steps]
     descendant_step_names = options[:descendant_step_names]
+    extra_arguments = options[:extra_arguments]
 
     reduce_while_ok(batch, [], fn {element, index}, result ->
       case rewrite_steps_for_element(
@@ -200,6 +216,7 @@ defmodule Reactor.Step.Map do
              steps,
              descendant_step_names,
              map_step,
+             extra_arguments,
              options[:allow_async?]
            ) do
         {:ok, steps} -> reduce_while_ok(steps, result, &{:ok, [&1 | &2]})
@@ -213,6 +230,7 @@ defmodule Reactor.Step.Map do
          steps,
          descendant_step_names,
          map_step,
+         extra_arguments,
          allow_async?
        ) do
     map_while_ok(
@@ -222,6 +240,7 @@ defmodule Reactor.Step.Map do
         {element, index},
         descendant_step_names,
         map_step,
+        extra_arguments,
         allow_async?
       )
     )
@@ -232,6 +251,7 @@ defmodule Reactor.Step.Map do
          {element, index},
          descendant_step_names,
          map_step,
+         extra_arguments,
          allow_async?
        ) do
     with {:ok, step} <-
@@ -247,12 +267,14 @@ defmodule Reactor.Step.Map do
              {element, index},
              descendant_step_names,
              map_step,
+             extra_arguments,
              allow_async?
            ) do
       {:ok,
        %{
          step
-         | name: {__MODULE__, map_step.name, step.name, index},
+         | arguments: Enum.concat(step.arguments, extra_arguments),
+           name: {__MODULE__, map_step.name, step.name, index},
            ref: {__MODULE__, map_step.name, step.ref, index},
            async?: allow_async?
        }}
@@ -302,6 +324,7 @@ defmodule Reactor.Step.Map do
          {element, index},
          descendant_step_names,
          map_step,
+         extra_arguments,
          allow_async?
        ) do
     with {:ok, steps} <-
@@ -310,6 +333,7 @@ defmodule Reactor.Step.Map do
              steps,
              descendant_step_names,
              map_step,
+             extra_arguments,
              allow_async?
            ) do
       {:ok, %{step | steps: steps}}
@@ -321,6 +345,7 @@ defmodule Reactor.Step.Map do
          _element_index,
          _descendant_step_names,
          _map_step,
+         _extra_arguments,
          _allow_async?
        ),
        do: {:ok, step}
