@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.8.5](https://github.com/ash-project/reactor/compare/v0.8.4...v0.8.5) (2024-07-10)
+
+
+
+
+### Improvements:
+
+* add `mix reactor.install` (#124)
+
 ## [v0.8.4](https://github.com/ash-project/reactor/compare/v0.8.3...v0.8.4) (2024-05-25)
 
 
