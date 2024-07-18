@@ -5,6 +5,27 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.9.0](https://github.com/ash-project/reactor/compare/v0.8.5...v0.9.0) (2024-07-18)
+
+
+
+
+### Features:
+
+* map: Add the ability to map over elements of a collection inside a reactor. (#123)
+
+* map: Add the ability to map over elements of a collection inside a reactor.
+
+### Bug Fixes:
+
+* automatically pass extra arguments from the map step to nested steps.
+
+* spurious test failures seemingly caused by `Mimic`.
+
+### Improvements:
+
+* throw a more helpful error when a step returns an invalid result.
+
 ## [v0.8.5](https://github.com/ash-project/reactor/compare/v0.8.4...v0.8.5) (2024-07-10)
 
 
