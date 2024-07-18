@@ -50,15 +50,22 @@ defmodule Reactor.Planner do
     steps_by_name =
       graph
       |> Graph.vertices()
-      |> Enum.concat(steps)
+      |> Stream.filter(&is_struct(&1, Step))
+      |> Stream.concat(steps)
       |> Map.new(&{&1.name, &1})
 
     steps
     |> reduce_while_ok(graph, fn
       step, graph when is_struct(step, Step) ->
-        graph
-        |> Graph.add_vertex(step, step.name)
-        |> reduce_arguments_into_graph(step, steps_by_name)
+        if Graph.has_vertex?(graph, step) do
+          graph
+          |> Graph.replace_vertex(step, step)
+          |> reduce_arguments_into_graph(step, steps_by_name)
+        else
+          graph
+          |> Graph.add_vertex(step, step.name)
+          |> reduce_arguments_into_graph(step, steps_by_name)
+        end
 
       not_step, _ ->
         {:error,
@@ -72,7 +79,7 @@ defmodule Reactor.Planner do
 
   defp reduce_arguments_into_graph(graph, current_step, steps_by_name) do
     reduce_while_ok(current_step.arguments, graph, fn
-      argument, graph when is_argument(argument) and is_from_result(argument) ->
+      argument, graph when is_from_result(argument) ->
         dependency_name = argument.source.name
 
         case Map.fetch(steps_by_name, dependency_name) do
@@ -95,8 +102,7 @@ defmodule Reactor.Planner do
              )}
         end
 
-      argument, graph
-      when is_argument(argument) and (is_from_input(argument) or is_from_value(argument)) ->
+      argument, graph when is_from_input(argument) or is_from_value(argument) ->
         {:ok, graph}
     end)
   end

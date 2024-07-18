@@ -117,6 +117,37 @@ defmodule Reactor.Dsl.Argument do
   @spec value(any) :: Template.Value.t()
   def value(value), do: %Template.Value{value: value}
 
+  @doc ~S"""
+  The `element` template helper for the Reactor DSL.
+
+  ## Example
+
+  ```elixir
+  defmodule ExampleReactor do
+    use Reactor
+
+    input :numbers
+
+    map :double_numbers do
+      source input(:numbers)
+
+      step :double do
+        argument :number, element(:double_numbers)
+
+        run fn args, _, _ ->
+          {:ok, args.number * 2}
+        end
+      end
+
+      return :double
+    end
+  end
+  ```
+  """
+  @spec element(any, [any]) :: Template.Element.t()
+  def element(name, sub_path \\ [])
+  def element(name, sub_path), do: %Template.Element{name: name, sub_path: List.wrap(sub_path)}
+
   @doc false
   def __entity__,
     do: %Spark.Dsl.Entity{

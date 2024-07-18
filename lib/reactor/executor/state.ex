@@ -53,7 +53,7 @@ defmodule Reactor.Executor.State do
     |> maybe_set_max_concurrency()
     |> maybe_allocate_concurrency_pool()
     |> Map.put(:started_at, DateTime.utc_now())
-    |> then(&struct(__MODULE__, &1))
+    |> then(&struct!(__MODULE__, &1))
   end
 
   defp maybe_set_max_concurrency(attrs)

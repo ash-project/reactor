@@ -39,7 +39,7 @@ defmodule Reactor.Dsl.Around do
           type: :atom,
           required: true,
           doc: """
-          A unique name of the group of steps.
+          A unique name for the group of steps.
           """
         ],
         fun: [
@@ -91,9 +91,15 @@ defmodule Reactor.Dsl.Around do
        )}
     end
 
-    def verify(_around, _dsl_state), do: :ok
-
-    def transform(_around, dsl_state), do: {:ok, dsl_state}
+    def verify(around, dsl_state) do
+      around.steps
+      |> Enum.reduce_while(:ok, fn step, :ok ->
+        case Dsl.Build.verify(step, dsl_state) do
+          :ok -> {:cont, :ok}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+    end
 
     defp build_inputs(reactor, around) do
       around.arguments

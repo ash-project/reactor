@@ -103,12 +103,18 @@ defmodule Reactor.Dsl.Group do
        )}
     end
 
-    def verify(_group, _dsl_state), do: :ok
+    def verify(group, dsl_state) do
+      group.steps
+      |> Enum.reduce_while(:ok, fn step, :ok ->
+        case Dsl.Build.verify(step, dsl_state) do
+          :ok -> {:cont, :ok}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      end)
+    end
 
-    def transform(_around, dsl_state), do: {:ok, dsl_state}
-
-    defp build_inputs(reactor, around) do
-      around.arguments
+    defp build_inputs(reactor, group) do
+      group.arguments
       |> Enum.map(& &1.name)
       |> reduce_while_ok(reactor, &Builder.add_input(&2, &1))
     end

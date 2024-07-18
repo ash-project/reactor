@@ -5,6 +5,7 @@ defmodule Reactor.Executor.StepRunner do
   alias Reactor.{
     Error.Invalid.ArgumentSubpathError,
     Error.Invalid.CompensateStepError,
+    Error.Invalid.InvalidResultError,
     Error.Invalid.MissingInputError,
     Error.Invalid.MissingResultError,
     Error.Invalid.RunStepError,
@@ -19,6 +20,8 @@ defmodule Reactor.Executor.StepRunner do
   import Reactor.Utils
   import Reactor.Argument, only: :macros
   require Logger
+
+  @dialyzer {:nowarn_function, handle_run_result: 5}
 
   # In the future this could be moved into a step property.
   @max_undo_count 5
@@ -159,6 +162,16 @@ defmodule Reactor.Executor.StepRunner do
     Hooks.event(reactor, {:run_halt, value}, step, context)
 
     {:halt, value}
+  end
+
+  defp handle_run_result(result, reactor, step, arguments, _context) do
+    {:error,
+     InvalidResultError.exception(
+       reactor: reactor,
+       step: step,
+       result: result,
+       arguments: arguments
+     )}
   end
 
   defp maybe_compensate(reactor, step, error, arguments, context) do
