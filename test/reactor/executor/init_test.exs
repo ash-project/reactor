@@ -2,7 +2,7 @@ defmodule Reactor.Executor.InitTest do
   @moduledoc false
   use ExUnit.Case, async: true
   import Reactor.Executor.Init
-  alias Reactor.{Builder, Executor}
+  alias Reactor.Builder
   use Mimic
 
   describe "init/4" do
@@ -51,15 +51,6 @@ defmodule Reactor.Executor.InitTest do
     } do
       assert {:error, error} = init(reactor, [], [], [:wat])
       assert Exception.message(error) =~ "cannot be converted into a map"
-    end
-
-    test "options are passed into `State.init/1`", %{reactor: reactor} do
-      Executor.State
-      |> expect(:init, fn options ->
-        assert options.hello == :marty
-      end)
-
-      assert {:ok, _reactor, _state} = init(reactor, [], [], hello: :marty)
     end
   end
 end

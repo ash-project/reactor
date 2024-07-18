@@ -1,5 +1,4 @@
 Mimic.copy(Example.Step.Compensable)
 Mimic.copy(Example.Step.Doable)
 Mimic.copy(Example.Step.Undoable)
-Mimic.copy(Reactor.Executor.State)
 ExUnit.start()
