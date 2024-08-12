@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.9.1](https://github.com/ash-project/reactor/compare/v0.9.0...v0.9.1) (2024-08-12)
+
+
+
+
+### Bug Fixes:
+
+* `Reactor.run!/4` should not return an `:ok` tuple.
+
 ## [v0.9.0](https://github.com/ash-project/reactor/compare/v0.8.5...v0.9.0) (2024-07-18)
 
 
