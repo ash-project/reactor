@@ -213,7 +213,7 @@ defmodule Reactor do
 
   def run!(reactor, inputs, context, options) do
     case run(reactor, inputs, context, options) do
-      {:ok, value} -> {:ok, value}
+      {:ok, value} -> value
       {:error, reason} -> raise reason
     end
   end

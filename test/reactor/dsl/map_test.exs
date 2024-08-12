@@ -30,7 +30,7 @@ defmodule Reactor.Dsl.MapTest do
   test "it maps over it's inputs" do
     numbers = [0, 2, 4, 6, 8, 10]
 
-    assert {:ok, [0, 4, 8, 12, 16, 20]} =
+    assert [0, 4, 8, 12, 16, 20] =
              Reactor.run!(MapOverNumbersReactor, %{numbers: numbers}, %{}, async?: false)
   end
 end
