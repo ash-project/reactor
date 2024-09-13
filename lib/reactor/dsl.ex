@@ -28,6 +28,7 @@ defmodule Reactor.Dsl do
       Dsl.Collect.__entity__(),
       Dsl.Compose.__entity__(),
       Dsl.Debug.__entity__(),
+      Dsl.Flunk.__entity__(),
       Dsl.Group.__entity__(),
       Dsl.Input.__entity__(),
       Dsl.Map.__entity__(),

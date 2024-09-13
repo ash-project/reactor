@@ -21,4 +21,41 @@ defmodule Reactor.Error do
       import Reactor.Utils
     end
   end
+
+  @doc """
+  Recursively searches through nested reactor errors for the first instance of
+  the provided module.
+  """
+  @spec fetch_error(Exception.t(), module) :: {:ok, Exception.t()} | :error
+  def fetch_error(error, module) when is_exception(error, module), do: {:ok, error}
+
+  def fetch_error(error, module) when is_list(error.errors) do
+    Enum.reduce_while(error.errors, :error, fn error, :error ->
+      case fetch_error(error, module) do
+        {:ok, error} -> {:halt, {:ok, error}}
+        :error -> {:cont, :error}
+      end
+    end)
+  end
+
+  def fetch_error(error, module) when is_exception(error.error),
+    do: fetch_error(error.error, module)
+
+  def fetch_error(_error, _module), do: :error
+
+  @doc """
+  Recursively searches through nested reactor errors and returns any errors
+  which match the provided module name.
+  """
+  @spec find_errors(Exception.t(), module) :: [Exception.t()]
+  def find_errors(error, module) when is_exception(error, module), do: [error]
+
+  def find_errors(error, module) when is_list(error.errors) do
+    Enum.flat_map(error.errors, &find_errors(&1, module))
+  end
+
+  def find_errors(error, module) when is_exception(error.error),
+    do: find_errors(error.error, module)
+
+  def find_errors(_error, _module), do: []
 end
