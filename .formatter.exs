@@ -20,6 +20,8 @@ spark_locals_without_parens = [
   debug: 2,
   default: 0,
   default: 1,
+  flunk: 2,
+  flunk: 3,
   group: 1,
   group: 2,
   input: 1,

@@ -23,6 +23,9 @@ The top-level reactor DSL
  * [debug](#reactor-debug)
    * argument
    * wait_for
+ * [flunk](#reactor-flunk)
+   * argument
+   * wait_for
  * [group](#reactor-group)
    * argument
    * wait_for
@@ -675,6 +678,153 @@ Target: `Reactor.Dsl.WaitFor`
 ### Introspection
 
 Target: `Reactor.Dsl.Debug`
+
+## reactor.flunk
+```elixir
+flunk name, message
+```
+
+
+Creates a step which will always cause the Reactor to exit with an error.
+
+This step will flunk with a `Reactor.Error.Invalid.ForcedFailureError` with it's message set to the provided message.
+Additionally, any arguments to the step will be stored in the exception under the `arguments` key.
+
+
+### Nested DSLs
+ * [argument](#reactor-flunk-argument)
+ * [wait_for](#reactor-flunk-wait_for)
+
+
+### Examples
+```
+flunk :outaroad, "Ran out of road before reaching 88Mph"
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-flunk-name){: #reactor-flunk-name .spark-required} | `atom` |  | A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps. |
+| [`message`](#reactor-flunk-message){: #reactor-flunk-message } | `nil \| String.t \| Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The message to to attach to the exception. |
+
+
+
+## reactor.flunk.argument
+```elixir
+argument name, source \\ nil
+```
+
+
+Specifies an argument to a Reactor step.
+
+Each argument is a value which is either the result of another step, or an input value.
+
+Individual arguments can be transformed with an arbitrary function before
+being passed to any steps.
+
+
+
+
+### Examples
+```
+argument :name, input(:name)
+
+```
+
+```
+argument :year, input(:date, [:year])
+
+```
+
+```
+argument :user, result(:create_user)
+
+```
+
+```
+argument :user_id, result(:create_user) do
+  transform & &1.id
+end
+
+```
+
+```
+argument :user_id, result(:create_user, [:id])
+
+```
+
+```
+argument :three, value(3)
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-flunk-argument-name){: #reactor-flunk-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
+| [`source`](#reactor-flunk-argument-source){: #reactor-flunk-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`transform`](#reactor-flunk-argument-transform){: #reactor-flunk-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Argument`
+
+## reactor.flunk.wait_for
+```elixir
+wait_for names
+```
+
+
+Wait for the named step to complete before allowing this one to start.
+
+Desugars to `argument :_, result(step_to_wait_for)`
+
+
+
+
+### Examples
+```
+wait_for :create_user
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`names`](#reactor-flunk-wait_for-names){: #reactor-flunk-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.WaitFor`
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Flunk`
 
 ## reactor.group
 ```elixir
