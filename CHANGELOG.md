@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.10.0](https://github.com/ash-project/reactor/compare/v0.9.1...v0.10.0) (2024-09-15)
+
+
+
+
+### Features:
+
+* Reactor.Dsl.Flunk: Add a special step type which always fails. (#125)
+
 ## [v0.9.1](https://github.com/ash-project/reactor/compare/v0.9.0...v0.9.1) (2024-08-12)
 
 
