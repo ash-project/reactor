@@ -62,7 +62,7 @@ defmodule Reactor.Dsl.Map do
           step :double do
             argument :number, element(:double_numbers)
 
-            run %{number: number}, _, _ ->
+            run fn %{number: number}, _, _ ->
               {:ok, number * 2}
             end
           end
@@ -70,7 +70,7 @@ defmodule Reactor.Dsl.Map do
         """,
         """
         step :get_subscriptions do
-          run _, _, _ ->
+          run fn _, _, _ ->
             Stripe.Subscription.list()
           end
         end
