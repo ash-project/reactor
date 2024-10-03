@@ -1058,7 +1058,7 @@ map :double_numbers do
   step :double do
     argument :number, element(:double_numbers)
 
-    run fn %{number: number}, _, _ ->
+    run fn %{number: number}, _ ->
       {:ok, number * 2}
     end
   end
@@ -1068,7 +1068,7 @@ end
 
 ```
 step :get_subscriptions do
-  run fn _, _, _ ->
+  run fn _, _ ->
     Stripe.Subscription.list()
   end
 end
@@ -1079,7 +1079,7 @@ map :cancel_subscriptions do
   step :cancel do
     argument :sub_id, element(:cancel_subscriptions, [:id])
 
-    run fn args, _, _ ->
+    run fn args, _ ->
       Stripe.Subscription.cancel(arg.sub_id, %{prorate: true, invoice_now: true})
     end
   end
@@ -1272,10 +1272,10 @@ end
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`run`](#reactor-step-run){: #reactor-step-run } | `(any -> any) \| mfa \| (any, any -> any) \| mfa` |  | Provide an anonymous function which implements the `run/3` callback. Cannot be provided at the same time as the `impl` argument. |
-| [`undo`](#reactor-step-undo){: #reactor-step-undo } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument. |
-| [`compensate`](#reactor-step-compensate){: #reactor-step-compensate } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument. |
-| [`max_retries`](#reactor-step-max_retries){: #reactor-step-max_retries } | `:infinity \| non_neg_integer` | `:infinity` | The maximum number of times that the step can be retried before failing. Only used when the result of the `compensate/4` callback is `:retry`. |
+| [`run`](#reactor-step-run){: #reactor-step-run } | `(any -> any) \| mfa \| (any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `run/1-2` callback. Cannot be provided at the same time as the `impl` argument. |
+| [`undo`](#reactor-step-undo){: #reactor-step-undo } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `undo/1-3` callback. Cannot be provided at the same time as the `impl` argument. |
+| [`compensate`](#reactor-step-compensate){: #reactor-step-compensate } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `compensate/1-3` callback. Cannot be provided at the same time as the `impl` argument. |
+| [`max_retries`](#reactor-step-max_retries){: #reactor-step-max_retries } | `:infinity \| non_neg_integer` | `:infinity` | The maximum number of times that the step can be retried before failing. Only used when the result of the `compensate` callback is `:retry`. |
 | [`async?`](#reactor-step-async?){: #reactor-step-async? } | `boolean` | `true` | When set to true the step will be executed asynchronously via Reactor's `TaskSupervisor`. |
 | [`transform`](#reactor-step-transform){: #reactor-step-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the entire argument map before it is passed to the step. |
 
