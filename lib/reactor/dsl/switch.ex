@@ -155,7 +155,13 @@ defmodule Reactor.Dsl.Switch do
     def verify(switch, dsl_state) do
       switch.matches
       |> Enum.flat_map(& &1.steps)
-      |> Enum.concat(switch.default.steps)
+      |> Enum.concat(
+        if is_nil(switch.default) do
+          []
+        else
+          switch.default.steps
+        end
+      )
       |> Enum.reduce_while(:ok, fn step, :ok ->
         case Build.verify(step, dsl_state) do
           :ok -> {:cont, :ok}
