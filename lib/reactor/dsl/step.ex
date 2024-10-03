@@ -90,21 +90,21 @@ defmodule Reactor.Dsl.Step do
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `run/3` callback. Cannot be provided at the same time as the `impl` argument.
+          Provide an anonymous function which implements a `run/1-2` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         undo: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument.
+          Provide an anonymous function which implements a `undo/1-3` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         compensate: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements the `undo/4` callback. Cannot be provided at the same time as the `impl` argument.
+          Provide an anonymous function which implements a `compensate/1-3` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         max_retries: [
@@ -112,7 +112,7 @@ defmodule Reactor.Dsl.Step do
           required: false,
           default: :infinity,
           doc: """
-          The maximum number of times that the step can be retried before failing. Only used when the result of the `compensate/4` callback is `:retry`.
+          The maximum number of times that the step can be retried before failing. Only used when the result of the `compensate` callback is `:retry`.
           """
         ],
         async?: [

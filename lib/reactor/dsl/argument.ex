@@ -63,7 +63,7 @@ defmodule Reactor.Dsl.Argument do
     use Reactor
 
     step :whom do
-      run fn ->
+      run fn _, _ ->
         {:ok, Enum.random(["Marty", "Doc", "Jennifer", "Lorraine", "George", nil])}
       end
     end
@@ -107,7 +107,7 @@ defmodule Reactor.Dsl.Argument do
       # here: -------↓↓↓↓↓
       argument :rhs, value(3)
 
-      run fn args, _, _ ->
+      run fn args, _ ->
         {:ok, args.lhs * args.rhs}
       end
     end
@@ -134,7 +134,7 @@ defmodule Reactor.Dsl.Argument do
       step :double do
         argument :number, element(:double_numbers)
 
-        run fn args, _, _ ->
+        run fn args, _ ->
           {:ok, args.number * 2}
         end
       end

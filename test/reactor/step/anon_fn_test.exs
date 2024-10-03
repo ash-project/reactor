@@ -7,7 +7,7 @@ defmodule Reactor.Step.AnonFnTest do
     assert Spark.implements_behaviour?(Reactor.Step.AnonFn, Reactor.Step)
   end
 
-  describe "run/3" do
+  describe "run/2" do
     test "it can handle 2 arity anonymous functions" do
       fun = fn arguments, _ ->
         arguments.first_name
