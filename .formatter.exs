@@ -26,6 +26,8 @@ spark_locals_without_parens = [
   group: 2,
   input: 1,
   input: 2,
+  inputs: 1,
+  inputs: 2,
   level: 1,
   map: 1,
   map: 2,
