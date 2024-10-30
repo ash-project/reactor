@@ -128,8 +128,10 @@ defmodule Reactor.Dsl.Switch do
     alias Spark.{Dsl.Verifier, Error.DslError}
 
     def build(switch, reactor) do
-      with {:ok, matches} <- build_matches(switch, reactor),
-           {:ok, default} <- build_default(switch, reactor) do
+      sub_reactor = Builder.new(reactor.id)
+
+      with {:ok, matches} <- build_matches(switch, sub_reactor),
+           {:ok, default} <- build_default(switch, sub_reactor) do
         Builder.add_step(
           reactor,
           switch.name,
