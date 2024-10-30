@@ -30,7 +30,7 @@ defmodule MyApp.CreateStripeSubscriptionStep do
 
   @impl true
   def run(arguments, context, options) do
-    Stripe.Subscription.create(arguments.stripe_customer_id, items: [plan: arguments.stripe_plan_id])
+    Stripe.Subscription.create(arguments.customer_id, items: [plan: arguments.plan_id])
   end
 
   @impl true
