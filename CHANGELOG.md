@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.10.1](https://github.com/ash-project/reactor/compare/v0.10.0...v0.10.1) (2024-11-06)
+
+
+
+
+### Bug Fixes:
+
+* Switch: Don't duplicate outside steps inside switch matches. (#133)
+
+* Don't raise error when switch is missing default branch (#129)
+
 ## [v0.10.0](https://github.com/ash-project/reactor/compare/v0.9.1...v0.10.0) (2024-09-15)
 
 
