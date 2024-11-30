@@ -7,6 +7,7 @@ defmodule Reactor.Dsl.Around do
   defstruct __identifier__: nil,
             allow_async?: false,
             arguments: [],
+            description: nil,
             fun: nil,
             name: nil,
             steps: []
@@ -17,6 +18,7 @@ defmodule Reactor.Dsl.Around do
           __identifier__: any,
           allow_async?: boolean,
           arguments: [Dsl.Argument.t()],
+          description: nil | String.t(),
           fun: mfa | Step.Around.around_fun(),
           name: atom,
           steps: [Dsl.Step.t()]
@@ -40,6 +42,13 @@ defmodule Reactor.Dsl.Around do
           required: true,
           doc: """
           A unique name for the group of steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         fun: [

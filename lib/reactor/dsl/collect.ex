@@ -7,6 +7,7 @@ defmodule Reactor.Dsl.Collect do
 
   defstruct __identifier__: nil,
             arguments: [],
+            description: nil,
             name: nil,
             transform: nil
 
@@ -14,6 +15,7 @@ defmodule Reactor.Dsl.Collect do
 
   @type t :: %__MODULE__{
           arguments: [Dsl.Argument.t()],
+          description: nil | String.t(),
           name: atom,
           transform: nil | (any -> any),
           __identifier__: any
@@ -51,6 +53,13 @@ defmodule Reactor.Dsl.Collect do
           required: true,
           doc: """
           A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         transform: [

@@ -32,6 +32,11 @@ defmodule Reactor.Builder.Step do
       required: false,
       doc: "Context which will be merged with the reactor context when calling this step"
     ],
+    description: [
+      type: :string,
+      required: false,
+      doc: "An optional description for the step"
+    ],
     ref: [
       type: {:in, [:step_name, :make_ref]},
       required: false,
@@ -88,6 +93,7 @@ defmodule Reactor.Builder.Step do
             arguments: arguments,
             async?: async,
             context: context,
+            description: options[:description],
             impl: impl,
             name: name,
             max_retries: max_retries
@@ -139,6 +145,7 @@ defmodule Reactor.Builder.Step do
         arguments: arguments,
         async?: async,
         context: context,
+        description: options[:description],
         impl: impl,
         name: name,
         max_retries: max_retries

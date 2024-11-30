@@ -6,12 +6,18 @@ defmodule Reactor.Dsl.Input do
   """
 
   defstruct __identifier__: nil,
+            description: nil,
             name: nil,
             transform: nil
 
   alias Reactor.{Builder, Dsl, Step}
 
-  @type t :: %Dsl.Input{name: any, transform: {module, keyword}, __identifier__: any}
+  @type t :: %Dsl.Input{
+          name: any,
+          description: nil | String.t(),
+          transform: {module, keyword},
+          __identifier__: any
+        }
 
   @doc false
   def __entity__,
@@ -53,6 +59,13 @@ defmodule Reactor.Dsl.Input do
           default: nil,
           doc: """
           An optional transformation function which can be used to modify the input before it is passed to any steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the input.
           """
         ]
       ]

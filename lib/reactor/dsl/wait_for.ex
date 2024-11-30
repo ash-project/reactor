@@ -5,7 +5,7 @@ defmodule Reactor.Dsl.WaitFor do
   See `d:Reactor.step.wait_for`.
   """
 
-  defstruct __identifier__: nil, names: []
+  defstruct __identifier__: nil, description: nil, names: []
 
   alias Reactor.{Argument, Dsl}
   import Reactor.Utils
@@ -30,6 +30,13 @@ defmodule Reactor.Dsl.WaitFor do
           required: true,
           doc: """
           The name of the step to wait for.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description.
           """
         ]
       ]

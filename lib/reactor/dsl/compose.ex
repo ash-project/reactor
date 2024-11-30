@@ -4,13 +4,14 @@ defmodule Reactor.Dsl.Compose do
 
   See the `d:Reactor.compose`.
   """
-  defstruct __identifier__: nil, arguments: [], name: nil, reactor: nil
+  defstruct __identifier__: nil, description: nil, arguments: [], name: nil, reactor: nil
 
   alias Reactor.{Builder, Dsl}
 
   @type t :: %Dsl.Compose{
           __identifier__: any,
           arguments: [Dsl.Argument.t()],
+          description: nil | String.t(),
           name: any,
           reactor: module | Reactor.t()
         }
@@ -36,6 +37,13 @@ defmodule Reactor.Dsl.Compose do
           required: true,
           doc: """
           A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         reactor: [

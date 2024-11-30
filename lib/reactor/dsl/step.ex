@@ -9,6 +9,7 @@ defmodule Reactor.Dsl.Step do
             arguments: [],
             async?: true,
             compensate: nil,
+            description: nil,
             impl: nil,
             max_retries: :infinity,
             name: nil,
@@ -23,6 +24,7 @@ defmodule Reactor.Dsl.Step do
           async?: boolean,
           compensate:
             nil | (any, Reactor.inputs(), Reactor.context() -> :ok | :retry | {:continue, any}),
+          description: nil | String.t(),
           impl: module | {module, keyword},
           max_retries: non_neg_integer() | :infinity,
           name: atom,
@@ -77,6 +79,13 @@ defmodule Reactor.Dsl.Step do
           required: true,
           doc: """
           A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         impl: [

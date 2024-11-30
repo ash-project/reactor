@@ -7,6 +7,7 @@ defmodule Reactor.Dsl.Switch do
   defstruct __identifier__: nil,
             allow_async?: true,
             default: nil,
+            description: nil,
             matches: [],
             name: nil,
             on: nil
@@ -25,6 +26,7 @@ defmodule Reactor.Dsl.Switch do
           __identifier__: any,
           allow_async?: boolean,
           default: nil | Default.t(),
+          description: nil | String.t(),
           matches: [Match.t()],
           name: atom,
           on: Template.Input.t() | Template.Result.t() | Template.Value.t()
@@ -102,6 +104,13 @@ defmodule Reactor.Dsl.Switch do
           required: true,
           doc: """
           A unique name for the switch.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         allow_async?: [

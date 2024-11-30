@@ -22,10 +22,13 @@ defmodule Reactor.Builder do
   import Reactor, only: :macros
   import Reactor.Utils
 
-  @type step_options :: [async? | max_retries | arguments_transform | context | ref]
+  @type step_options :: [async? | description | max_retries | arguments_transform | context | ref]
 
   @typedoc "Should the step be run asynchronously?"
   @type async? :: {:async?, boolean | (keyword -> boolean)}
+
+  @typedoc "An optional step description"
+  @type description :: nil | String.t()
 
   @typedoc "How many times is the step allowed to retry?"
   @type max_retries :: {:max_retries, :infinity | non_neg_integer()}
