@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.10.2](https://github.com/ash-project/reactor/compare/v0.10.1...v0.10.2) (2024-12-01)
+
+
+
+
+### Improvements:
+
+* DSL: Add `description` options to most DSL entities. (#137)
+
 ## [v0.10.1](https://github.com/ash-project/reactor/compare/v0.10.0...v0.10.1) (2024-11-06)
 
 
