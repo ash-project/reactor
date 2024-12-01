@@ -9,12 +9,14 @@ defmodule Reactor.Dsl.Flunk do
 
   defstruct __identifier__: nil,
             arguments: [],
+            description: nil,
             name: nil,
             message: nil
 
   @type t :: %Flunk{
           __identifier__: any,
           arguments: [Argument.t()],
+          description: nil | String.t(),
           message: Template.t(),
           name: atom
         }
@@ -44,6 +46,13 @@ defmodule Reactor.Dsl.Flunk do
           required: true,
           doc: """
           A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         message: [

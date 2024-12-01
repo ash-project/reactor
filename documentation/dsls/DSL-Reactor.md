@@ -80,7 +80,11 @@ Name a middleware to be added to the Reactor.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`module`](#reactor-middlewares-middleware-module){: #reactor-middlewares-middleware-module .spark-required} | `module` |  | The middleware to be added to the Reactor. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-middlewares-middleware-description){: #reactor-middlewares-middleware-description } | `String.t` |  | An optional description for the middleware. |
 
 
 
@@ -118,6 +122,7 @@ Wrap a function around a group of steps.
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-around-description){: #reactor-around-description } | `String.t` |  | An optional description for the step. |
 | [`allow_async?`](#reactor-around-allow_async?){: #reactor-around-allow_async? } | `boolean` | `false` | Whether the emitted steps should be allowed to run asynchronously. |
 
 
@@ -182,6 +187,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-around-argument-description){: #reactor-around-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-around-argument-transform){: #reactor-around-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -217,7 +223,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-around-wait_for-names){: #reactor-around-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-around-wait_for-description){: #reactor-around-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -274,6 +284,7 @@ end
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-collect-description){: #reactor-collect-description } | `String.t` |  | An optional description for the step. |
 | [`transform`](#reactor-collect-transform){: #reactor-collect-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the entire argument map before it is returned. |
 
 
@@ -338,6 +349,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-collect-argument-description){: #reactor-collect-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-collect-argument-transform){: #reactor-collect-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -373,7 +385,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-collect-wait_for-names){: #reactor-collect-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-collect-wait_for-description){: #reactor-collect-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -414,7 +430,11 @@ Allows place another Reactor into this one as if it were a single step.
 |------|------|---------|------|
 | [`name`](#reactor-compose-name){: #reactor-compose-name .spark-required} | `atom` |  | A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor. |
 | [`reactor`](#reactor-compose-reactor){: #reactor-compose-reactor .spark-required} | `Reactor \| module` |  | The reactor module or struct to compose upon. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
 
 
 ## reactor.compose.argument
@@ -478,6 +498,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-compose-argument-description){: #reactor-compose-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-compose-argument-transform){: #reactor-compose-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -513,7 +534,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-compose-wait_for-names){: #reactor-compose-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-compose-wait_for-description){: #reactor-compose-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -627,6 +652,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-debug-argument-description){: #reactor-debug-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-debug-argument-transform){: #reactor-debug-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -662,7 +688,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-debug-wait_for-names){: #reactor-debug-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-debug-wait_for-description){: #reactor-debug-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -710,7 +740,11 @@ flunk :outaroad, "Ran out of road before reaching 88Mph"
 |------|------|---------|------|
 | [`name`](#reactor-flunk-name){: #reactor-flunk-name .spark-required} | `atom` |  | A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps. |
 | [`message`](#reactor-flunk-message){: #reactor-flunk-message } | `nil \| String.t \| Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The message to to attach to the exception. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-flunk-description){: #reactor-flunk-description } | `String.t` |  | An optional description for the step. |
 
 
 ## reactor.flunk.argument
@@ -774,6 +808,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-flunk-argument-description){: #reactor-flunk-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-flunk-argument-transform){: #reactor-flunk-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -809,7 +844,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-flunk-wait_for-names){: #reactor-flunk-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-flunk-wait_for-description){: #reactor-flunk-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -854,6 +893,7 @@ Call functions before and after a group of steps.
 | [`before_all`](#reactor-group-before_all){: #reactor-group-before_all .spark-required} | `(any, any, any -> any) \| mfa` |  | The before function. See `Reactor.Step.Group` for more information. |
 | [`after_all`](#reactor-group-after_all){: #reactor-group-after_all .spark-required} | `(any -> any) \| mfa` |  | The after function. See `Reactor.Step.Group` for more information. |
 | [`allow_async?`](#reactor-group-allow_async?){: #reactor-group-allow_async? } | `boolean` | `true` | Whether the emitted steps should be allowed to run asynchronously. |
+| [`description`](#reactor-group-description){: #reactor-group-description } | `String.t` |  | An optional description for the step. |
 
 
 ## reactor.group.argument
@@ -917,6 +957,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-group-argument-description){: #reactor-group-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-group-argument-transform){: #reactor-group-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -952,7 +993,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-group-wait_for-names){: #reactor-group-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-group-wait_for-description){: #reactor-group-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -1011,6 +1056,7 @@ end
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`transform`](#reactor-input-transform){: #reactor-input-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the input before it is passed to any steps. |
+| [`description`](#reactor-input-description){: #reactor-input-description } | `String.t` |  | An optional description for the input. |
 
 
 
@@ -1103,6 +1149,7 @@ end
 | [`source`](#reactor-map-source){: #reactor-map-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The iterator or enumerable to use as the source of the iteration. |
 | [`allow_async?`](#reactor-map-allow_async?){: #reactor-map-allow_async? } | `boolean` | `false` | Whether the emitted steps should be allowed to run asynchronously. |
 | [`batch_size`](#reactor-map-batch_size){: #reactor-map-batch_size } | `pos_integer` | `100` | The number of items to consume off the source when emitting steps. |
+| [`description`](#reactor-map-description){: #reactor-map-description } | `String.t` |  | An optional description for the step. |
 | [`return`](#reactor-map-return){: #reactor-map-return } | `atom` |  | The name of the nested step to use as the return value. |
 | [`strict_ordering?`](#reactor-map-strict_ordering?){: #reactor-map-strict_ordering? } | `boolean` | `true` | Whether the mapped values must be returned in the same order that they were provided. |
 
@@ -1168,6 +1215,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-map-argument-description){: #reactor-map-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-map-argument-transform){: #reactor-map-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -1203,7 +1251,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-map-wait_for-names){: #reactor-map-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-map-wait_for-description){: #reactor-map-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -1272,6 +1324,7 @@ end
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-step-description){: #reactor-step-description } | `String.t` |  | An optional description for the step. |
 | [`run`](#reactor-step-run){: #reactor-step-run } | `(any -> any) \| mfa \| (any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `run/1-2` callback. Cannot be provided at the same time as the `impl` argument. |
 | [`undo`](#reactor-step-undo){: #reactor-step-undo } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `undo/1-3` callback. Cannot be provided at the same time as the `impl` argument. |
 | [`compensate`](#reactor-step-compensate){: #reactor-step-compensate } | `(any -> any) \| mfa \| (any, any -> any) \| mfa \| (any, any, any -> any) \| mfa` |  | Provide an anonymous function which implements a `compensate/1-3` callback. Cannot be provided at the same time as the `impl` argument. |
@@ -1341,6 +1394,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`description`](#reactor-step-argument-description){: #reactor-step-argument-description } | `String.t` |  | An optional description for the argument. |
 | [`transform`](#reactor-step-argument-transform){: #reactor-step-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -1376,7 +1430,11 @@ wait_for :create_user
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`names`](#reactor-step-wait_for-names){: #reactor-step-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
 
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-step-wait_for-description){: #reactor-step-wait_for-description } | `String.t` |  | An optional description. |
 
 
 
@@ -1421,6 +1479,7 @@ Use a predicate to determine which steps should be executed.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`on`](#reactor-switch-on){: #reactor-switch-on .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | The value to match against. |
+| [`description`](#reactor-switch-description){: #reactor-switch-description } | `String.t` |  | An optional description for the step. |
 | [`allow_async?`](#reactor-switch-allow_async?){: #reactor-switch-allow_async? } | `boolean` | `true` | Whether the emitted steps should be allowed to run asynchronously. |
 
 

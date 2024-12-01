@@ -6,6 +6,7 @@ defmodule Reactor.Dsl.Argument do
   """
 
   defstruct __identifier__: nil,
+            description: nil,
             name: nil,
             source: nil,
             transform: nil
@@ -13,6 +14,7 @@ defmodule Reactor.Dsl.Argument do
   alias Reactor.{Argument, Dsl, Step, Template}
 
   @type t :: %Dsl.Argument{
+          description: nil | String.t(),
           name: atom,
           source: Template.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa,
@@ -187,6 +189,13 @@ defmodule Reactor.Dsl.Argument do
       identifier: :name,
       imports: [Dsl.Argument],
       schema: [
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the argument.
+          """
+        ],
         name: [
           type: :atom,
           required: true,

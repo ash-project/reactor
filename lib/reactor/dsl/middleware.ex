@@ -7,10 +7,11 @@ defmodule Reactor.Dsl.Middleware do
 
   alias Reactor.{Dsl.Build, Middleware}
 
-  defstruct __identifier__: nil, module: nil
+  defstruct __identifier__: nil, description: nil, module: nil
 
   @type t :: %__MODULE__{
           __identifier__: any,
+          description: nil | String.t(),
           module: Middleware.t()
         }
 
@@ -29,6 +30,13 @@ defmodule Reactor.Dsl.Middleware do
           required: true,
           doc: """
           The middleware to be added to the Reactor.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the middleware.
           """
         ]
       ]

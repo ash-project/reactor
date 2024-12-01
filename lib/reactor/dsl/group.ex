@@ -5,10 +5,11 @@ defmodule Reactor.Dsl.Group do
   See `d:Reactor.group`.
   """
   defstruct __identifier__: nil,
+            after_all: nil,
             allow_async?: false,
             arguments: [],
             before_all: nil,
-            after_all: nil,
+            description: nil,
             name: nil,
             steps: []
 
@@ -16,10 +17,11 @@ defmodule Reactor.Dsl.Group do
 
   @type t :: %Dsl.Group{
           __identifier__: any,
+          after_all: mfa | Step.Group.after_fun(),
           allow_async?: true,
           arguments: [Dsl.Argument.t()],
           before_all: mfa | Step.Group.before_fun(),
-          after_all: mfa | Step.Group.after_fun(),
+          description: nil | String.t(),
           name: atom,
           steps: [Dsl.Step.t()]
         }
@@ -64,6 +66,13 @@ defmodule Reactor.Dsl.Group do
           default: true,
           doc: """
           Whether the emitted steps should be allowed to run asynchronously.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ]
       ]

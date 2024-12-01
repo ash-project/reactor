@@ -9,6 +9,7 @@ defmodule Reactor.Dsl.Map do
             allow_async?: false,
             arguments: [],
             batch_size: 100,
+            description: nil,
             iterable?: true,
             name: nil,
             return: nil,
@@ -23,6 +24,7 @@ defmodule Reactor.Dsl.Map do
           allow_async?: boolean,
           arguments: [Dsl.Argument.t()],
           batch_size: pos_integer(),
+          description: nil | String.t(),
           iterable?: true,
           name: atom,
           return: atom,
@@ -118,6 +120,13 @@ defmodule Reactor.Dsl.Map do
           default: 100,
           doc: """
           The number of items to consume off the source when emitting steps.
+          """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
           """
         ],
         source: [
