@@ -37,7 +37,7 @@ The package can be installed by adding `reactor` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:reactor, "~> 0.10.2"}
+    {:reactor, "~> 0.10.3"}
   ]
 end
 ```
