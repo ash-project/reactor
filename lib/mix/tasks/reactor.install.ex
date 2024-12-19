@@ -21,8 +21,6 @@ else
     @moduledoc """
     Installs Reactor into a project. Should be called with `mix igniter.install reactor`.
     """
-    alias Igniter.{Mix.Task, Project.Formatter}
-
     @shortdoc "Installs Reactor into a project."
 
     use Mix.Task
