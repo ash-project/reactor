@@ -127,13 +127,8 @@ defmodule Reactor.Step.Around do
                {:ok, value} -> {:concurrency_key, value}
                :error -> nil
              end
-           end),
-         {:ok, result} <-
-           Reactor.run(reactor, arguments, context, options) do
-      {:ok, result}
-    else
-      {:error, reason} -> {:error, reason}
-      {:halt, reactor} -> {:halt, reactor}
+           end) do
+      Reactor.run(reactor, arguments, context, options)
     end
   end
 
