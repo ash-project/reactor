@@ -10,6 +10,7 @@ defmodule Reactor.Dsl.Map do
             arguments: [],
             batch_size: 100,
             description: nil,
+            guards: [],
             iterable?: true,
             name: nil,
             return: nil,
@@ -25,6 +26,7 @@ defmodule Reactor.Dsl.Map do
           arguments: [Dsl.Argument.t()],
           batch_size: pos_integer(),
           description: nil | String.t(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           iterable?: true,
           name: atom,
           return: atom,
@@ -96,7 +98,11 @@ defmodule Reactor.Dsl.Map do
       args: [:name],
       identifier: :name,
       imports: [Dsl.Argument],
-      entities: [steps: [], arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()],
+        steps: []
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -189,6 +195,7 @@ defmodule Reactor.Dsl.Map do
           map.name,
           {Step.Map, step_options},
           arguments,
+          guards: map.guards,
           max_retries: 0,
           ref: :step_name
         )

@@ -13,7 +13,7 @@ defmodule Reactor.Builder.StepTest do
     end
   end
 
-  describe "add_step/5" do
+  describe "add_step/6" do
     test "when given an invalid argument it returns an error" do
       reactor = Builder.new()
 
@@ -189,7 +189,7 @@ defmodule Reactor.Builder.StepTest do
     end
   end
 
-  describe "new_step/4" do
+  describe "new_step/5" do
     test "it builds a step" do
       assert {:ok, %Step{}} = Builder.Step.new_step(:marty, GreeterStep, [], [])
     end
@@ -200,7 +200,8 @@ defmodule Reactor.Builder.StepTest do
     end
 
     test "when the impl is not a `Reactor.Step` it returns an error" do
-      assert {:error, %ArgumentError{} = error} = Builder.Step.new_step(:greet, Kernel, [], [])
+      assert {:error, %ArgumentError{} = error} =
+               Builder.Step.new_step(:greet, Kernel, [], [])
 
       assert Exception.message(error) =~ ~r/does not implement the `Reactor.Step` behaviour/i
     end

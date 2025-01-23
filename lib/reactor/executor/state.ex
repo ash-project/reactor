@@ -21,6 +21,7 @@ defmodule Reactor.Executor.State do
             max_iterations: @defaults.max_iterations,
             pool_owner: false,
             retries: %{},
+            skipped: MapSet.new(),
             started_at: nil,
             timeout: @defaults.timeout
 
@@ -36,6 +37,7 @@ defmodule Reactor.Executor.State do
           max_iterations: pos_integer() | :infinity,
           pool_owner: boolean,
           retries: %{reference() => pos_integer()},
+          skipped: MapSet.t(),
           started_at: DateTime.t(),
           timeout: pos_integer() | :infinity
         }

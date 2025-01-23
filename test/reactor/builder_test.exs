@@ -34,7 +34,7 @@ defmodule Reactor.BuilderTest do
     end
   end
 
-  describe "add_step/3..5" do
+  describe "add_step/3..6" do
     defmodule Noop do
       @moduledoc false
       use Reactor.Step

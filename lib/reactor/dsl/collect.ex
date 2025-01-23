@@ -8,6 +8,7 @@ defmodule Reactor.Dsl.Collect do
   defstruct __identifier__: nil,
             arguments: [],
             description: nil,
+            guards: [],
             name: nil,
             transform: nil
 
@@ -16,6 +17,7 @@ defmodule Reactor.Dsl.Collect do
   @type t :: %__MODULE__{
           arguments: [Dsl.Argument.t()],
           description: nil | String.t(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
           transform: nil | (any -> any),
           __identifier__: any
@@ -45,7 +47,10 @@ defmodule Reactor.Dsl.Collect do
       args: [:name],
       target: __MODULE__,
       identifier: :name,
-      entities: [arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -81,6 +86,7 @@ defmodule Reactor.Dsl.Collect do
         Step.ReturnAllArguments,
         collect.arguments,
         async?: true,
+        guards: collect.guards,
         max_retries: 1,
         transform: collect.transform,
         ref: :step_name

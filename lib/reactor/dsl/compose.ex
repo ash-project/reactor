@@ -4,7 +4,12 @@ defmodule Reactor.Dsl.Compose do
 
   See the `d:Reactor.compose`.
   """
-  defstruct __identifier__: nil, description: nil, arguments: [], name: nil, reactor: nil
+  defstruct __identifier__: nil,
+            arguments: [],
+            description: nil,
+            guards: [],
+            name: nil,
+            reactor: nil
 
   alias Reactor.{Builder, Dsl}
 
@@ -12,6 +17,7 @@ defmodule Reactor.Dsl.Compose do
           __identifier__: any,
           arguments: [Dsl.Argument.t()],
           description: nil | String.t(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
           reactor: module | Reactor.t()
         }
@@ -29,7 +35,10 @@ defmodule Reactor.Dsl.Compose do
       target: Dsl.Compose,
       identifier: :name,
       no_depend_modules: [:reactor],
-      entities: [arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -58,7 +67,9 @@ defmodule Reactor.Dsl.Compose do
 
   defimpl Dsl.Build do
     def build(compose, reactor) do
-      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments)
+      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments,
+        guards: compose.guards
+      )
     end
 
     def transform(_compose, dsl_state), do: {:ok, dsl_state}

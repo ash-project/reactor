@@ -9,6 +9,7 @@ defmodule Reactor.Dsl.Around do
             arguments: [],
             description: nil,
             fun: nil,
+            guards: [],
             name: nil,
             steps: []
 
@@ -20,6 +21,7 @@ defmodule Reactor.Dsl.Around do
           arguments: [Dsl.Argument.t()],
           description: nil | String.t(),
           fun: mfa | Step.Around.around_fun(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
           steps: [Dsl.Step.t()]
         }
@@ -34,7 +36,11 @@ defmodule Reactor.Dsl.Around do
       target: Dsl.Around,
       args: [:name, {:optional, :fun}],
       identifier: :name,
-      entities: [steps: [], arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        steps: [],
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -85,6 +91,7 @@ defmodule Reactor.Dsl.Around do
            steps: sub_reactor.steps, fun: around.fun, allow_async?: around.allow_async?},
           around.arguments,
           async?: around.allow_async?,
+          guards: around.guards,
           max_retries: 0,
           ref: :step_name
         )

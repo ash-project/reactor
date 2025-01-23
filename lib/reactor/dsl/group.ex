@@ -10,6 +10,7 @@ defmodule Reactor.Dsl.Group do
             arguments: [],
             before_all: nil,
             description: nil,
+            guards: [],
             name: nil,
             steps: []
 
@@ -22,6 +23,7 @@ defmodule Reactor.Dsl.Group do
           arguments: [Dsl.Argument.t()],
           before_all: mfa | Step.Group.before_fun(),
           description: nil | String.t(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
           steps: [Dsl.Step.t()]
         }
@@ -36,7 +38,11 @@ defmodule Reactor.Dsl.Group do
       target: Dsl.Group,
       args: [:name],
       identifier: :name,
-      entities: [steps: [], arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()],
+        steps: []
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -97,6 +103,7 @@ defmodule Reactor.Dsl.Group do
            allow_async?: group.allow_async?},
           group.arguments,
           async?: group.allow_async?,
+          guards: group.guards,
           max_retries: 0,
           ref: :step_name
         )

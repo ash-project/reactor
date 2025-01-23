@@ -10,6 +10,7 @@ defmodule Reactor.Dsl.Step do
             async?: true,
             compensate: nil,
             description: nil,
+            guards: [],
             impl: nil,
             max_retries: :infinity,
             name: nil,
@@ -25,6 +26,7 @@ defmodule Reactor.Dsl.Step do
           compensate:
             nil | (any, Reactor.inputs(), Reactor.context() -> :ok | :retry | {:continue, any}),
           description: nil | String.t(),
+          guards: [Dsl.Where.t() | Dsl.Guard.t()],
           impl: module | {module, keyword},
           max_retries: non_neg_integer() | :infinity,
           name: atom,
@@ -71,7 +73,10 @@ defmodule Reactor.Dsl.Step do
       target: __MODULE__,
       identifier: :name,
       no_depend_modules: [:impl],
-      entities: [arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()]],
+      entities: [
+        arguments: [Dsl.Argument.__entity__(), Dsl.WaitFor.__entity__()],
+        guards: [Dsl.Where.__entity__(), Dsl.Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -150,6 +155,7 @@ defmodule Reactor.Dsl.Step do
       with {:ok, step} <- rewrite_step(step, reactor.id) do
         Builder.add_step(reactor, step.name, step.impl, step.arguments,
           async?: step.async?,
+          guards: step.guards,
           max_retries: step.max_retries,
           transform: step.transform,
           ref: :step_name

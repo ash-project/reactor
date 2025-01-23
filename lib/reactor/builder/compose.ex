@@ -13,23 +13,36 @@ defmodule Reactor.Builder.Compose do
   import Reactor.Utils
   alias Reactor.{Argument, Builder, Error.Internal.ComposeError, Step}
 
+  @opt_schema Spark.Options.new!(
+                guards: [
+                  type: {:list, {:protocol, Reactor.Guard.Build}},
+                  required: false,
+                  default: []
+                ]
+              )
+
   @doc """
   Compose another Reactor inside this one.
+
+  ## Options
+
+  #{Spark.Options.docs(@opt_schema)}
   """
-  @spec compose(Reactor.t(), atom, Reactor.t() | module, [Builder.step_argument()]) ::
+  @spec compose(Reactor.t(), atom, Reactor.t() | module, [Builder.step_argument()], keyword) ::
           {:ok, Reactor.t()} | {:error, any}
-  def compose(reactor, name, inner_reactor, arguments) when is_atom(inner_reactor) do
+  def compose(reactor, name, inner_reactor, arguments, options) when is_atom(inner_reactor) do
     if compose_would_be_recursive?(reactor, inner_reactor) do
-      do_runtime_compose(reactor, name, inner_reactor, arguments)
+      do_runtime_compose(reactor, name, inner_reactor, arguments, options)
     else
       case Reactor.Info.to_struct(inner_reactor) do
-        {:ok, inner_reactor} -> compose(reactor, name, inner_reactor, arguments)
+        {:ok, inner_reactor} -> compose(reactor, name, inner_reactor, arguments, options)
         {:error, reason} -> {:error, reason}
       end
     end
   end
 
-  def compose(reactor, name, inner_reactor, arguments) when not is_nil(inner_reactor.plan) do
+  def compose(reactor, name, inner_reactor, arguments, options)
+      when not is_nil(inner_reactor.plan) do
     steps =
       inner_reactor.plan
       |> Graph.vertices()
@@ -39,27 +52,31 @@ defmodule Reactor.Builder.Compose do
       reactor,
       name,
       %{inner_reactor | steps: steps, plan: nil},
-      arguments
+      arguments,
+      options
     )
   end
 
-  def compose(reactor, name, inner_reactor, arguments)
+  def compose(reactor, name, inner_reactor, arguments, options)
       when is_reactor(reactor) and is_atom(name) and is_reactor(inner_reactor) and
-             is_list(arguments) do
-    if compose_would_be_recursive?(reactor, inner_reactor.id) do
-      do_runtime_compose(reactor, name, inner_reactor, arguments)
-    else
-      do_static_compose(reactor, name, inner_reactor, arguments)
+             is_list(arguments) and is_list(options) do
+    with {:ok, options} <- Spark.Options.validate(options, @opt_schema) do
+      if compose_would_be_recursive?(reactor, inner_reactor.id) || Enum.any?(options[:guards]) do
+        do_runtime_compose(reactor, name, inner_reactor, arguments, options[:guards])
+      else
+        do_static_compose(reactor, name, inner_reactor, arguments)
+      end
     end
   end
 
-  defp do_runtime_compose(reactor, name, inner_reactor, arguments) do
+  defp do_runtime_compose(reactor, name, inner_reactor, arguments, guards) do
     Builder.add_step(reactor, name, {Step.Compose, reactor: inner_reactor}, arguments,
+      guards: guards,
       max_retries: 0
     )
   end
 
-  def do_static_compose(reactor, name, inner_reactor, arguments) do
+  defp do_static_compose(reactor, name, inner_reactor, arguments) do
     with {:ok, arguments} <- assert_all_are_arguments(arguments),
          :ok <- assert_arguments_match_inner_reactor_inputs(arguments, inner_reactor),
          {:ok, steps} <- rewrite_steps(inner_reactor, name, arguments),
@@ -123,6 +140,7 @@ defmodule Reactor.Builder.Compose do
        name: name,
        async?: true,
        impl: {Step.ReturnArgument, argument: :value},
+       guards: [],
        max_retries: 0,
        ref: name
      }}

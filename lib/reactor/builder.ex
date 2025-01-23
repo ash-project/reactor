@@ -22,7 +22,9 @@ defmodule Reactor.Builder do
   import Reactor, only: :macros
   import Reactor.Utils
 
-  @type step_options :: [async? | description | max_retries | arguments_transform | context | ref]
+  @type step_options :: [
+          async? | description | guards | max_retries | arguments_transform | context | ref
+        ]
 
   @typedoc "Should the step be run asynchronously?"
   @type async? :: {:async?, boolean | (keyword -> boolean)}
@@ -39,6 +41,7 @@ defmodule Reactor.Builder do
            nil | (%{optional(atom) => any} -> %{optional(atom) => any}) | {module | keyword} | mfa}
 
   @type ref :: {:ref, :step_name | :make_ref}
+  @type guards :: {:guards, [Reactor.Guard.Build.t()]}
 
   @typedoc "Optional context which will be merged with the reactor context when calling this step."
   @type context :: Reactor.context()
@@ -133,7 +136,8 @@ defmodule Reactor.Builder do
   additional step to do the transformation needed (this is what `add_step/5`
   does anyway).
   """
-  @spec new_step(any, impl, [step_argument], step_options) :: {:ok, Step.t()} | {:error, any}
+  @spec new_step(any, impl, [step_argument], step_options) ::
+          {:ok, Step.t()} | {:error, any}
   def new_step(name, impl, arguments \\ [], options \\ [])
 
   def new_step(_name, _impl, arguments, _options) when not is_list(arguments),
@@ -198,31 +202,36 @@ defmodule Reactor.Builder do
   within itself) then this will be detected and runtime composition will be used
   instead.  See `Reactor.Step.Compose` for more details.
   """
-  @spec compose(Reactor.t(), atom, Reactor.t() | module, [step_argument]) ::
+  @spec compose(Reactor.t(), atom, Reactor.t() | module, [step_argument], Keyword.t()) ::
           {:ok, Reactor.t()} | {:error, any}
-  def compose(reactor, _name, _inner_reactor, _arguments) when not is_reactor(reactor),
+  def compose(reactor, name, inner_reactor, arguments \\ [], options \\ [])
+
+  def compose(reactor, _name, _inner_reactor, _arguments, _options) when not is_reactor(reactor),
     do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 
-  def compose(_reactor, name, _inner_reactor, _arguments) when not is_atom(name),
+  def compose(_reactor, name, _inner_reactor, _arguments, _options) when not is_atom(name),
     do: {:error, argument_error(:name, "not an atom", name)}
 
-  def compose(_reactor, _name, inner_reactor, _arguments)
+  def compose(_reactor, _name, inner_reactor, _arguments, _options)
       when not is_reactor(inner_reactor) and not is_atom(inner_reactor),
       do: {:error, argument_error(:inner_reactor, "not a Reactor", inner_reactor)}
 
-  def compose(_reactor, _name, _inner_reactor, arguments) when not is_list(arguments),
+  def compose(_reactor, _name, _inner_reactor, arguments, _options) when not is_list(arguments),
     do: {:error, argument_error(:arguments, "not a list", arguments)}
 
-  def compose(reactor, name, inner_reactor, arguments),
-    do: Builder.Compose.compose(reactor, name, inner_reactor, arguments)
+  def compose(_reactor, _name, _inner_reactor, _arguments, options) when not is_list(options),
+    do: {:error, argument_error(:options, "not a list", options)}
+
+  def compose(reactor, name, inner_reactor, arguments, options),
+    do: Builder.Compose.compose(reactor, name, inner_reactor, arguments, options)
 
   @doc """
   Raising version of `compose/4`.
   """
-  @spec compose!(Reactor.t(), atom, Reactor.t() | module, [step_argument]) ::
+  @spec compose!(Reactor.t(), atom, Reactor.t() | module, [step_argument], Keyword.t()) ::
           Reactor.t() | no_return
-  def compose!(reactor, name, inner_reactor, arguments) do
-    case compose(reactor, name, inner_reactor, arguments) do
+  def compose!(reactor, name, inner_reactor, arguments, options \\ []) do
+    case compose(reactor, name, inner_reactor, arguments, options) do
       {:ok, reactor} -> reactor
       {:error, reason} -> raise reason
     end

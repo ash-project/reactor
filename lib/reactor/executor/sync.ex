@@ -15,9 +15,14 @@ defmodule Reactor.Executor.Sync do
   def run(reactor, state, nil), do: {:continue, reactor, state}
 
   def run(reactor, state, step) do
-    result = Executor.StepRunner.run(reactor, state, step, state.concurrency_key)
+    case Executor.StepRunner.run(reactor, state, step, state.concurrency_key) do
+      {:skip, result} ->
+        state = %{state | skipped: MapSet.put(state.skipped, step.ref)}
+        handle_completed_step(reactor, state, step, result)
 
-    handle_completed_step(reactor, state, step, result)
+      result ->
+        handle_completed_step(reactor, state, step, result)
+    end
   end
 
   defp handle_completed_step(reactor, state, step, :retry) do
@@ -46,7 +51,7 @@ defmodule Reactor.Executor.Sync do
   defp handle_completed_step(reactor, state, step, {:ok, value, new_steps}) do
     reactor =
       reactor
-      |> maybe_store_undo(step, value)
+      |> maybe_store_undo(step, value, state)
       |> maybe_store_intermediate_result(step, value)
 
     reactor =
@@ -91,11 +96,11 @@ defmodule Reactor.Executor.Sync do
     %{reactor | plan: Graph.delete_vertex(reactor.plan, step)}
   end
 
-  defp maybe_store_undo(reactor, step, value) do
-    if Step.can?(step, :undo) do
-      %{reactor | undo: [{step, value} | reactor.undo]}
-    else
-      reactor
+  defp maybe_store_undo(reactor, step, value, state) do
+    cond do
+      MapSet.member?(state.skipped, step.ref) -> reactor
+      Step.can?(step, :undo) -> %{reactor | undo: [{step, value} | reactor.undo]}
+      true -> reactor
     end
   end
 

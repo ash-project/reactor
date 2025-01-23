@@ -104,6 +104,11 @@ defmodule Reactor.Executor.Async do
   defp got_worse?(:undo, :halt), do: true
   defp got_worse?(_old, _new), do: false
 
+  defp handle_completed_step(reactor, state, {task, step, {:skip, result}}) do
+    state = %{state | skipped: MapSet.put(state.skipped, step.ref)}
+    handle_completed_step(reactor, state, {task, step, result})
+  end
+
   defp handle_completed_step(reactor, state, {task, step, {:ok, value, new_steps}}) do
     state =
       state
@@ -112,7 +117,7 @@ defmodule Reactor.Executor.Async do
     reactor =
       reactor
       |> drop_from_plan(task)
-      |> maybe_store_undo(step, value)
+      |> maybe_store_undo(step, value, state)
       |> maybe_store_intermediate_result(step, value)
 
     reactor =
@@ -192,28 +197,23 @@ defmodule Reactor.Executor.Async do
     |> Task.yield_many(opts)
     |> Stream.reject(&is_nil(elem(&1, 1)))
     |> Stream.map(fn
-      {task, {:ok, {:error, reason}}} ->
-        {task, {:error, reason}}
-
-      {task, {:ok, {:halt, reason}}} ->
-        {task, {:halt, reason}}
-
-      {task, {:ok, :retry}} ->
-        {task, {:retry, nil}}
-
-      {task, {:ok, {:retry, reason}}} ->
-        {task, {:retry, reason}}
-
-      {task, {:ok, {:ok, value, steps}}} when is_list(steps) ->
-        {task, {:ok, value, steps}}
+      {task, {:ok, result}} ->
+        {task, normalise_result(result)}
 
       {task, {:exit, reason}} ->
-        {task, {:error, reason}}
+        {task, normalise_result({:error, reason})}
     end)
     |> Enum.map(fn {task, result} ->
       {task, Map.fetch!(current_tasks, task), result}
     end)
   end
+
+  defp normalise_result({:error, reason}), do: {:error, reason}
+  defp normalise_result({:halt, reason}), do: {:halt, reason}
+  defp normalise_result(:retry), do: {:retry, nil}
+  defp normalise_result({:ok, value}), do: {:ok, value, []}
+  defp normalise_result({:ok, value, steps}) when is_list(steps), do: {:ok, value, steps}
+  defp normalise_result({:skip, result}), do: {:skip, normalise_result(result)}
 
   defp drop_task(state, task) do
     ConcurrencyTracker.release(state.concurrency_key, 1)
@@ -237,11 +237,11 @@ defmodule Reactor.Executor.Async do
     %{reactor | intermediate_results: Map.put(reactor.intermediate_results, step.name, value)}
   end
 
-  defp maybe_store_undo(reactor, step, value) do
-    if Step.can?(step, :undo) do
-      %{reactor | undo: [{step, value} | reactor.undo]}
-    else
-      reactor
+  defp maybe_store_undo(reactor, step, value, state) do
+    cond do
+      MapSet.member?(state.skipped, step.ref) -> reactor
+      Step.can?(step, :undo) -> %{reactor | undo: [{step, value} | reactor.undo]}
+      true -> reactor
     end
   end
 
