@@ -18,49 +18,46 @@ defmodule Reactor.MixProject do
       source_url: "https://github.com/ash-project/reactor",
       homepage_url: "https://github.com/ash-project/reactor",
       dialyzer: [plt_add_apps: [:mix]],
-      docs: [
-        main: "readme",
-        logo: "logos/reactor-logo-light-small.png",
-        extras: extra_documentation(),
-        groups_for_extras: extra_documentation_groups(),
-        before_closing_head_tag: fn type ->
-          if type == :html do
-            """
-            <script>
-              if (location.hostname === "hexdocs.pm") {
-                var script = document.createElement("script");
-                script.src = "https://plausible.io/js/script.js";
-                script.setAttribute("defer", "defer")
-                script.setAttribute("data-domain", "ashhexdocs")
-                document.head.appendChild(script);
-              }
-            </script>
-            """
-          end
-        end,
-        groups_for_modules: [
-          Dsl: ~r/^Reactor\.Dsl.*/,
-          Steps: ~r/^Reactor\.Step.*/,
-          Middleware: ~r/^Reactor\.Middleware.*/,
-          Errors: ~r/^Reactor\.Error.*/,
-          Builder: ~r/^Reactor\.Builder.*/,
-          Internals: ~r/^Reactor\..*/
-        ],
-        extra_section: "GUIDES",
-        formatters: ["html"],
-        filter_modules: ~r/^Elixir.Reactor/,
-        source_url_pattern: "https://github.com/ash-project/reactor/blob/main/%{path}/#L%{line}",
-        spark: [
-          extensions: [
-            %{
-              module: Reactor.Dsl,
-              name: "Reactor.Dsl",
-              target: "Reactor",
-              type: "Reactor"
-            }
-          ]
+      docs: fn ->
+        [
+          main: "readme",
+          logo: "logos/reactor-logo-light-small.png",
+          extras: [
+            "README.md",
+            "documentation/tutorials/getting-started-with-reactor.md",
+            {"documentation/dsls/DSL-Reactor.md",
+             search_data: Spark.Docs.search_data_for(Reactor.Dsl)}
+          ],
+          groups_for_extras: extra_documentation_groups(),
+          before_closing_head_tag: fn type ->
+            if type == :html do
+              """
+              <script>
+                if (location.hostname === "hexdocs.pm") {
+                  var script = document.createElement("script");
+                  script.src = "https://plausible.io/js/script.js";
+                  script.setAttribute("defer", "defer")
+                  script.setAttribute("data-domain", "ashhexdocs")
+                  document.head.appendChild(script);
+                }
+              </script>
+              """
+            end
+          end,
+          groups_for_modules: [
+            Dsl: ~r/^Reactor\.Dsl.*/,
+            Steps: ~r/^Reactor\.Step.*/,
+            Middleware: ~r/^Reactor\.Middleware.*/,
+            Errors: ~r/^Reactor\.Error.*/,
+            Builder: ~r/^Reactor\.Builder.*/,
+            Internals: ~r/^Reactor\..*/
+          ],
+          extra_section: "GUIDES",
+          formatters: ["html"],
+          filter_modules: ~r/^Elixir.Reactor/,
+          source_url_pattern: "https://github.com/ash-project/reactor/blob/main/%{path}/#L%{line}"
         ]
-      ]
+      end
     ]
   end
 
@@ -102,7 +99,7 @@ defmodule Reactor.MixProject do
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test], runtime: false},
-      {:ex_doc, github: "elixir-lang/ex_doc", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.37-rc", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16.0", only: [:dev, :test]},
       {:git_ops, "~> 2.6.0", only: [:dev, :test]},
       {:mimic, "~> 1.7", only: :test},
@@ -125,31 +122,11 @@ defmodule Reactor.MixProject do
       docs: [
         "spark.cheat_sheets",
         "docs",
-        "spark.cheat_sheets_in_search",
         "spark.replace_doc_links"
       ],
       "spark.formatter": "spark.formatter --extensions Reactor.Dsl",
-      "spark.cheat_sheets": "spark.cheat_sheets --extensions Reactor.Dsl",
-      "spark.cheat_sheets_in_search": "spark.cheat_sheets_in_search --extensions Reactor.Dsl"
+      "spark.cheat_sheets": "spark.cheat_sheets --extensions Reactor.Dsl"
     ]
-  end
-
-  defp extra_documentation do
-    ["README.md"]
-    |> Enum.concat(Path.wildcard("documentation/**/*.{md,livemd,cheatmd}"))
-    |> Enum.map(fn
-      "README.md" ->
-        {:"README.md", title: "Read Me", ash_hq?: false}
-
-      "documentation/tutorials/" <> _ = path ->
-        {String.to_atom(path), []}
-
-      "documentation/topics/" <> _ = path ->
-        {String.to_atom(path), []}
-
-      "documentation/dsls/" <> _ = path ->
-        {String.to_atom(path), []}
-    end)
   end
 
   defp extra_documentation_groups do
