@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.11.0](https://github.com/ash-project/reactor/compare/v0.10.3...v0.11.0) (2025-01-28)
+
+
+
+
+### Features:
+
+* Add `where` and `guard` entities to steps. (#148)
+
 ## [v0.10.3](https://github.com/ash-project/reactor/compare/v0.10.2...v0.10.3) (2024-12-19)
 
 
