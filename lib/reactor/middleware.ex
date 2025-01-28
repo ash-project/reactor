@@ -29,6 +29,9 @@ defmodule Reactor.Middleware do
           | {:compensate_error, error_or_errors}
           | {:compensate_retry, any}
           | {:compensate_start, any}
+          | {:guard_start, Reactor.Guard.t(), arguments :: Reactor.inputs()}
+          | {:guard_fail, Reactor.Guard.t(), Reactor.Step.run_result()}
+          | {:guard_pass, Reactor.Guard.t()}
           | {:process_start, pid}
           | {:process_terminate, pid}
           | {:run_complete, result}

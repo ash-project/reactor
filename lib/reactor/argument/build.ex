@@ -6,7 +6,7 @@ defprotocol Reactor.Argument.Build do
   alias Reactor.Argument
 
   @doc """
-  Convert the input into an argument.
+  Convert the input into one or more arguments.
   """
   @spec build(t) :: {:ok, [Argument.t()]} | {:error, any}
   def build(input)

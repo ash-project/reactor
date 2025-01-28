@@ -26,6 +26,8 @@ spark_locals_without_parens = [
   fun: 1,
   group: 1,
   group: 2,
+  guard: 1,
+  guard: 2,
   impl: 1,
   input: 1,
   input: 2,
@@ -50,7 +52,9 @@ spark_locals_without_parens = [
   transform: 1,
   undo: 1,
   wait_for: 1,
-  wait_for: 2
+  wait_for: 2,
+  where: 1,
+  where: 2
 ]
 
 [

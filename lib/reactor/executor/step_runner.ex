@@ -30,7 +30,7 @@ defmodule Reactor.Executor.StepRunner do
   Collect the arguments and and run a step, with compensation if required.
   """
   @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
-          {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
+          Step.run_result() | {:skip, Step.run_result()}
   def run(reactor, state, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
@@ -44,7 +44,12 @@ defmodule Reactor.Executor.StepRunner do
 
       metadata_stack = Process.get(:__reactor__, [])
       Process.put(:__reactor__, [metadata | metadata_stack])
-      result = do_run(reactor, step, arguments, context)
+
+      result =
+        with :cont <- evaluate_guards(reactor, step, arguments, context) do
+          do_run(reactor, step, arguments, context)
+        end
+
       Process.put(:__reactor__, metadata_stack)
       result
     end
@@ -56,7 +61,7 @@ defmodule Reactor.Executor.StepRunner do
   This is a simple wrapper around `run/4` except that it emits more events.
   """
   @spec run_async(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key(), map) ::
-          {:ok, any, [Step.t()]} | :retry | {:retry, any} | {:error | :halt, any}
+          Step.run_result() | {:skip, Step.run_result()}
   def run_async(reactor, state, step, concurrency_key, process_contexts) do
     Hooks.set_process_contexts(process_contexts)
     Hooks.event(reactor, {:process_start, self()}, step, reactor.context)
@@ -111,6 +116,41 @@ defmodule Reactor.Executor.StepRunner do
         {:error, error}
     end
   end
+
+  defp evaluate_guards(_reactor, step, _arguments, _context) when step.guards == [], do: :cont
+
+  defp evaluate_guards(reactor, step, arguments, context) do
+    Enum.reduce_while(step.guards, :cont, fn guard, :cont ->
+      evaluate_guard(guard, reactor, step, arguments, context)
+    end)
+  end
+
+  defp evaluate_guard(guard, reactor, step, arguments, context) do
+    Hooks.event(reactor, {:guard_start, guard, arguments}, step, context)
+
+    case run_guard_fun(guard.fun, arguments, context) do
+      :cont ->
+        Hooks.event(reactor, {:guard_pass, guard}, step, context)
+        {:cont, :cont}
+
+      {:halt, {:ok, result}} ->
+        Hooks.event(reactor, {:guard_fail, guard, {:ok, result}}, step, context)
+        {:halt, {:skip, {:ok, result, []}}}
+
+      {:halt, result} ->
+        Hooks.event(reactor, {:guard_fail, guard, result}, step, context)
+        {:halt, {:skip, result}}
+    end
+  rescue
+    error ->
+      Hooks.event(reactor, {:guard_fail, guard, {:error, error}}, step, context)
+      {:halt, {:skip, {:error, error}}}
+  end
+
+  defp run_guard_fun({m, f, a}, arguments, context), do: apply(m, f, [arguments, context | a])
+
+  defp run_guard_fun(fun, arguments, context) when is_function(fun, 2),
+    do: fun.(arguments, context)
 
   defp do_run(reactor, step, arguments, context) do
     Hooks.event(reactor, {:run_start, arguments}, step, context)

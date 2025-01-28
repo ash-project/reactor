@@ -38,7 +38,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:ok, reactor} =
                InnerReactor
                |> Builder.new()
-               |> Compose.compose(:recurse, InnerReactor, message: {:input, :message})
+               |> Compose.compose(:recurse, InnerReactor, [message: {:input, :message}], [])
 
       assert recurse_step =
                reactor.steps
@@ -59,7 +59,7 @@ defmodule Reactor.Builder.ComposeTest do
 
       assert {:ok, outer_reactor} =
                inner_reactor
-               |> Builder.compose(:recurse, inner_reactor, message: {:input, :message})
+               |> Builder.compose(:recurse, inner_reactor, [message: {:input, :message}], [])
 
       assert recurse_step =
                outer_reactor.steps
@@ -85,7 +85,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:ok, outer_reactor} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, message: {:input, :name})
+               |> Compose.compose(:shout_at, inner_reactor, [message: {:input, :name}], [])
 
       assert {:__reactor__, :compose, :shout_at, :shout} in Enum.map(
                outer_reactor.steps,
@@ -103,7 +103,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:ok, outer_reactor} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, message: {:input, :name})
+               |> Compose.compose(:shout_at, inner_reactor, [message: {:input, :name}], [])
 
       assert {:__reactor__, :compose, :shout_at, :shout} in Enum.map(
                outer_reactor.steps,
@@ -120,7 +120,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:error, %ComposeError{} = error} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, message: {:input, :name})
+               |> Compose.compose(:shout_at, inner_reactor, [message: {:input, :name}], [])
 
       assert Exception.message(error) =~ ~r/must have an explicit return value/i
     end
@@ -134,7 +134,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:error, %ArgumentError{} = error} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, [{:marty}])
+               |> Compose.compose(:shout_at, inner_reactor, [{:marty}], [])
 
       assert Exception.message(error) =~ ~r/contains a non-argument value/i
     end
@@ -148,7 +148,7 @@ defmodule Reactor.Builder.ComposeTest do
       assert {:error, %ComposeError{} = error} =
                Builder.new()
                |> Builder.add_input!(:name)
-               |> Compose.compose(:shout_at, inner_reactor, [])
+               |> Compose.compose(:shout_at, inner_reactor, [], [])
 
       assert Exception.message(error) =~ ~r/missing argument for `message` input/i
     end

@@ -13,20 +13,25 @@ defmodule Reactor.Step do
             name: nil,
             max_retries: :infinity,
             ref: nil,
-            transform: nil
+            transform: nil,
+            guards: []
 
   alias Reactor.{Argument, Step}
+
+  @type context :: %{optional(atom) => any}
+  @type arguments :: %{optional(atom) => any}
 
   @type t :: %Step{
           arguments: [Argument.t()],
           async?: boolean | (keyword -> boolean),
-          context: %{optional(atom) => any},
+          context: context(),
           description: nil | String.t(),
           impl: module | {module, keyword},
           name: any,
           max_retries: non_neg_integer() | :infinity,
           ref: nil | reference(),
-          transform: nil | (any -> any) | {module, keyword} | mfa
+          transform: nil | (any -> any) | {module, keyword} | mfa,
+          guards: [Reactor.Guard.t()]
         }
 
   @type step :: module

@@ -7,14 +7,16 @@ defmodule Reactor.Dsl.Debug do
 
   defstruct __identifier__: nil,
             arguments: [],
+            guards: [],
             level: :debug,
             name: nil
 
-  alias Reactor.{Dsl.Argument, Dsl.Build, Dsl.Debug, Dsl.WaitFor}
+  alias Reactor.Dsl.{Argument, Build, Debug, Guard, WaitFor, Where}
 
   @type t :: %Debug{
           __identifier__: any,
           arguments: [Argument.t()],
+          guards: [Where.t() | Guard.t()],
           level: Logger.level(),
           name: atom
         }
@@ -36,7 +38,10 @@ defmodule Reactor.Dsl.Debug do
       target: Debug,
       args: [:name],
       identifier: :name,
-      entities: [arguments: [Argument.__entity__(), WaitFor.__entity__()]],
+      entities: [
+        arguments: [Argument.__entity__(), WaitFor.__entity__()],
+        guards: [Where.__entity__(), Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -66,6 +71,7 @@ defmodule Reactor.Dsl.Debug do
         debug.name,
         {Step.Debug, level: debug.level},
         debug.arguments,
+        guards: debug.guards,
         max_retries: 0,
         ref: :step_name
       )

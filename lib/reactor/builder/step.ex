@@ -5,13 +5,13 @@ defmodule Reactor.Builder.Step do
   You should not use this module directly, but instead use
   `Reactor.Builder.new_step/4` and `Reactor.Builder.add_step/5`.
   """
-  alias Reactor.{Argument, Builder, Step, Template}
+  alias Reactor.{Argument, Builder, Guard, Step, Template}
   import Reactor.Argument, only: :macros
   import Reactor.Utils
 
   @option_schema [
     async?: [
-      type: :boolean,
+      type: {:or, [:boolean, {:mfa_or_fun, 1}]},
       default: true,
       required: false,
       doc: "Allow the step to be run asynchronously?"
@@ -23,19 +23,32 @@ defmodule Reactor.Builder.Step do
       doc: "The maximum number of times the step can ask to be retried"
     ],
     transform: [
-      type: {:or, {:mfa_or_fun, 1}},
+      type:
+        {:or,
+         [
+           nil,
+           {:mfa_or_fun, 1},
+           {:tuple, [:module, :non_empty_keyword_list]}
+         ]},
       required: false,
       doc: "A function which can modify all incoming arguments"
     ],
     context: [
       type: :map,
       required: false,
+      default: %{},
       doc: "Context which will be merged with the reactor context when calling this step"
     ],
     description: [
       type: :string,
       required: false,
       doc: "An optional description for the step"
+    ],
+    guards: [
+      type: {:list, {:protocol, Reactor.Guard.Build}},
+      required: false,
+      default: [],
+      doc: "Optional guards to add to the step"
     ],
     ref: [
       type: {:in, [:step_name, :make_ref]},
@@ -70,33 +83,33 @@ defmodule Reactor.Builder.Step do
           Builder.step_options()
         ) :: {:ok, Reactor.t()} | {:error, any}
   def add_step(reactor, name, impl, arguments, options) do
-    with {:ok, arguments} <- assert_all_are_arguments(arguments),
+    with {:ok, options} <- Spark.Options.validate(options, @option_schema),
+         {:ok, arguments} <- build_arguments(arguments),
          {:ok, arguments} <- maybe_rewrite_input_arguments(reactor, arguments),
+         {:ok, guards} <- build_guards(options[:guards]),
          :ok <- assert_is_step_impl(impl),
          {:ok, {arguments, argument_transform_steps}} <-
            build_argument_transform_steps(arguments, name),
          {:ok, arguments, step_transform_step} <-
-           maybe_build_step_transform_all_step(arguments, name, options[:transform]),
-         {:ok, async} <- validate_async_option(options),
-         {:ok, context} <- validate_context_option(options),
-         {:ok, max_retries} <- validate_max_retries_option(options) do
+           maybe_build_step_transform_all_step(arguments, name, options[:transform]) do
       context =
         if step_transform_step do
-          deep_merge(context, %{private: %{replace_arguments: :value}})
+          deep_merge(options[:context], %{private: %{replace_arguments: :value}})
         else
-          context
+          options[:context]
         end
 
       steps =
         [
           %Step{
             arguments: arguments,
-            async?: async,
+            async?: options[:async?],
             context: context,
             description: options[:description],
+            guards: guards,
             impl: impl,
             name: name,
-            max_retries: max_retries
+            max_retries: options[:max_retries]
           }
         ]
         |> Enum.concat(argument_transform_steps)
@@ -131,75 +144,32 @@ defmodule Reactor.Builder.Step do
   #{Spark.Options.docs(@option_schema)}
   """
   @doc spark_opts: [{5, @option_schema}]
-  @spec new_step(any, Builder.impl(), [Builder.step_argument()], Builder.step_options()) ::
+  @spec new_step(
+          any,
+          Builder.impl(),
+          [Builder.step_argument()],
+          Builder.step_options()
+        ) ::
           {:ok, Step.t()} | {:error, any}
   def new_step(name, impl, arguments, options) do
-    with {:ok, arguments} <- assert_all_are_arguments(arguments),
+    with {:ok, options} <- Spark.Options.validate(options, @option_schema),
+         {:ok, arguments} <- build_arguments(arguments),
          :ok <- assert_no_argument_transforms(arguments),
+         {:ok, guards} <- build_guards(options[:guards]),
          :ok <- assert_is_step_impl(impl),
-         {:ok, async} <- validate_async_option(options),
-         {:ok, context} <- validate_context_option(options),
-         {:ok, max_retries} <- validate_max_retries_option(options),
          :ok <- validate_no_transform_option(options) do
       step = %Step{
         arguments: arguments,
-        async?: async,
-        context: context,
+        async?: options[:async?],
+        context: options[:context],
         description: options[:description],
+        guards: guards,
         impl: impl,
         name: name,
-        max_retries: max_retries
+        max_retries: options[:max_retries]
       }
 
       {:ok, step}
-    end
-  end
-
-  defp validate_async_option(options) do
-    options
-    |> Keyword.get(:async?, true)
-    |> case do
-      value when is_boolean(value) ->
-        {:ok, value}
-
-      fun when is_function(fun, 1) ->
-        {:ok, fun}
-
-      value ->
-        {:error, argument_error(:options, "Invalid value for the `async?` option.", value)}
-    end
-  end
-
-  defp validate_context_option(options) do
-    options
-    |> Keyword.get(:context, %{})
-    |> case do
-      value when is_map(value) ->
-        {:ok, value}
-
-      value ->
-        {:error,
-         argument_error(:options, "Invalid value for the `context` option: must be a map.", value)}
-    end
-  end
-
-  defp validate_max_retries_option(options) do
-    options
-    |> Keyword.get(:max_retries, 100)
-    |> case do
-      :infinity ->
-        {:ok, :infinity}
-
-      value when is_integer(value) and value >= 0 ->
-        {:ok, value}
-
-      value ->
-        {:error,
-         argument_error(
-           :options,
-           "Invalid value for the `max_retries` option: must be a non-negative integer or `:infinity`.",
-           value
-         )}
     end
   end
 
@@ -212,7 +182,7 @@ defmodule Reactor.Builder.Step do
     end
   end
 
-  defp assert_all_are_arguments(arguments) do
+  defp build_arguments(arguments) do
     arguments
     |> map_while_ok(&Argument.Build.build/1)
     |> and_then(&{:ok, List.flatten(&1)})
@@ -235,6 +205,12 @@ defmodule Reactor.Builder.Step do
       when is_from_result(argument) or is_from_value(argument) or is_from_element(argument) ->
         {:ok, argument}
     end)
+  end
+
+  defp build_guards(guards) do
+    guards
+    |> map_while_ok(&Guard.Build.build/1)
+    |> and_then(&{:ok, List.flatten(&1)})
   end
 
   defp assert_is_step_impl({impl, opts}) when is_list(opts), do: assert_is_step_impl(impl)

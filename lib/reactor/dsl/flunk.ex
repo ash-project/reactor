@@ -5,11 +5,21 @@ defmodule Reactor.Dsl.Flunk do
   See `d:Reactor.flunk`.
   """
 
-  alias Reactor.{Dsl.Argument, Dsl.Build, Dsl.Flunk, Dsl.WaitFor, Step, Template}
+  alias Reactor.{
+    Dsl.Argument,
+    Dsl.Build,
+    Dsl.Flunk,
+    Dsl.Guard,
+    Dsl.WaitFor,
+    Dsl.Where,
+    Step,
+    Template
+  }
 
   defstruct __identifier__: nil,
             arguments: [],
             description: nil,
+            guards: [],
             name: nil,
             message: nil
 
@@ -17,6 +27,7 @@ defmodule Reactor.Dsl.Flunk do
           __identifier__: any,
           arguments: [Argument.t()],
           description: nil | String.t(),
+          guards: [Where.t() | Guard.t()],
           message: Template.t(),
           name: atom
         }
@@ -38,7 +49,10 @@ defmodule Reactor.Dsl.Flunk do
       ],
       args: [:name, :message],
       target: __MODULE__,
-      entities: [arguments: [Argument.__entity__(), WaitFor.__entity__()]],
+      entities: [
+        arguments: [Argument.__entity__(), WaitFor.__entity__()],
+        guards: [Where.__entity__(), Guard.__entity__()]
+      ],
       recursive_as: :steps,
       schema: [
         name: [
@@ -78,6 +92,7 @@ defmodule Reactor.Dsl.Flunk do
                {flunk.name, :arguments},
                Step.ReturnAllArguments,
                flunk.arguments,
+               guards: flunk.guards,
                async?: true,
                max_retries: 1,
                ref: :step_name
