@@ -255,7 +255,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.around.where
+### reactor.around.where
 ```elixir
 where predicate
 ```
@@ -299,7 +299,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.around.guard
+### reactor.around.guard
 ```elixir
 guard fun
 ```
@@ -515,7 +515,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.collect.where
+### reactor.collect.where
 ```elixir
 where predicate
 ```
@@ -559,7 +559,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.collect.guard
+### reactor.collect.guard
 ```elixir
 guard fun
 ```
@@ -762,7 +762,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.compose.where
+### reactor.compose.where
 ```elixir
 where predicate
 ```
@@ -806,7 +806,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.compose.guard
+### reactor.compose.guard
 ```elixir
 guard fun
 ```
@@ -1014,7 +1014,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.debug.where
+### reactor.debug.where
 ```elixir
 where predicate
 ```
@@ -1058,7 +1058,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.debug.guard
+### reactor.debug.guard
 ```elixir
 guard fun
 ```
@@ -1268,7 +1268,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.flunk.where
+### reactor.flunk.where
 ```elixir
 where predicate
 ```
@@ -1312,7 +1312,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.flunk.guard
+### reactor.flunk.guard
 ```elixir
 guard fun
 ```
@@ -1515,7 +1515,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.group.where
+### reactor.group.where
 ```elixir
 where predicate
 ```
@@ -1559,7 +1559,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.group.guard
+### reactor.group.guard
 ```elixir
 guard fun
 ```
@@ -1871,7 +1871,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.map.where
+### reactor.map.where
 ```elixir
 where predicate
 ```
@@ -1915,7 +1915,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.map.guard
+### reactor.map.guard
 ```elixir
 guard fun
 ```
@@ -2148,7 +2148,7 @@ wait_for :create_user
 
 Target: `Reactor.Dsl.WaitFor`
 
-## reactor.step.where
+### reactor.step.where
 ```elixir
 where predicate
 ```
@@ -2192,7 +2192,7 @@ end
 
 Target: `Reactor.Dsl.Where`
 
-## reactor.step.guard
+### reactor.step.guard
 ```elixir
 guard fun
 ```
