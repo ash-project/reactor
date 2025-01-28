@@ -1,7 +1,12 @@
 version: 2
 updates:
-- package-ecosystem: mix
-  directory: "/"
-  versioning-strategy: lockfile-only
-  schedule:
-    interval: "daily"
+  - package-ecosystem: mix
+    directory: "/"
+    versioning-strategy: lockfile-only
+    schedule:
+      interval: "daily"
+    groups:
+      production-dependencies:
+        dependency-type: production
+      dev-dependencies:
+        dependency-type: development
