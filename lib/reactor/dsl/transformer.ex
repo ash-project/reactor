@@ -2,7 +2,7 @@ defmodule Reactor.Dsl.Transformer do
   @moduledoc false
   alias Reactor.{Dsl, Info, Planner}
   alias Spark.{Dsl.Transformer, Error.DslError}
-  import Reactor.Utils
+  import Reactor.Dsl.Utils
   use Transformer
 
   @doc false
@@ -43,12 +43,9 @@ defmodule Reactor.Dsl.Transformer do
          )}
 
       names ->
-        names
-        |> Enum.frequencies()
-        |> reduce_while_ok(names, fn
-          {_name, 1}, names -> {:ok, names}
-          {name, n}, _names -> {:error, "There are #{n} steps named `#{inspect(name)}`."}
-        end)
+        with :ok <- assert_unique_step_names(names, dsl_state) do
+          {:ok, names}
+        end
     end
   end
 

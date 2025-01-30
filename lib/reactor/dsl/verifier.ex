@@ -5,12 +5,37 @@ defmodule Reactor.Dsl.Verifier do
   use Spark.Dsl.Verifier
   alias Reactor.{Argument, Dsl.Build, Dsl.Input}
   alias Spark.{Dsl.Verifier, Error.DslError}
+  import Reactor.Dsl.Utils
   require Argument
 
   @doc false
   @impl true
   @spec verify(Spark.Dsl.t()) :: :ok | {:error, any}
   def verify(dsl_state) do
+    with :ok <- recursively_verify_step_names(dsl_state) do
+      recursively_verify_steps(dsl_state)
+    end
+  end
+
+  defp recursively_verify_step_names(dsl_state) do
+    dsl_state
+    |> Verifier.get_entities([:reactor])
+    |> recursively_extract_step_names()
+    |> assert_unique_step_names(dsl_state)
+  end
+
+  defp recursively_extract_step_names(steps), do: recursively_extract_step_names(steps, [])
+  defp recursively_extract_step_names([], names), do: names
+
+  defp recursively_extract_step_names([step | steps], names) when is_list(step.steps) do
+    names = recursively_extract_step_names(step.steps, [step.name | names])
+    recursively_extract_step_names(steps, names)
+  end
+
+  defp recursively_extract_step_names([step | steps], names),
+    do: recursively_extract_step_names(steps, [step.name | names])
+
+  defp recursively_verify_steps(dsl_state) do
     dsl_state
     |> Verifier.get_entities([:reactor])
     |> Enum.reject(&is_struct(&1, Input))
