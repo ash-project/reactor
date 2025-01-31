@@ -33,7 +33,8 @@ defmodule Reactor.Dsl do
       Dsl.Input.__entity__(),
       Dsl.Map.__entity__(),
       Dsl.Step.__entity__(),
-      Dsl.Switch.__entity__()
+      Dsl.Switch.__entity__(),
+      Dsl.Template.__entity__()
     ],
     sections: [@middleware],
     top_level?: true,

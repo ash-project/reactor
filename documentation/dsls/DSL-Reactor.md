@@ -57,6 +57,11 @@ The top-level reactor DSL
 
    * default
 
+ * [template](#reactor-template)
+   * argument
+   * wait_for
+   * where
+   * guard
 
 
 
@@ -2348,6 +2353,263 @@ Target: `Reactor.Dsl.Switch.Default`
 ### Introspection
 
 Target: `Reactor.Dsl.Switch`
+
+### reactor.template
+```elixir
+template name
+```
+
+
+A step which passes all it's arguments as assigns into an `EEx` template and returns the result.
+
+
+### Nested DSLs
+ * [argument](#reactor-template-argument)
+ * [wait_for](#reactor-template-wait_for)
+ * [where](#reactor-template-where)
+ * [guard](#reactor-template-guard)
+
+
+### Examples
+```
+
+        template :welcome_message do
+          arguments :user
+          template """
+          Welcome <%= @user.name %>! 🎉
+          """
+        end
+        
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-template-name){: #reactor-template-name .spark-required} | `atom` |  | A unique name for the step. Used when choosing the return value of the Reactor and for arguments into other steps. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`template`](#reactor-template-template){: #reactor-template-template .spark-required} | `String.t` |  | An `EEx` template. |
+| [`description`](#reactor-template-description){: #reactor-template-description } | `String.t` |  | An optional description for the step. |
+
+
+### reactor.template.argument
+```elixir
+argument name, source \\ nil
+```
+
+
+Specifies an argument to a Reactor step.
+
+Each argument is a value which is either the result of another step, or an input value.
+
+Individual arguments can be transformed with an arbitrary function before
+being passed to any steps.
+
+
+
+
+### Examples
+```
+argument :name, input(:name)
+
+```
+
+```
+argument :year, input(:date, [:year])
+
+```
+
+```
+argument :user, result(:create_user)
+
+```
+
+```
+argument :user_id, result(:create_user) do
+  transform & &1.id
+end
+
+```
+
+```
+argument :user_id, result(:create_user, [:id])
+
+```
+
+```
+argument :three, value(3)
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-template-argument-name){: #reactor-template-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
+| [`source`](#reactor-template-argument-source){: #reactor-template-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-template-argument-description){: #reactor-template-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`transform`](#reactor-template-argument-transform){: #reactor-template-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Argument`
+
+### reactor.template.wait_for
+```elixir
+wait_for names
+```
+
+
+Wait for the named step to complete before allowing this one to start.
+
+Desugars to `argument :_, result(step_to_wait_for)`
+
+
+
+
+### Examples
+```
+wait_for :create_user
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`names`](#reactor-template-wait_for-names){: #reactor-template-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-template-wait_for-description){: #reactor-template-wait_for-description } | `String.t` |  | An optional description. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.WaitFor`
+
+### reactor.template.where
+```elixir
+where predicate
+```
+
+
+Only execute the surrounding step if the predicate function returns true.
+
+This is a simple version of `guard` which provides more flexibility at the cost of complexity.
+
+
+
+
+### Examples
+```
+step :read_file do
+  argument :path, input(:path)
+  run &File.read(&1.path)
+  where &File.exists?(&1.path)
+end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`predicate`](#reactor-template-where-predicate){: #reactor-template-where-predicate .spark-required} | `(any -> any) \| mfa \| (any, any -> any) \| mfa` |  | Provide a function which takes the step arguments and optionally the context and returns a boolean value. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-template-where-description){: #reactor-template-where-description } | `String.t` |  | An optional description of the guard. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Where`
+
+### reactor.template.guard
+```elixir
+guard fun
+```
+
+
+Provides a flexible method for conditionally executing a step, or replacing it's result.
+
+Expects a two arity function which takes the step's arguments and context and returns one of the following:
+
+- `:cont` - the guard has passed.
+- `{:halt, result}` - the guard has failed - instead of executing the step use the provided result.
+
+
+
+
+### Examples
+```
+step :read_file_via_cache do
+  argument :path, input(:path)
+  run &File.read(&1.path)
+  guard fn %{path: path}, %{cache: cache} ->
+    case Cache.get(cache, path) do
+      {:ok, content} -> {:halt, {:ok, content}}
+      _ -> :cont
+    end
+  end
+end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`fun`](#reactor-template-guard-fun){: #reactor-template-guard-fun .spark-required} | `(any, any -> any) \| mfa` |  | The guard function. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-template-guard-description){: #reactor-template-guard-description } | `String.t` |  | An optional description of the guard. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Guard`
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Template`
 
 
 

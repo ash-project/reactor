@@ -49,6 +49,8 @@ spark_locals_without_parens = [
   strict_ordering?: 1,
   switch: 1,
   switch: 2,
+  template: 1,
+  template: 2,
   transform: 1,
   undo: 1,
   wait_for: 1,
