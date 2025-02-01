@@ -5,6 +5,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.12.0](https://github.com/ash-project/reactor/compare/v0.11.0...v0.12.0) (2025-02-01)
+
+
+
+
+### Features:
+
+* template: Add `template` step which renders an EEx template. (#154)
+
+### Improvements:
+
+* Verify step name uniqueness recursively. (#153)
+
 ## [v0.11.0](https://github.com/ash-project/reactor/compare/v0.10.3...v0.11.0) (2025-01-28)
 
 
