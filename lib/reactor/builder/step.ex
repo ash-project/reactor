@@ -22,6 +22,11 @@ defmodule Reactor.Builder.Step do
       required: false,
       doc: "The maximum number of times the step can ask to be retried"
     ],
+    compensate: [
+      type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
+      required: false,
+      doc: "Compensate for the failure of the step."
+    ],
     transform: [
       type:
         {:or,
