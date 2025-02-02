@@ -17,7 +17,7 @@ defmodule Reactor.Dsl.VerifierTest do
 
   test "reactors cannot have recursively duplicated step names" do
     assert_raise(DslError, ~r/duplicate steps/, fn ->
-      defmodule DuplicatedStepNameReactor do
+      defmodule RecursivelyDuplicatedStepNameReactor do
         @moduledoc false
         use Reactor
 
