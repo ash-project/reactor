@@ -133,7 +133,7 @@ defmodule Reactor.Dsl.Switch do
 
   defimpl Build do
     import Reactor.Utils
-    alias Reactor.{Argument, Builder, Planner}
+    alias Reactor.{Argument, Builder}
     alias Spark.{Dsl.Verifier, Error.DslError}
 
     def build(switch, reactor) do
@@ -189,8 +189,7 @@ defmodule Reactor.Dsl.Switch do
 
     defp build_match(match, switch, reactor) do
       with {:ok, reactor} <- build_steps(match.steps, reactor),
-           {:ok, reactor} <- maybe_build_return_step(match.return, switch, reactor),
-           {:ok, _} <- Planner.plan(reactor) do
+           {:ok, reactor} <- maybe_build_return_step(match.return, switch, reactor) do
         {:ok, {match.predicate, reactor.steps}}
       end
     end
@@ -199,8 +198,7 @@ defmodule Reactor.Dsl.Switch do
 
     defp build_default(switch, reactor) do
       with {:ok, reactor} <- build_steps(switch.default.steps, reactor),
-           {:ok, reactor} <- maybe_build_return_step(switch.default.return, switch, reactor),
-           {:ok, _} <- Planner.plan(reactor) do
+           {:ok, reactor} <- maybe_build_return_step(switch.default.return, switch, reactor) do
         {:ok, reactor.steps}
       end
     end

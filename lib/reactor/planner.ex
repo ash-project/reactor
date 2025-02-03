@@ -24,7 +24,8 @@ defmodule Reactor.Planner do
     do: plan(%{reactor | plan: empty_graph()})
 
   def plan(reactor) do
-    with {:ok, graph} <- reduce_steps_into_graph(reactor.plan, reactor.steps),
+    with {:ok, graph} <-
+           reduce_steps_into_graph(reactor.plan, reactor.steps, reactor.intermediate_results),
          :ok <- assert_graph_not_cyclic(reactor, graph) do
       {:ok, %{reactor | steps: [], plan: graph}}
     end
@@ -46,7 +47,7 @@ defmodule Reactor.Planner do
 
   defp empty_graph, do: Graph.new(type: :directed, vertex_identifier: &__MODULE__.get_ref/1)
 
-  defp reduce_steps_into_graph(graph, steps) do
+  defp reduce_steps_into_graph(graph, steps, intermediate_results) do
     steps_by_name =
       graph
       |> Graph.vertices()
@@ -60,11 +61,11 @@ defmodule Reactor.Planner do
         if Graph.has_vertex?(graph, step) do
           graph
           |> Graph.replace_vertex(step, step)
-          |> reduce_arguments_into_graph(step, steps_by_name)
+          |> reduce_arguments_into_graph(step, steps_by_name, intermediate_results)
         else
           graph
           |> Graph.add_vertex(step, step.name)
-          |> reduce_arguments_into_graph(step, steps_by_name)
+          |> reduce_arguments_into_graph(step, steps_by_name, intermediate_results)
         end
 
       not_step, _ ->
@@ -77,8 +78,12 @@ defmodule Reactor.Planner do
     end)
   end
 
-  defp reduce_arguments_into_graph(graph, current_step, steps_by_name) do
+  defp reduce_arguments_into_graph(graph, current_step, steps_by_name, intermediate_results) do
     reduce_while_ok(current_step.arguments, graph, fn
+      argument, graph
+      when is_from_result(argument) and is_map_key(intermediate_results, argument.source.name) ->
+        {:ok, graph}
+
       argument, graph when is_from_result(argument) ->
         dependency_name = argument.source.name
 

@@ -1,6 +1,7 @@
 defmodule Reactor.Dsl.SwitchTest do
   @moduledoc false
   use ExUnit.Case, async: true
+  import ExUnit.CaptureLog
 
   defmodule Noop do
     @moduledoc false
@@ -59,5 +60,62 @@ defmodule Reactor.Dsl.SwitchTest do
 
   test "it does not require a default" do
     assert {:ok, nil} = Reactor.run(SwitchNoDefaultReactor, value: nil)
+  end
+
+  describe "nested steps can refer to external inputs" do
+    defmodule SwitchOutsideReferInputReactor do
+      @moduledoc false
+      use Reactor
+
+      input :code
+
+      switch :has_code do
+        on input(:code)
+
+        matches? &(not is_nil(&1)) do
+          debug :debug do
+            argument :onboarding_code, input(:code)
+          end
+        end
+      end
+    end
+
+    test "when the switch matches it runs the inner step" do
+      assert capture_log(fn ->
+               Reactor.run(SwitchOutsideReferInputReactor, %{code: "amscray"})
+             end) =~ ~r/amscray/
+    end
+  end
+
+  describe "nested steps can refer to external step results" do
+    defmodule SwitchOutsideReferResultReactor do
+      @moduledoc false
+      use Reactor
+
+      input :code
+
+      step :onboarding_code do
+        argument :code, input(:code)
+        run &{:ok, &1.code}
+      end
+
+      switch :has_code do
+        on result(:onboarding_code)
+
+        matches? &(not is_nil(&1)) do
+          debug :debug do
+            argument :onboarding_code, result(:onboarding_code)
+          end
+        end
+      end
+    end
+
+    test "when the switch matches it runs the inner step" do
+      assert capture_log(fn ->
+               Reactor.run(SwitchOutsideReferResultReactor, %{code: "amscray"}, %{},
+                 async?: false
+               )
+             end) =~ ~r/amscray/
+    end
   end
 end
