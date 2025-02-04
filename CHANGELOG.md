@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.12.1](https://github.com/ash-project/reactor/compare/v0.12.0...v0.12.1) (2025-02-04)
+
+
+
+
+### Bug Fixes:
+
+* Correctly pass guards into `flunk` step. (#158)
+
+* Runtime step planning with intermediate results. (#156)
+
 ## [v0.12.0](https://github.com/ash-project/reactor/compare/v0.11.0...v0.12.0) (2025-02-01)
 
 
