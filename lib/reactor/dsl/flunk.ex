@@ -92,7 +92,6 @@ defmodule Reactor.Dsl.Flunk do
                {flunk.name, :arguments},
                Step.ReturnAllArguments,
                flunk.arguments,
-               guards: flunk.guards,
                async?: true,
                max_retries: 1,
                ref: :step_name
@@ -103,6 +102,7 @@ defmodule Reactor.Dsl.Flunk do
 
         Builder.add_step(reactor, flunk.name, Step.Fail, arguments,
           max_retries: 0,
+          guards: flunk.guards,
           ref: :step_name
         )
       end
