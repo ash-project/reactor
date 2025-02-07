@@ -6,22 +6,22 @@ defmodule Reactor.Dsl.Compose do
   """
   defstruct __identifier__: nil,
             arguments: [],
+            async?: nil,
             description: nil,
             guards: [],
             name: nil,
-            reactor: nil,
-            runtime?: nil
+            reactor: nil
 
   alias Reactor.{Builder, Dsl}
 
   @type t :: %Dsl.Compose{
           __identifier__: any,
           arguments: [Dsl.Argument.t()],
+          async?: nil | boolean,
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
-          reactor: module | Reactor.t(),
-          runtime?: nil
+          reactor: module | Reactor.t()
         }
 
   @doc false
@@ -64,29 +64,106 @@ defmodule Reactor.Dsl.Compose do
           The reactor module or struct to compose upon.
           """
         ],
-        runtime?: [
-          type: {:in, [nil, true]},
+        async?: [
+          type: :boolean,
           required: false,
+          default: true,
           doc: """
-          Setting this to `true` will force the Reactor to use runtime composition.
+          Whether the composed steps should be run asynchronously.
           """
         ]
       ]
     }
 
-  defimpl Dsl.Build do
-    def build(compose, reactor) do
-      opts =
-        if compose.runtime? do
-          [guards: compose.guards, runtime?: true]
-        else
-          [guards: compose.guards]
-        end
+  @doc false
+  def verify_arguments(reactor, arguments) do
+    with {:ok, inputs} <- reactor_inputs(reactor),
+         {:ok, arg_names} <- argument_names(arguments) do
+      extra_args =
+        arg_names
+        |> MapSet.difference(inputs)
+        |> Enum.to_list()
 
-      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments, opts)
+      missing_args =
+        inputs
+        |> MapSet.difference(arg_names)
+        |> Enum.to_list()
+
+      case {extra_args, missing_args} do
+        {[], []} ->
+          :ok
+
+        {extra_args, []} ->
+          {:error, {:extra_args, inputs, extra_args}}
+
+        {[], missing_args} ->
+          {:error, {:missing_args, inputs, missing_args}}
+      end
+    end
+  end
+
+  defp reactor_inputs(reactor) when is_struct(reactor),
+    do: {:ok, MapSet.new(reactor.inputs)}
+
+  defp reactor_inputs(reactor) when is_atom(reactor) do
+    with {:ok, reactor} <- Reactor.Info.to_struct(reactor) do
+      reactor_inputs(reactor)
+    end
+  end
+
+  defp argument_names(arguments), do: {:ok, MapSet.new(arguments, & &1.name)}
+
+  defimpl Dsl.Build do
+    alias Spark.{Dsl.Verifier, Error.DslError}
+
+    def build(step, reactor) do
+      Builder.compose(reactor, step.name, step.reactor, step.arguments,
+        async?: step.async?,
+        guards: step.guards
+      )
     end
 
-    def transform(_compose, dsl_state), do: {:ok, dsl_state}
-    def verify(_compose, _dsl_state), do: :ok
+    def verify(step, dsl_state) do
+      case Reactor.Dsl.Compose.verify_arguments(step.reactor, step.arguments) do
+        :ok ->
+          :ok
+
+        {:error, {:extra_args, inputs, extra_args}} ->
+          {:error,
+           %DslError{
+             module: Verifier.get_persisted(dsl_state, :module),
+             path: [:reactor, :step, step.name],
+             message: """
+             # Extra arguments while composing Reactors.
+
+             The composed Reactor takes the following inputs:
+
+             #{Enum.map_join(inputs, "\n", &"  - #{&1}")}
+
+             The extra arguments are:
+
+             #{Enum.map_join(extra_args, "\n", &"  - #{&1}")}
+             """
+           }}
+
+        {:error, {:missing_args, inputs, missing_args}} ->
+          {:error,
+           %DslError{
+             module: Verifier.get_persisted(dsl_state, :module),
+             path: [:reactor, :step, step.name],
+             message: """
+             # Missing arguments while composing Reactors.
+
+             The composed Reactor takes the following inputs:
+
+             #{Enum.map_join(inputs, "\n", &"  - #{&1}")}
+
+             The missing arguments are:
+
+             #{Enum.map_join(missing_args, "\n", &"  - #{&1}")}
+             """
+           }}
+      end
+    end
   end
 end

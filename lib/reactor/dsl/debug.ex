@@ -78,6 +78,5 @@ defmodule Reactor.Dsl.Debug do
     end
 
     def verify(_, _), do: :ok
-    def transform(_, dsl_state), do: {:ok, dsl_state}
   end
 end

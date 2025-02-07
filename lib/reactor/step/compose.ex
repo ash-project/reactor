@@ -23,14 +23,14 @@ defmodule Reactor.Step.Compose do
     reactor = Keyword.fetch!(options, :reactor)
     reactor_id = get_reactor_id(reactor)
 
-    context
-    |> get_composed_reactors()
-    |> MapSet.member?(reactor_id)
-    |> if do
-      handle_recursive_reactor(reactor, arguments, context)
-    else
-      handle_non_recursive_reactor(reactor, arguments, context)
-    end
+    # context
+    # |> get_composed_reactors()
+    # |> MapSet.member?(reactor_id)
+    # |> if do
+    handle_recursive_reactor(reactor, arguments, context)
+    # else
+    #   handle_non_recursive_reactor(reactor, arguments, context)
+    # end
   end
 
   defp handle_recursive_reactor(reactor, arguments, context),

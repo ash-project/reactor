@@ -181,8 +181,6 @@ defmodule Reactor.Dsl.Switch do
       end)
     end
 
-    def transform(_switch, dsl_state), do: {:ok, dsl_state}
-
     defp build_matches(switch, reactor) do
       map_while_ok(switch.matches, &build_match(&1, switch, reactor), true)
     end

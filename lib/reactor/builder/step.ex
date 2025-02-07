@@ -224,7 +224,8 @@ defmodule Reactor.Builder.Step do
     end
   end
 
-  defp build_argument_transform_steps(arguments, step_name) do
+  @doc false
+  def build_argument_transform_steps(arguments, step_name) do
     arguments
     |> reduce_while_ok({[], []}, fn
       argument, {arguments, steps} when is_from_input(argument) and has_transform(argument) ->
