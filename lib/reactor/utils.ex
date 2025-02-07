@@ -110,7 +110,7 @@ defmodule Reactor.Utils do
   def flat_map_while_ok(inputs, mapper, false) do
     reduce_while_ok(inputs, [], fn input, acc ->
       case mapper.(input) do
-        {:ok, result} -> reduce_while_ok(result, acc, &[&1 | &2])
+        {:ok, result} -> reduce_while_ok(result, acc, &{:ok, [&1 | &2]})
         {:error, reason} -> {:error, reason}
       end
     end)

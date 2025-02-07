@@ -163,8 +163,6 @@ defmodule Reactor.Dsl.Step do
       end
     end
 
-    def transform(_step, dsl_state), do: {:ok, dsl_state}
-
     def verify(_step, _dsl_state), do: :ok
 
     defp rewrite_step(step, module) when is_nil(step.impl) and is_nil(step.run),

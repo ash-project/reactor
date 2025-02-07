@@ -73,9 +73,9 @@ defmodule Reactor.Argument do
       iex> Argument.from_element(:argument_name, &Atom.to_string/1)
 
   """
-  @spec from_element(atom, atom, nil | (any -> any)) :: Argument.t()
+  @spec from_element(any, any, nil | (any -> any)) :: Argument.t()
   def from_element(name, element_name, transform \\ nil)
-      when is_atom(name) and maybe_transform(transform),
+      when maybe_transform(transform),
       do: %Argument{
         name: name,
         source: %Template.Element{name: element_name},

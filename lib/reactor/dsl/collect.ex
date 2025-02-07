@@ -79,21 +79,20 @@ defmodule Reactor.Dsl.Collect do
     }
 
   defimpl Dsl.Build do
-    def build(collect, reactor) do
+    def build(step, reactor) do
       Builder.add_step(
         reactor,
-        collect.name,
+        step.name,
         Step.ReturnAllArguments,
-        collect.arguments,
+        step.arguments,
         async?: true,
-        guards: collect.guards,
+        guards: step.guards,
         max_retries: 1,
-        transform: collect.transform,
+        transform: step.transform,
         ref: :step_name
       )
     end
 
-    def verify(_collect, _dsl_state), do: :ok
-    def transform(_collect, dsl_state), do: {:ok, dsl_state}
+    def verify(_step, _dsl_state), do: :ok
   end
 end

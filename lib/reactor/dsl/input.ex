@@ -76,7 +76,6 @@ defmodule Reactor.Dsl.Input do
       Builder.add_input(reactor, input.name, input.transform)
     end
 
-    def transform(_input, dsl_state), do: {:ok, dsl_state}
     def verify(_input, _dsl_state), do: :ok
   end
 end
