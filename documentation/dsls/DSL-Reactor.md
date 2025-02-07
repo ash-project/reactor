@@ -654,6 +654,7 @@ Allows place another Reactor into this one as if it were a single step.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
+| [`runtime?`](#reactor-compose-runtime?){: #reactor-compose-runtime? } | `nil \| true` |  | Setting this to `true` will force the Reactor to use runtime composition. |
 
 
 ### reactor.compose.argument

@@ -18,6 +18,10 @@ defmodule Reactor.Builder.Compose do
                   type: {:list, {:protocol, Reactor.Guard.Build}},
                   required: false,
                   default: []
+                ],
+                runtime?: [
+                  type: {:in, [nil, true]},
+                  required: false
                 ]
               )
 
@@ -31,7 +35,7 @@ defmodule Reactor.Builder.Compose do
   @spec compose(Reactor.t(), atom, Reactor.t() | module, [Builder.step_argument()], keyword) ::
           {:ok, Reactor.t()} | {:error, any}
   def compose(reactor, name, inner_reactor, arguments, options) when is_atom(inner_reactor) do
-    if compose_would_be_recursive?(reactor, inner_reactor) do
+    if compose_would_be_recursive?(reactor, inner_reactor) || runtime_forced?(options) do
       do_runtime_compose(reactor, name, inner_reactor, arguments, options)
     else
       case Reactor.Info.to_struct(inner_reactor) do
@@ -61,17 +65,22 @@ defmodule Reactor.Builder.Compose do
       when is_reactor(reactor) and is_atom(name) and is_reactor(inner_reactor) and
              is_list(arguments) and is_list(options) do
     with {:ok, options} <- Spark.Options.validate(options, @opt_schema) do
-      if compose_would_be_recursive?(reactor, inner_reactor.id) || Enum.any?(options[:guards]) do
-        do_runtime_compose(reactor, name, inner_reactor, arguments, options[:guards])
+      if compose_would_be_recursive?(reactor, inner_reactor.id) || runtime_forced?(options) do
+        do_runtime_compose(reactor, name, inner_reactor, arguments, options)
       else
         do_static_compose(reactor, name, inner_reactor, arguments)
       end
     end
   end
 
-  defp do_runtime_compose(reactor, name, inner_reactor, arguments, guards) do
+  defp runtime_forced?(options),
+    do:
+      options[:runtime?] ||
+        Enum.any?(options[:guards] || [])
+
+  defp do_runtime_compose(reactor, name, inner_reactor, arguments, options) do
     Builder.add_step(reactor, name, {Step.Compose, reactor: inner_reactor}, arguments,
-      guards: guards,
+      guards: options[:guards] || [],
       max_retries: 0
     )
   end

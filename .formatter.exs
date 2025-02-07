@@ -42,6 +42,7 @@ spark_locals_without_parens = [
   on: 1,
   return: 1,
   run: 1,
+  runtime?: 1,
   source: 1,
   step: 1,
   step: 2,

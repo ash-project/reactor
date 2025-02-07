@@ -9,7 +9,8 @@ defmodule Reactor.Dsl.Compose do
             description: nil,
             guards: [],
             name: nil,
-            reactor: nil
+            reactor: nil,
+            runtime?: nil
 
   alias Reactor.{Builder, Dsl}
 
@@ -19,7 +20,8 @@ defmodule Reactor.Dsl.Compose do
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
-          reactor: module | Reactor.t()
+          reactor: module | Reactor.t(),
+          runtime?: nil
         }
 
   @doc false
@@ -61,15 +63,27 @@ defmodule Reactor.Dsl.Compose do
           doc: """
           The reactor module or struct to compose upon.
           """
+        ],
+        runtime?: [
+          type: {:in, [nil, true]},
+          required: false,
+          doc: """
+          Setting this to `true` will force the Reactor to use runtime composition.
+          """
         ]
       ]
     }
 
   defimpl Dsl.Build do
     def build(compose, reactor) do
-      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments,
-        guards: compose.guards
-      )
+      opts =
+        if compose.runtime? do
+          [guards: compose.guards, runtime?: true]
+        else
+          [guards: compose.guards]
+        end
+
+      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments, opts)
     end
 
     def transform(_compose, dsl_state), do: {:ok, dsl_state}
