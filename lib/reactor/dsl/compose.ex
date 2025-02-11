@@ -6,6 +6,7 @@ defmodule Reactor.Dsl.Compose do
   """
   defstruct __identifier__: nil,
             arguments: [],
+            async?: nil,
             description: nil,
             guards: [],
             name: nil,
@@ -15,7 +16,8 @@ defmodule Reactor.Dsl.Compose do
 
   @type t :: %Dsl.Compose{
           __identifier__: any,
-          arguments: [Dsl.Argument.t()],
+          arguments: [Dsl.Argument.t() | Dsl.WaitFor.t()],
+          async?: nil | boolean,
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
@@ -61,18 +63,69 @@ defmodule Reactor.Dsl.Compose do
           doc: """
           The reactor module or struct to compose upon.
           """
+        ],
+        async?: [
+          type: :boolean,
+          required: false,
+          default: true,
+          doc: """
+          Whether the composed steps should be run asynchronously.
+          """
         ]
       ]
     }
 
   defimpl Dsl.Build do
-    def build(compose, reactor) do
-      Builder.compose(reactor, compose.name, compose.reactor, compose.arguments,
-        guards: compose.guards
+    alias Spark.{Dsl.Verifier, Error.DslError}
+
+    def build(step, reactor) do
+      Builder.compose(reactor, step.name, step.reactor, step.arguments,
+        async?: step.async?,
+        guards: step.guards
       )
     end
 
-    def transform(_compose, dsl_state), do: {:ok, dsl_state}
-    def verify(_compose, _dsl_state), do: :ok
+    def verify(step, dsl_state) do
+      case Reactor.Builder.Compose.verify_arguments(step.reactor, step.arguments) do
+        :ok ->
+          :ok
+
+        {:error, {:extra_args, inputs, extra_args}} ->
+          {:error,
+           %DslError{
+             module: Verifier.get_persisted(dsl_state, :module),
+             path: [:reactor, :step, step.name],
+             message: """
+             # Extra arguments while composing Reactors.
+
+             The composed Reactor takes the following inputs:
+
+             #{Enum.map_join(inputs, "\n", &"  - #{&1}")}
+
+             The extra arguments are:
+
+             #{Enum.map_join(extra_args, "\n", &"  - #{&1}")}
+             """
+           }}
+
+        {:error, {:missing_args, inputs, missing_args}} ->
+          {:error,
+           %DslError{
+             module: Verifier.get_persisted(dsl_state, :module),
+             path: [:reactor, :step, step.name],
+             message: """
+             # Missing arguments while composing Reactors.
+
+             The composed Reactor takes the following inputs:
+
+             #{Enum.map_join(inputs, "\n", &"  - #{&1}")}
+
+             The missing arguments are:
+
+             #{Enum.map_join(missing_args, "\n", &"  - #{&1}")}
+             """
+           }}
+      end
+    end
   end
 end

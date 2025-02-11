@@ -117,6 +117,5 @@ defmodule Reactor.Dsl.Flunk do
     defp message_argument(flunk) when is_nil(flunk.message), do: nil
 
     def verify(_, _), do: :ok
-    def transform(_, dsl_state), do: {:ok, dsl_state}
   end
 end

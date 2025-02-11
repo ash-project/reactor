@@ -654,6 +654,7 @@ Allows place another Reactor into this one as if it were a single step.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
+| [`async?`](#reactor-compose-async?){: #reactor-compose-async? } | `boolean` | `true` | Whether the composed steps should be run asynchronously. |
 
 
 ### reactor.compose.argument

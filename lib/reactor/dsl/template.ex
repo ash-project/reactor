@@ -87,6 +87,5 @@ defmodule Reactor.Dsl.Template do
     end
 
     def verify(_template, _dsl_state), do: :ok
-    def transform(_step, dsl_state), do: {:ok, dsl_state}
   end
 end
