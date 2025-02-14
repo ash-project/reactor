@@ -1,4 +1,25 @@
 defmodule Reactor.Magic do
+  @moduledoc """
+  Look its magic.
+
+    defmodule Foo do
+     import Reactor.Magic
+
+     def_reactor say_hello(name) do
+       a = "Hello, "
+       b = run_step(
+         Reactor.Step.Template, 
+         %{a: a, b: name}, 
+         template: "<%= @a %><%= @b %>"
+       )
+       "I just said: #{b}"
+     end
+    end
+  """
+  defmacro run_step(_mod, _args) do
+    raise "Used `run_step/2` in an unsupported context or with unsupported args"
+  end
+
   defmacro def_reactor({func, _, args}, do: body) do
     args_as_map =
       Enum.map(args, fn {name, _, _} ->
@@ -97,6 +118,62 @@ defmodule Reactor.Magic do
   defp increment_step_number({name, number}), do: {name, number + 1}
   defp decrement_step_number({name, number}), do: {name, number - 1}
 
+  defp make_step(
+         {:run_step, meta_a, [{:__aliases__, _, _} = step_type, map]},
+         bindings,
+         step_name
+       ) do
+    make_step({:run_step, meta_a, [step_type, map, []]}, bindings, step_name)
+  end
+
+  defp make_step(
+         {:run_step, _, [{:__aliases__, _, _} = step_type, {:%{}, _, keys}, opts]},
+         bindings,
+         step_name
+       )
+       when is_list(keys) and is_list(opts) do
+    bindings_as_arguments =
+      Enum.map(keys, fn
+        {key, {var, _, _}} ->
+          case Keyword.fetch(bindings, var) do
+            {:ok, :input} ->
+              quote do
+                Reactor.Dsl.Reactor.Step.Reactor.Arguments.Argument.argument(
+                  unquote(key),
+                  Reactor.Dsl.Argument.input(unquote(var))
+                )
+              end
+
+            {:ok, {:result, step_name}} ->
+              quote do
+                Reactor.Dsl.Reactor.Step.Reactor.Arguments.Argument.argument(
+                  unquote(key),
+                  Reactor.Dsl.Argument.result(unquote(to_name(step_name)))
+                )
+              end
+
+            :error ->
+              raise "No such usable variable: #{var}"
+          end
+
+        other ->
+          raise "Unsupported step input: #{Macro.to_string(other)}"
+      end)
+
+    name = to_name(step_name)
+
+    quote do
+      require Reactor.Dsl.Step
+      require Reactor.Dsl.Reactor.Step
+      require Reactor.Dsl.Reactor.Step.Options
+      require Reactor.Dsl.Reactor.Step.Reactor.Arguments.Argument
+
+      Reactor.Dsl.Reactor.Step.step unquote(name), {unquote(step_type), unquote(opts)} do
+        (unquote_splicing(bindings_as_arguments))
+      end
+    end
+  end
+
   defp make_step(ast, bindings, step_name) do
     ast = {:ok, ast}
 
@@ -161,16 +238,5 @@ defmodule Reactor.Magic do
 
   defp to_name({letter, number}) do
     :"#{letter}_#{number}"
-  end
-end
-
-defmodule Foo do
-  import Reactor.Magic
-
-  def_reactor wait_twice(amount) do
-    start = System.monotonic_time(:millisecond)
-    :timer.sleep(amount)
-    :timer.sleep(amount)
-    System.monotonic_time(:millisecond) - start
   end
 end
