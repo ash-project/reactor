@@ -16,6 +16,7 @@ spark_locals_without_parens = [
   compensate: 1,
   compose: 2,
   compose: 3,
+  context: 1,
   debug: 1,
   debug: 2,
   default: 0,

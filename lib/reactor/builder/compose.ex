@@ -17,6 +17,12 @@ defmodule Reactor.Builder.Compose do
                   default: [],
                   doc: "Any guards which need to be added to the generated step"
                 ],
+                context: [
+                  type: {:list, :atom},
+                  required: false,
+                  default: [],
+                  doc: "A list of context keys which should be copied into the child reactor"
+                ],
                 async?: [
                   type: :boolean,
                   required: false,
@@ -40,7 +46,7 @@ defmodule Reactor.Builder.Compose do
         Builder.add_step(
           reactor,
           name,
-          {Reactor.Step.Compose, reactor: inner_reactor},
+          {Reactor.Step.Compose, reactor: inner_reactor, context: options[:context]},
           arguments,
           async?: options[:async?],
           guards: options[:guards] || [],

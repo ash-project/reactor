@@ -653,6 +653,7 @@ Allows place another Reactor into this one as if it were a single step.
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
+| [`context`](#reactor-compose-context){: #reactor-compose-context } | `atom \| list(atom)` | `[]` | A list of context keys which should be copied into the child reactor. |
 | [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
 | [`async?`](#reactor-compose-async?){: #reactor-compose-async? } | `boolean` | `true` | Whether the composed steps should be run asynchronously. |
 

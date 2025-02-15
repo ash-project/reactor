@@ -7,6 +7,7 @@ defmodule Reactor.Dsl.Compose do
   defstruct __identifier__: nil,
             arguments: [],
             async?: nil,
+            context: [],
             description: nil,
             guards: [],
             name: nil,
@@ -18,6 +19,7 @@ defmodule Reactor.Dsl.Compose do
           __identifier__: any,
           arguments: [Dsl.Argument.t() | Dsl.WaitFor.t()],
           async?: nil | boolean,
+          context: [atom],
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
@@ -48,6 +50,14 @@ defmodule Reactor.Dsl.Compose do
           required: true,
           doc: """
           A unique name for the step. Allows the result of the composed reactor to be depended upon by steps in this reactor.
+          """
+        ],
+        context: [
+          type: {:wrap_list, :atom},
+          required: false,
+          default: [],
+          doc: """
+          A list of context keys which should be copied into the child reactor.
           """
         ],
         description: [
@@ -81,6 +91,7 @@ defmodule Reactor.Dsl.Compose do
     def build(step, reactor) do
       Builder.compose(reactor, step.name, step.reactor, step.arguments,
         async?: step.async?,
+        context: step.context,
         guards: step.guards
       )
     end

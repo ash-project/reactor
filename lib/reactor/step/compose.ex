@@ -14,7 +14,12 @@ defmodule Reactor.Step.Compose do
   def run(arguments, context, options) do
     reactor = Keyword.fetch!(options, :reactor)
 
-    Reactor.run(reactor, arguments, %{},
+    sub_context =
+      options
+      |> Keyword.get(:context, [])
+      |> then(&Map.take(context, &1))
+
+    Reactor.run(reactor, arguments, sub_context,
       concurrency_key: context.concurrency_key,
       async?: options[:async?] || false
     )
