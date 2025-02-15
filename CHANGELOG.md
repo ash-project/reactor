@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.13.2](https://github.com/ash-project/reactor/compare/v0.13.1...v0.13.2) (2025-02-15)
+
+
+
+
+### Bug Fixes:
+
+* context should be shared with child reactors by default. (#168)
+
 ## [v0.13.1](https://github.com/ash-project/reactor/compare/v0.13.0...v0.13.1) (2025-02-11)
 
 
