@@ -14,7 +14,7 @@ defmodule Reactor.Step.Compose do
   def run(arguments, context, options) do
     reactor = Keyword.fetch!(options, :reactor)
 
-    Reactor.run(reactor, arguments, %{},
+    Reactor.run(reactor, arguments, context,
       concurrency_key: context.concurrency_key,
       async?: options[:async?] || false
     )
