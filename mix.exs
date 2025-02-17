@@ -101,7 +101,7 @@ defmodule Reactor.MixProject do
       {:doctor, "~> 0.18", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.37-rc", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16.0", only: [:dev, :test]},
-      {:git_ops, "~> 2.6.0", only: [:dev, :test]},
+      {:git_ops, "~> 2.7.0", only: [:dev, :test]},
       {:mimic, "~> 1.7", only: :test},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
