@@ -111,7 +111,7 @@ defmodule Reactor.Executor.StepRunner do
         do_undo(reactor, value, step, arguments, context, undo_count + 1)
 
       {:error, reason} ->
-        error = UndoStepError.exception(step: step.name, error: reason)
+        error = UndoStepError.exception(step: step, error: reason)
         Hooks.event(reactor, {:undo_error, error}, step, context)
         {:error, error}
     end
