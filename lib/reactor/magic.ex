@@ -2,19 +2,19 @@ defmodule Reactor.Magic do
   @moduledoc """
   Look its magic.
 
-    defmodule Foo do
-     import Reactor.Magic
+  ```elixir
+  defmodule Foo do
+    import Reactor.Magic
 
-     def_reactor say_hello(name) do
-       a = "Hello, "
-       b = run_step(
-         Reactor.Step.Template, 
-         %{a: a, b: name}, 
-         template: "<%= @a %><%= @b %>"
-       )
-       "I just said: #{b}"
-     end
+    def_reactor name(a) do
+      start = System.monotonic_time(:millisecond)
+      x = :timer.sleep(500)
+      y = :timer.sleep(500)
+
+      "#{x} #{y} #{System.monotonic_time(:millisecond) - start}"
     end
+  end
+  ```
   """
   defmacro run_step(_mod, _args) do
     raise "Used `run_step/2` in an unsupported context or with unsupported args"
