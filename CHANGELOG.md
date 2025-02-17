@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.13.3](https://github.com/ash-project/reactor/compare/v0.13.2...v0.13.3) (2025-02-17)
+
+
+
+
+### Bug Fixes:
+
+* pass full step to undo error
+
 ## [v0.13.2](https://github.com/ash-project/reactor/compare/v0.13.1...v0.13.2) (2025-02-15)
 
 
