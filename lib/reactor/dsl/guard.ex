@@ -64,7 +64,7 @@ defmodule Reactor.Dsl.Guard do
   defimpl Guard.Build do
     @doc false
     def build(guard) do
-      {:ok, [%Guard{fun: guard.fun}]}
+      {:ok, [%Guard{description: guard.description, fun: guard.fun}]}
     end
   end
 end

@@ -80,6 +80,7 @@ defmodule Reactor.Dsl.Template do
         {Step.Template, template: template.template},
         template.arguments,
         async?: true,
+        description: template.description,
         guards: template.guards,
         max_retries: 1,
         ref: :step_name

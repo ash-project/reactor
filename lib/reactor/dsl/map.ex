@@ -195,6 +195,7 @@ defmodule Reactor.Dsl.Map do
           map.name,
           {Step.Map, step_options},
           arguments,
+          description: map.description,
           guards: map.guards,
           max_retries: 0,
           ref: :step_name
