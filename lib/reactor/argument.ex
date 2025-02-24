@@ -5,6 +5,8 @@ defmodule Reactor.Argument do
 
   defstruct description: nil, name: nil, source: nil, transform: nil
 
+  @behaviour Reactor.Mermaid.Render
+
   alias Reactor.{Argument, Template}
   import Reactor.Template, only: :macros
 
@@ -218,6 +220,11 @@ defmodule Reactor.Argument do
   """
   defguard has_sub_path(argument)
            when is_list(argument.source.sub_path) and argument.source.sub_path != []
+
+  @doc false
+  @impl true
+  def to_mermaid(argument, options),
+    do: Reactor.Mermaid.Render.Argument.to_mermaid(argument, options)
 
   defp validate_options!(options) when is_list(options),
     do: Spark.Options.validate!(options, @options)

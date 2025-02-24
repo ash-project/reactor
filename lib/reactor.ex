@@ -49,6 +49,7 @@ defmodule Reactor do
             undo: []
 
   use Spark.Dsl, default_extensions: [extensions: [Dsl]]
+  @behaviour Reactor.Mermaid.Render
 
   @type context :: %{optional(atom) => any}
   @type context_arg :: Enumerable.t({atom, any})
@@ -219,4 +220,8 @@ defmodule Reactor do
       {:error, reason} -> raise reason
     end
   end
+
+  @doc false
+  def to_mermaid(reactor, options) when is_struct(reactor, __MODULE__),
+    do: Reactor.Mermaid.Render.Reactor.to_mermaid(reactor, options)
 end

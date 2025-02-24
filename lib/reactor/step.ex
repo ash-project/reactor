@@ -16,6 +16,8 @@ defmodule Reactor.Step do
             transform: nil,
             guards: []
 
+  @behaviour Reactor.Mermaid.Render
+
   alias Reactor.{Argument, Step}
 
   @type context :: %{optional(atom) => any}
@@ -280,4 +282,7 @@ defmodule Reactor.Step do
       defoverridable can?: 2, async?: 1
     end
   end
+
+  @doc false
+  def to_mermaid(step, options), do: Reactor.Mermaid.Render.Step.to_mermaid(step, options)
 end
