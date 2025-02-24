@@ -13,6 +13,7 @@ defmodule Reactor.Step.AnonFn do
   """
 
   use Reactor.Step
+  @behaviour Reactor.Mermaid
 
   @doc false
   @impl true
@@ -82,4 +83,9 @@ defmodule Reactor.Step.AnonFn do
   def can?(%{impl: {_, opts}}, :undo), do: is_function(Keyword.get(opts, :undo))
   def can?(%{impl: {_, opts}}, :compensate), do: is_function(Keyword.get(opts, :compensate))
   def can?(_, _), do: false
+
+  @doc false
+  @impl true
+  def to_mermaid(step, options),
+    do: __MODULE__.Mermaid.to_mermaid(step, options)
 end

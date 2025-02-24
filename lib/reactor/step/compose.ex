@@ -8,6 +8,7 @@ defmodule Reactor.Step.Compose do
   """
 
   use Reactor.Step
+  @behaviour Reactor.Mermaid
 
   @doc false
   @impl true
@@ -19,4 +20,9 @@ defmodule Reactor.Step.Compose do
       async?: options[:async?] || false
     )
   end
+
+  @doc false
+  @impl true
+  def to_mermaid(step, options),
+    do: __MODULE__.Mermaid.to_mermaid(step, options)
 end

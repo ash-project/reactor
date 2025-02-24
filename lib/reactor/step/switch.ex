@@ -43,6 +43,7 @@ defmodule Reactor.Step.Switch do
   use Reactor.Step
   alias Reactor.Step
   import Reactor.Utils
+  @behaviour Reactor.Mermaid
 
   @typedoc """
   A list of predicates and steps to execute if the predicate returns a truthy
@@ -78,6 +79,11 @@ defmodule Reactor.Step.Switch do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  @doc false
+  @impl true
+  def to_mermaid(step, options),
+    do: __MODULE__.Mermaid.to_mermaid(step, options)
 
   defp find_match(matches, value) do
     Enum.reduce_while(matches, :no_match, fn {predicate, steps}, :no_match ->

@@ -1712,7 +1712,7 @@ is implemented.
 ### Examples
 ```
 map :double_numbers do
-  input input(:numbers)
+  source input(:numbers)
 
   step :double do
     argument :number, element(:double_numbers)
@@ -1733,7 +1733,7 @@ step :get_subscriptions do
 end
 
 map :cancel_subscriptions do
-  input result(:get_subscriptions)
+  source result(:get_subscriptions)
 
   step :cancel do
     argument :sub_id, element(:cancel_subscriptions, [:id])

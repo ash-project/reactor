@@ -20,6 +20,7 @@ defmodule Reactor.Step.Transform do
 
   alias Reactor.{Error.Invalid.MissingArgumentError, Error.Invalid.TransformError, Step}
   use Step
+  @behaviour Reactor.Mermaid
 
   @doc false
   @impl true
@@ -37,6 +38,12 @@ defmodule Reactor.Step.Transform do
            arguments: arguments
          )}
     end
+  end
+
+  @doc false
+  @impl true
+  def to_mermaid(%{impl: {__MODULE__, opts}} = step, options) do
+    __MODULE__.Mermaid.to_mermaid(step, opts[:fun], options)
   end
 
   defp do_transform(value, opts) do
