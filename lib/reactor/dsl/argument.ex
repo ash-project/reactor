@@ -190,7 +190,7 @@ defmodule Reactor.Dsl.Argument do
       imports: [Dsl.Argument],
       schema: [
         description: [
-          type: :string,
+          type: {:or, [:string, nil]},
           required: false,
           doc: """
           An optional description for the argument.
@@ -226,7 +226,7 @@ defmodule Reactor.Dsl.Argument do
       argument =
         argument
         |> Map.from_struct()
-        |> Map.take(~w[name source transform]a)
+        |> Map.take(~w[description name source transform]a)
         |> then(&struct(Argument, &1))
 
       {:ok, [argument]}

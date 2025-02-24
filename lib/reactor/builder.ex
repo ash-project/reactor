@@ -30,7 +30,7 @@ defmodule Reactor.Builder do
   @type async? :: {:async?, boolean | (keyword -> boolean)}
 
   @typedoc "An optional step description"
-  @type description :: nil | String.t()
+  @type description :: {:description, nil | String.t()}
 
   @typedoc "How many times is the step allowed to retry?"
   @type max_retries :: {:max_retries, :infinity | non_neg_integer()}
@@ -38,7 +38,7 @@ defmodule Reactor.Builder do
   @typedoc "Optionally transform all the arguments into new arguments"
   @type arguments_transform ::
           {:transform,
-           nil | (%{optional(atom) => any} -> %{optional(atom) => any}) | {module | keyword} | mfa}
+           nil | (%{optional(atom) => any} -> %{optional(atom) => any}) | {module, keyword} | mfa}
 
   @type ref :: {:ref, :step_name | :make_ref}
   @type guards :: {:guards, [Reactor.Guard.Build.t()]}
@@ -65,23 +65,23 @@ defmodule Reactor.Builder do
   This both places the input in the Reactor for later input validation and adds
   steps to the Reactor which will emit and (possibly) transform the input.
   """
-  @spec add_input(Reactor.t(), any, nil | (any -> any)) :: {:ok, Reactor.t()} | {:error, any}
-  def add_input(reactor, name, transform \\ nil)
+  @spec add_input(Reactor.t(), any, Builder.Input.options()) :: {:ok, Reactor.t()} | {:error, any}
+  def add_input(reactor, name, options \\ nil)
 
-  def add_input(reactor, _name, _transform) when not is_reactor(reactor),
+  def add_input(reactor, _name, _options) when not is_reactor(reactor),
     do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
 
-  def add_input(reactor, name, transform),
-    do: Builder.Input.add_input(reactor, name, transform)
+  def add_input(reactor, name, options),
+    do: Builder.Input.add_input(reactor, name, options)
 
   @doc """
   Raising version of `add_input/2..3`.
   """
-  @spec add_input!(Reactor.t(), any, nil | (any -> any)) :: Reactor.t() | no_return
-  def add_input!(reactor, name, transform \\ nil)
+  @spec add_input!(Reactor.t(), any, Builder.Input.options()) :: Reactor.t() | no_return
+  def add_input!(reactor, name, options \\ nil)
 
-  def add_input!(reactor, name, transform) do
-    case add_input(reactor, name, transform) do
+  def add_input!(reactor, name, options) do
+    case add_input(reactor, name, options) do
       {:ok, reactor} -> reactor
       {:error, reason} -> raise reason
     end

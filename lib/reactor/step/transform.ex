@@ -20,6 +20,7 @@ defmodule Reactor.Step.Transform do
 
   alias Reactor.{Error.Invalid.MissingArgumentError, Error.Invalid.TransformError, Step}
   use Step
+  @behaviour Reactor.Mermaid.Render
 
   @doc false
   @impl true
@@ -36,6 +37,37 @@ defmodule Reactor.Step.Transform do
            argument: :value,
            arguments: arguments
          )}
+    end
+  end
+
+  @doc false
+  @impl true
+  def to_mermaid(%{impl: {__MODULE__, opts}} = step, options) do
+    import Reactor.Mermaid.Utils
+
+    name =
+      case step.name do
+        {:__reactor__, :transform, :input, input} ->
+          "Transform input #{name(input)}"
+
+        {:__reactor__, :transform, argument_name, _step_name} ->
+          "Transform argument #{name(argument_name)}"
+
+        other ->
+          name(other)
+      end
+
+    if options[:describe?] do
+      indentify(
+        """
+        #{mermaid_id(step.name, :step)}[\"`**#{name}**
+        #{md_escape(inspect(opts[:fun], pretty: true))}
+        `\"]
+        """,
+        options
+      )
+    else
+      indentify("#{mermaid_id(step.name, :step)}[#{name}]\n", options)
     end
   end
 

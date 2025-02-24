@@ -103,6 +103,7 @@ defmodule Reactor.Dsl.Group do
            allow_async?: group.allow_async?},
           group.arguments,
           async?: group.allow_async?,
+          description: group.description,
           guards: group.guards,
           max_retries: 0,
           ref: :step_name

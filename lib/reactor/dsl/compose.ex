@@ -81,6 +81,7 @@ defmodule Reactor.Dsl.Compose do
     def build(step, reactor) do
       Builder.compose(reactor, step.name, step.reactor, step.arguments,
         async?: step.async?,
+        description: step.description,
         guards: step.guards
       )
     end

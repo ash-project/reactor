@@ -91,6 +91,7 @@ defmodule Reactor.Dsl.Around do
            steps: sub_reactor.steps, fun: around.fun, allow_async?: around.allow_async?},
           around.arguments,
           async?: around.allow_async?,
+          description: around.description,
           guards: around.guards,
           max_retries: 0,
           ref: :step_name

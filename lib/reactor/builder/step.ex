@@ -40,7 +40,7 @@ defmodule Reactor.Builder.Step do
       doc: "Context which will be merged with the reactor context when calling this step"
     ],
     description: [
-      type: :string,
+      type: {:or, [nil, :string]},
       required: false,
       doc: "An optional description for the step"
     ],

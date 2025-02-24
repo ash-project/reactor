@@ -86,6 +86,7 @@ defmodule Reactor.Dsl.Collect do
         Step.ReturnAllArguments,
         step.arguments,
         async?: true,
+        description: step.description,
         guards: step.guards,
         max_retries: 1,
         transform: step.transform,

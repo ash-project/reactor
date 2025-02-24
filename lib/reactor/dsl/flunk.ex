@@ -101,8 +101,9 @@ defmodule Reactor.Dsl.Flunk do
           |> maybe_append(message_argument(flunk))
 
         Builder.add_step(reactor, flunk.name, Step.Fail, arguments,
-          max_retries: 0,
+          description: flunk.description,
           guards: flunk.guards,
+          max_retries: 0,
           ref: :step_name
         )
       end

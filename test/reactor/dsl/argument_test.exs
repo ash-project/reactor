@@ -31,12 +31,14 @@ defmodule Reactor.Dsl.ArgumentTest do
       assert {:ok,
               [
                 %Argument{
+                  description: "Example",
                   name: :name,
                   source: %Template.Input{name: :source},
                   transform: ^transform
                 }
               ]} =
                Argument.Build.build(%Dsl.Argument{
+                 description: "Example",
                  name: :name,
                  source: %Template.Input{name: :source},
                  transform: transform,
