@@ -7,6 +7,7 @@ defmodule Reactor.Dsl.Debug do
 
   defstruct __identifier__: nil,
             arguments: [],
+            description: nil,
             guards: [],
             level: :debug,
             name: nil
@@ -16,6 +17,7 @@ defmodule Reactor.Dsl.Debug do
   @type t :: %Debug{
           __identifier__: any,
           arguments: [Argument.t()],
+          description: nil | String.t(),
           guards: [Where.t() | Guard.t()],
           level: Logger.level(),
           name: atom
@@ -58,6 +60,13 @@ defmodule Reactor.Dsl.Debug do
           doc: """
           The log level to send the debug information to.
           """
+        ],
+        description: [
+          type: :string,
+          required: false,
+          doc: """
+          An optional description for the step.
+          """
         ]
       ]
     }
@@ -71,6 +80,7 @@ defmodule Reactor.Dsl.Debug do
         debug.name,
         {Step.Debug, level: debug.level},
         debug.arguments,
+        description: debug.description,
         guards: debug.guards,
         max_retries: 0,
         ref: :step_name

@@ -210,7 +210,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-around-argument-description){: #reactor-around-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-around-argument-description){: #reactor-around-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-around-argument-transform){: #reactor-around-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -470,7 +470,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-collect-argument-description){: #reactor-collect-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-collect-argument-description){: #reactor-collect-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-collect-argument-transform){: #reactor-collect-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -718,7 +718,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-compose-argument-description){: #reactor-compose-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-compose-argument-description){: #reactor-compose-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-compose-argument-transform){: #reactor-compose-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -907,6 +907,7 @@ end
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`level`](#reactor-debug-level){: #reactor-debug-level } | `:emergency \| :alert \| :critical \| :error \| :warning \| :notice \| :info \| :debug` | `:debug` | The log level to send the debug information to. |
+| [`description`](#reactor-debug-description){: #reactor-debug-description } | `String.t` |  | An optional description for the step. |
 
 
 ### reactor.debug.argument
@@ -970,7 +971,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-debug-argument-description){: #reactor-debug-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-debug-argument-description){: #reactor-debug-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-debug-argument-transform){: #reactor-debug-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -1224,7 +1225,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-flunk-argument-description){: #reactor-flunk-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-flunk-argument-description){: #reactor-flunk-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-flunk-argument-transform){: #reactor-flunk-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -1471,7 +1472,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-group-argument-description){: #reactor-group-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-group-argument-description){: #reactor-group-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-group-argument-transform){: #reactor-group-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -1711,7 +1712,7 @@ is implemented.
 ### Examples
 ```
 map :double_numbers do
-  input input(:numbers)
+  source input(:numbers)
 
   step :double do
     argument :number, element(:double_numbers)
@@ -1732,7 +1733,7 @@ step :get_subscriptions do
 end
 
 map :cancel_subscriptions do
-  input result(:get_subscriptions)
+  source result(:get_subscriptions)
 
   step :cancel do
     argument :sub_id, element(:cancel_subscriptions, [:id])
@@ -1827,7 +1828,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-map-argument-description){: #reactor-map-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-map-argument-description){: #reactor-map-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-map-argument-transform){: #reactor-map-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -2104,7 +2105,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-step-argument-description){: #reactor-step-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-step-argument-description){: #reactor-step-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-step-argument-transform){: #reactor-step-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 
@@ -2459,7 +2460,7 @@ argument :three, value(3)
 
 | Name | Type | Default | Docs |
 |------|------|---------|------|
-| [`description`](#reactor-template-argument-description){: #reactor-template-argument-description } | `String.t` |  | An optional description for the argument. |
+| [`description`](#reactor-template-argument-description){: #reactor-template-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
 | [`transform`](#reactor-template-argument-transform){: #reactor-template-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
 
 

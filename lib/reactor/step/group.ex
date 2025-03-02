@@ -66,6 +66,8 @@ defmodule Reactor.Step.Group do
   alias Reactor.{Argument, Builder, Step}
   import Reactor.Utils
 
+  @behaviour Reactor.Mermaid
+
   @typedoc """
   The before function.
   """
@@ -113,15 +115,12 @@ defmodule Reactor.Step.Group do
   def run(arguments, context, options) do
     allow_async? = Keyword.get(options, :allow_async?, true)
     name = context.current_step.name
-    reactor = Builder.new({__MODULE__, name})
 
     with {:ok, before_fun} <- capture_before_fun(options),
          {:ok, after_fun} <- capture_after_fun(options),
          {:ok, steps} <- fetch_steps(options),
          {:ok, arguments, context, steps} <- before_fun.(arguments, context, steps),
-         {:ok, reactor} <- build_inputs(reactor, arguments),
-         {:ok, reactor} <- build_steps(reactor, steps),
-         {:ok, reactor} <- build_return_step(reactor, steps),
+         {:ok, reactor} <- build_nested_reactor(arguments, name, steps),
          options <-
            maybe_append_result([async?: allow_async?], fn ->
              case Map.fetch(context, :concurrency_key) do
@@ -135,6 +134,25 @@ defmodule Reactor.Step.Group do
     else
       {:error, reason} -> {:error, reason}
       {:halt, reactor} -> {:halt, reactor}
+    end
+  end
+
+  @doc false
+  @impl true
+  def to_mermaid(%{impl: {__MODULE__, opts}} = step, options) do
+    steps = Keyword.get(opts, :steps, [])
+
+    with {:ok, reactor} <- build_nested_reactor(step.arguments, step.name, steps) do
+      __MODULE__.Mermaid.to_mermaid(step, reactor, options)
+    end
+  end
+
+  defp build_nested_reactor(arguments, name, steps) do
+    reactor = Builder.new({__MODULE__, name})
+
+    with {:ok, reactor} <- build_inputs(reactor, arguments),
+         {:ok, reactor} <- build_steps(reactor, steps) do
+      build_return_step(reactor, steps)
     end
   end
 

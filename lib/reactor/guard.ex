@@ -12,9 +12,10 @@ defmodule Reactor.Guard do
   - `{:halt, result}` - the guard has failed - use `result` as the steps result.
   """
 
-  defstruct fun: nil
+  defstruct description: nil, fun: nil
 
   @type t :: %__MODULE__{
+          description: nil | String.t(),
           fun:
             (Reactor.inputs(), Reactor.context() -> :cont | {:halt, Reactor.Step.run_result()})
             | mfa

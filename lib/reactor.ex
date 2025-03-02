@@ -38,6 +38,7 @@ defmodule Reactor do
 
   defstruct context: %{},
             id: nil,
+            input_descriptions: %{},
             inputs: [],
             intermediate_results: %{},
             middleware: [],
@@ -119,6 +120,7 @@ defmodule Reactor do
   @type t :: %Reactor{
           context: context,
           id: any,
+          input_descriptions: %{atom => String.t()},
           inputs: [atom],
           intermediate_results: %{any => any},
           middleware: [Reactor.Middleware.t()],

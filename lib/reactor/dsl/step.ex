@@ -155,6 +155,7 @@ defmodule Reactor.Dsl.Step do
       with {:ok, step} <- rewrite_step(step, reactor.id) do
         Builder.add_step(reactor, step.name, step.impl, step.arguments,
           async?: step.async?,
+          description: step.description,
           guards: step.guards,
           max_retries: step.max_retries,
           transform: step.transform,

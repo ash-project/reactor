@@ -1,4 +1,6 @@
 defmodule Reactor.Step.Around do
+  require Reactor.Mermaid
+
   @moduledoc """
   Wrap the execution of a number of steps in a function.
 
@@ -63,6 +65,7 @@ defmodule Reactor.Step.Around do
   use Reactor.Step
   alias Reactor.{Argument, Builder, Step}
   import Reactor.Utils
+  @behaviour Reactor.Mermaid
 
   @typedoc """
   The type signature for the provided callback function.
@@ -111,24 +114,41 @@ defmodule Reactor.Step.Around do
     end
   end
 
+  @doc false
+  @impl true
+  def to_mermaid(%{impl: {__MODULE__, opts}} = step, options) do
+    steps = Keyword.get(opts, :steps, [])
+
+    with {:ok, reactor} <- build_nested_reactor(step.arguments, step.name, steps) do
+      __MODULE__.Mermaid.to_mermaid(step, reactor, options)
+    end
+  end
+
+  @doc false
   def around(_arguments, _context, [], _options), do: {:ok, %{}}
 
   def around(arguments, context, steps, options) do
     allow_async? = Keyword.get(options, :allow_async?, true)
-    name = context.current_step.name
+
+    with {:ok, reactor} <- build_nested_reactor(arguments, context.current_step.name, steps) do
+      options =
+        maybe_append_result([async?: allow_async?], fn ->
+          case Map.fetch(context, :concurrency_key) do
+            {:ok, value} -> {:concurrency_key, value}
+            :error -> nil
+          end
+        end)
+
+      Reactor.run(reactor, arguments, context, options)
+    end
+  end
+
+  defp build_nested_reactor(arguments, name, steps) do
     reactor = Builder.new({__MODULE__, name})
 
     with {:ok, reactor} <- build_inputs(reactor, arguments),
-         {:ok, reactor} <- build_steps(reactor, steps),
-         {:ok, reactor} <- build_return_step(reactor, steps),
-         options <-
-           maybe_append_result([async?: allow_async?], fn ->
-             case Map.fetch(context, :concurrency_key) do
-               {:ok, value} -> {:concurrency_key, value}
-               :error -> nil
-             end
-           end) do
-      Reactor.run(reactor, arguments, context, options)
+         {:ok, reactor} <- build_steps(reactor, steps) do
+      build_return_step(reactor, steps)
     end
   end
 

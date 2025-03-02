@@ -148,6 +148,7 @@ defmodule Reactor.Dsl.Switch do
            on: :value, matches: matches, default: default, allow_async?: switch.allow_async?},
           [%Argument{name: :value, source: switch.on}],
           async?: switch.allow_async?,
+          description: switch.description,
           max_retries: 0,
           ref: :step_name
         )

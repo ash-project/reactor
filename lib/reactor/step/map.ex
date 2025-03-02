@@ -7,6 +7,8 @@ defmodule Reactor.Step.Map do
   alias Spark.Options
   import Reactor.Utils
 
+  @behaviour Reactor.Mermaid
+
   @option_schema [
     state: [
       type: {:in, [:init, :iterating]},
@@ -94,6 +96,10 @@ defmodule Reactor.Step.Map do
       end
     end
   end
+
+  @doc false
+  @impl true
+  def to_mermaid(step, options), do: __MODULE__.Mermaid.to_mermaid(step, options)
 
   defp do_init(source, arguments, options, map_step) when Iter.is_iter(source) do
     source =
