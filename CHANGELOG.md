@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.14.0](https://github.com/ash-project/reactor/compare/v0.13.3...v0.14.0) (2025-03-04)
+
+
+
+
+### Features:
+
+* Add ability to convert Reactors into Mermaid flowcharts.
+
+### Improvements:
+
+* Add the ability to render Mermaid flowcharts. (#175)
+
+* Ensure that descriptions are carried through into Reactor structs.
+
 ## [v0.13.3](https://github.com/ash-project/reactor/compare/v0.13.2...v0.13.3) (2025-02-17)
 
 
