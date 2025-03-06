@@ -88,7 +88,7 @@ defmodule MyApp.RegisterUserReactor do
     end
 
     argument :plan_id do
-      source result(:get_stripe_plan)
+      source result(:find_stripe_plan)
       transform &(&1.id)
     end
   end
