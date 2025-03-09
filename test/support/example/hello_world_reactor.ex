@@ -1,6 +1,6 @@
 defmodule Example.HelloWorldReactor do
   @moduledoc false
-  use Reactor
+  use Reactor, otp_app: :reactor
 
   input :whom
 

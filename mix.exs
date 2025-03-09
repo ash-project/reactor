@@ -93,7 +93,10 @@ defmodule Reactor.MixProject do
       {:libgraph, "~> 0.16"},
       {:igniter, "~> 0.4", optional: true},
       {:iterex, "~> 0.1"},
+      {:jason, "~> 1.0"},
       {:telemetry, "~> 1.2"},
+      {:yaml_elixir, "~> 2.11"},
+      {:ymlr, "~> 5.0"},
 
       # Dev/Test dependencies
       {:credo, ">= 0.0.0", only: [:dev, :test], runtime: false},
