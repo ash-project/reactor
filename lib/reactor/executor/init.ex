@@ -24,6 +24,7 @@ defmodule Reactor.Executor.Init do
         reactor.context
         |> deep_merge(context)
         |> deep_merge(%{private: %{inputs: inputs}})
+        |> maybe_compose_reactors(options)
 
       {:ok, %{reactor | context: context}, state}
     end
@@ -57,4 +58,16 @@ defmodule Reactor.Executor.Init do
        )}
     end
   end
+
+  defp maybe_compose_reactors(context, options) when is_nil(options.parent_reactor), do: context
+
+  defp maybe_compose_reactors(context, options) when is_map_key(options, :parent_reactor) do
+    context
+    |> Map.update!(:private, fn private ->
+      private
+      |> Map.update!(:composed_reactors, &MapSet.put(&1, options.parent_reactor))
+    end)
+  end
+
+  defp maybe_compose_reactors(context, _options), do: context
 end

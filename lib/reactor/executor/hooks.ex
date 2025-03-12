@@ -11,6 +11,7 @@ defmodule Reactor.Executor.Hooks do
     context =
       Map.put(context, :__reactor__, %{
         id: reactor.id,
+        # reactor_ids: context.private.composed_reactors,
         inputs: reactor.inputs,
         middleware: reactor.middleware,
         step_count: step_count(reactor),

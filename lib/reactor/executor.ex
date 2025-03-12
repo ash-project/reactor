@@ -55,15 +55,13 @@ defmodule Reactor.Executor do
   """
   @spec run(Reactor.t(), Reactor.inputs(), Reactor.context(), Reactor.options()) ::
           {:ok, any} | {:halted, Reactor.t()} | {:error, any}
-  def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
-
   def run(reactor, _inputs, _context, _options) when is_nil(reactor.return),
     do: {:error, MissingReturnError.exception(reactor: reactor)}
 
   def run(reactor, inputs, context, options) when reactor.state in ~w[pending halted]a do
-    with {:ok, context} <- Executor.Hooks.init(reactor, context),
-         {:ok, reactor, state} <- Executor.Init.init(reactor, inputs, context, options) do
-      execute(reactor, state)
+    with {:ok, reactor, state} <- Executor.Init.init(reactor, inputs, context, options),
+         {:ok, context} <- Executor.Hooks.init(reactor, reactor.context) do
+      execute(%{reactor | context: context}, state)
     end
   end
 

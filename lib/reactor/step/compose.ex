@@ -17,7 +17,8 @@ defmodule Reactor.Step.Compose do
 
     Reactor.run(reactor, arguments, context,
       concurrency_key: context.concurrency_key,
-      async?: options[:async?] || false
+      async?: options[:async?] || false,
+      parent_reactor: context.__reactor__.id
     )
   end
 
