@@ -14,6 +14,8 @@ defmodule Reactor.Middleware.Telemetry do
   * `[:reactor, :step, :compensate, :stop]`
   * `[:reactor, :step, :undo, :start]`
   * `[:reactor, :step, :undo, :stop]`
+
+  You can provide additional metadata by placing a map under the `telemetry_metadata` context key.
   """
 
   use Reactor.Middleware
@@ -23,7 +25,10 @@ defmodule Reactor.Middleware.Telemetry do
   def init(context) do
     start = System.monotonic_time()
 
-    metadata = context.__reactor__
+    metadata =
+      context
+      |> Map.get(:telemetry_metadata, %{})
+      |> Map.merge(context.__reactor__)
 
     :telemetry.execute(
       [:reactor, :run, :start],
