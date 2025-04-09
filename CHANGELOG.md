@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.15.1](https://github.com/ash-project/reactor/compare/v0.15.0...v0.15.1) (2025-04-09)
+
+
+
+
+### Improvements:
+
+* Allow additional telemetry metadata to be provided via Reactor context. (#194)
+
 ## [v0.15.0](https://github.com/ash-project/reactor/compare/v0.14.0...v0.15.0) (2025-03-11)
 
 
