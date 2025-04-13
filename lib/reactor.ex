@@ -153,16 +153,21 @@ defmodule Reactor do
       default: :infinity,
       doc: "The maximum number of times to allow the Reactor to loop"
     ],
-    async_option: [
+    async?: [
       type: :boolean,
       required: false,
       default: true,
       doc: "Whether to allow the Reactor to start processes"
     ],
-    concurrency_key_option: [
+    concurrency_key: [
       type: :reference,
       required: false,
       hide: true
+    ],
+    run_id: [
+      type: :any,
+      required: false,
+      doc: "A unique identifier for the Reactor run"
     ]
   ]
 

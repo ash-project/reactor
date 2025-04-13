@@ -39,6 +39,7 @@ defmodule Reactor.Executor.StepRunner do
         current_step: step,
         pid: self(),
         reactor: reactor,
+        run_id: state.run_id,
         concurrency_key: concurrency_key
       }
 

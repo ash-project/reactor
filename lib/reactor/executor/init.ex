@@ -24,6 +24,7 @@ defmodule Reactor.Executor.Init do
         reactor.context
         |> deep_merge(context)
         |> deep_merge(%{private: %{inputs: inputs}})
+        |> Map.put(:run_id, state.run_id)
 
       {:ok, %{reactor | context: context}, state}
     end

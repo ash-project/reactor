@@ -21,6 +21,7 @@ defmodule Reactor.Executor.State do
             max_iterations: @defaults.max_iterations,
             pool_owner: false,
             retries: %{},
+            run_id: nil,
             skipped: MapSet.new(),
             started_at: nil,
             timeout: @defaults.timeout
@@ -37,6 +38,7 @@ defmodule Reactor.Executor.State do
           max_iterations: pos_integer() | :infinity,
           pool_owner: boolean,
           retries: %{reference() => pos_integer()},
+          run_id: any,
           skipped: MapSet.t(),
           started_at: DateTime.t(),
           timeout: pos_integer() | :infinity
@@ -54,6 +56,7 @@ defmodule Reactor.Executor.State do
     attrs
     |> maybe_set_max_concurrency()
     |> maybe_allocate_concurrency_pool()
+    |> maybe_set_run_id()
     |> Map.put(:started_at, DateTime.utc_now())
     |> then(&struct!(__MODULE__, &1))
   end
@@ -77,5 +80,13 @@ defmodule Reactor.Executor.State do
     attrs
     |> Map.put(:concurrency_key, ConcurrencyTracker.allocate_pool(attrs.max_concurrency))
     |> Map.put(:pool_owner, true)
+  end
+
+  defp maybe_set_run_id(attrs) do
+    attrs
+    |> Map.update(:run_id, make_ref(), fn
+      nil -> make_ref()
+      ref -> ref
+    end)
   end
 end
