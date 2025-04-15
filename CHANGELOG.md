@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.15.2](https://github.com/ash-project/reactor/compare/v0.15.1...v0.15.2) (2025-04-15)
+
+
+
+
+### Improvements:
+
+* Include a unique `run_id` for every reactor run. (#201)
+
 ## [v0.15.1](https://github.com/ash-project/reactor/compare/v0.15.0...v0.15.1) (2025-04-09)
 
 
