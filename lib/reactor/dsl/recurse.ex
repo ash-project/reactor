@@ -15,6 +15,7 @@ defmodule Reactor.Dsl.Recurse do
             exit_condition: nil
 
   alias Reactor.{Builder, Dsl}
+  alias Spark.Dsl.Transformer
 
   @type t :: %Dsl.Recurse{
           __identifier__: any,
@@ -86,11 +87,10 @@ defmodule Reactor.Dsl.Recurse do
           """
         ],
         exit_condition: [
-          type: {:or, [:mfa, :fun]},
+          type: {:or, [nil, {:mfa_or_fun, 1}]},
           required: false,
           doc: """
-          A function that takes the result of an iteration and returns a boolean.
-          When true, the recursion will stop. If not provided, will rely solely on max_iterations.
+          A function that takes the result of an iteration and returns a boolean. When true, the recursion will stop. If not provided, will rely solely on max_iterations.
           """
         ]
       ]
@@ -110,9 +110,8 @@ defmodule Reactor.Dsl.Recurse do
     end
 
     def verify(step, dsl_state) do
-      with :ok <- verify_arguments(step, dsl_state),
-           :ok <- verify_constraints(step, dsl_state) do
-        :ok
+      with :ok <- verify_arguments(step, dsl_state) do
+        verify_constraints(step, dsl_state)
       end
     end
 
@@ -160,9 +159,8 @@ defmodule Reactor.Dsl.Recurse do
     end
 
     defp verify_constraints(step, dsl_state) do
-      with :ok <- verify_termination_conditions(step, dsl_state),
-           :ok <- verify_reactor_return(step, dsl_state) do
-        :ok
+      with :ok <- verify_termination_conditions(step, dsl_state) do
+        verify_reactor_return(step, dsl_state)
       end
     end
 
@@ -186,7 +184,7 @@ defmodule Reactor.Dsl.Recurse do
     end
 
     defp verify_reactor_return(step, dsl_state) do
-      return_section = Spark.Dsl.Transformer.get_option(dsl_state, [:reactor], :return)
+      return_section = Transformer.get_option(dsl_state, [:reactor], :return)
 
       if is_nil(return_section) do
         {:error,

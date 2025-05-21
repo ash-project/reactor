@@ -42,6 +42,8 @@ spark_locals_without_parens = [
   middleware: 1,
   middleware: 2,
   on: 1,
+  recurse: 2,
+  recurse: 3,
   return: 1,
   run: 1,
   source: 1,

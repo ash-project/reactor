@@ -7,7 +7,6 @@ defmodule Reactor.Step.Recurse.Mermaid do
   import Utils
 
   @doc false
-  @spec to_mermaid(Reactor.Step.t(), keyword) :: Reactor.Mermaid.Node.t()
   def to_mermaid(%{impl: {module, opts}} = step, options) do
     reactor =
       case Keyword.fetch!(opts, :reactor) do

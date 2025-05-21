@@ -38,7 +38,7 @@ defmodule Reactor.Step.Recurse do
       """
     ],
     exit_condition: [
-      type: {:or, [:mfa, :fun]},
+      type: {:or, [nil, {:mfa_or_fun, 1}]},
       required: false,
       doc: """
       A function that takes the result of an iteration and returns whether to exit the recursion.

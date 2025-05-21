@@ -29,7 +29,7 @@ defmodule Reactor.Builder.Recurse do
                   doc: "Maximum number of iterations to execute"
                 ],
                 exit_condition: [
-                  type: {:or, [:mfa, :fun]},
+                  type: {:or, [nil, {:mfa_or_fun, 1}]},
                   required: false,
                   doc: "Function to determine when to stop iteration"
                 ]
