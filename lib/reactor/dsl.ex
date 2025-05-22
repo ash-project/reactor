@@ -32,6 +32,7 @@ defmodule Reactor.Dsl do
       Dsl.Group.__entity__(),
       Dsl.Input.__entity__(),
       Dsl.Map.__entity__(),
+      Dsl.Recurse.__entity__(),
       Dsl.Step.__entity__(),
       Dsl.Switch.__entity__(),
       Dsl.Template.__entity__()

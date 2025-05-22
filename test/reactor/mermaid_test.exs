@@ -677,4 +677,98 @@ defmodule Reactor.MermaidTest do
     assert expanded ==
              Reactor.Mermaid.to_mermaid!(ReactorWithSwitch, output: :binary, describe?: true)
   end
+
+  test "reactor with recurse" do
+    defmodule ReactorWithRecurse do
+      @moduledoc false
+
+      defmodule Inner do
+        @moduledoc false
+        use Reactor
+
+        input :whom
+
+        step :greet, Example.Step.Greeter do
+          description "Perform a ritual greeting"
+          argument :whom, input(:whom)
+        end
+
+        return :greet
+      end
+
+      defmodule Outer do
+        @moduledoc false
+        use Reactor
+
+        input :first_person
+
+        recurse :greet_first, Inner do
+          argument :whom, input(:first_person)
+          max_iterations 9
+          exit_condition fn str -> String.length(str) > 0 end
+        end
+      end
+    end
+
+    plain = """
+    flowchart LR
+        start{"Start"}
+        start==>reactor_Reactor.MermaidTest.ReactorWithRecurse.Outer
+        subgraph reactor_Reactor.MermaidTest.ReactorWithRecurse.Outer["Reactor.MermaidTest.ReactorWithRecurse.Outer"]
+            direction LR
+            input_106935667>"Input first_person"]
+            input_106935667 -->|whom|step_67615159
+            step_67615159["greet_first(Reactor.Step.Recurse)"]
+            subgraph reactor_11439297["{Reactor.MermaidTest.ReactorWithRecurse.Inner, :greet_first}"]
+                direction LR
+                input_34140751>"Input whom"]
+                input_34140751 -->|whom|step_131748215
+                step_131748215["greet(Example.Step.Greeter)"]
+                return_11439297{"Return"}
+                step_131748215==>return_11439297
+            end
+            step_67615159-->input_34140751
+            return_11439297-->step_67615159
+            return_Reactor.MermaidTest.ReactorWithRecurse.Outer{"Return"}
+            step_67615159==>return_Reactor.MermaidTest.ReactorWithRecurse.Outer
+        end
+    """
+
+    assert plain ==
+             Reactor.Mermaid.to_mermaid!(ReactorWithRecurse.Outer, output: :binary)
+
+    expanded = """
+    flowchart LR
+        start{"Start"}
+        start==>reactor_Reactor.MermaidTest.ReactorWithRecurse.Outer
+        subgraph reactor_Reactor.MermaidTest.ReactorWithRecurse.Outer["Reactor.MermaidTest.ReactorWithRecurse.Outer"]
+            direction LR
+            input_106935667>"`**Input first_person**
+            `"]
+            input_106935667 -->|whom|step_67615159
+            step_67615159["`**greet\\_first \\(Reactor.Step.Recurse\\)**
+             max_iterations: 9`"]
+            subgraph reactor_11439297["{Reactor.MermaidTest.ReactorWithRecurse.Inner, :greet_first}"]
+                direction LR
+                input_34140751>"`**Input whom**
+                `"]
+                input_34140751 -->|whom|step_131748215
+                step_131748215["`**greet \\(Example.Step.Greeter\\)**
+                Perform a ritual greeting`"]
+                return_11439297{"Return"}
+                step_131748215==>return_11439297
+            end
+            step_67615159-->input_34140751
+            return_11439297-->step_67615159
+            return_Reactor.MermaidTest.ReactorWithRecurse.Outer{"Return"}
+            step_67615159==>return_Reactor.MermaidTest.ReactorWithRecurse.Outer
+        end
+    """
+
+    assert expanded ==
+             Reactor.Mermaid.to_mermaid!(ReactorWithRecurse.Outer,
+               output: :binary,
+               describe?: true
+             )
+  end
 end

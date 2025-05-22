@@ -238,6 +238,53 @@ defmodule Reactor.Builder do
   end
 
   @doc """
+  Recurse a Reactor until an exit condition is met or maximum iterations are reached.
+
+  Recursion takes the output of one execution of the reactor and feeds it as input
+  to the next execution, continuing until either:
+  1. The exit_condition function returns true when applied to the latest result
+  2. The maximum number of iterations is reached
+  3. An error occurs during execution
+
+  This provides a powerful way to implement iterative algorithms where the 
+  processing continues until a convergence condition is met.
+  """
+  @spec recurse(Reactor.t(), atom, Reactor.t() | module, [step_argument], Keyword.t()) ::
+          {:ok, Reactor.t()} | {:error, any}
+  def recurse(reactor, name, inner_reactor, arguments \\ [], options \\ [])
+
+  def recurse(reactor, _name, _inner_reactor, _arguments, _options) when not is_reactor(reactor),
+    do: {:error, argument_error(:reactor, "not a Reactor", reactor)}
+
+  def recurse(_reactor, name, _inner_reactor, _arguments, _options) when not is_atom(name),
+    do: {:error, argument_error(:name, "not an atom", name)}
+
+  def recurse(_reactor, _name, inner_reactor, _arguments, _options)
+      when not is_reactor(inner_reactor) and not is_atom(inner_reactor),
+      do: {:error, argument_error(:inner_reactor, "not a Reactor", inner_reactor)}
+
+  def recurse(_reactor, _name, _inner_reactor, arguments, _options) when not is_list(arguments),
+    do: {:error, argument_error(:arguments, "not a list", arguments)}
+
+  def recurse(_reactor, _name, _inner_reactor, _arguments, options) when not is_list(options),
+    do: {:error, argument_error(:options, "not a list", options)}
+
+  def recurse(reactor, name, inner_reactor, arguments, options),
+    do: Builder.Recurse.recurse(reactor, name, inner_reactor, arguments, options)
+
+  @doc """
+  Raising version of `recurse/4`.
+  """
+  @spec recurse!(Reactor.t(), atom, Reactor.t() | module, [step_argument], Keyword.t()) ::
+          Reactor.t() | no_return
+  def recurse!(reactor, name, inner_reactor, arguments, options \\ []) do
+    case recurse(reactor, name, inner_reactor, arguments, options) do
+      {:ok, reactor} -> reactor
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   Add a middleware to the Reactor.
 
   Returns an error if the middleware is already present on the Reactor.
