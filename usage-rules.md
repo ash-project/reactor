@@ -312,18 +312,6 @@ collect :user_summary do
 end
 ```
 
-### Template Steps
-
-Dynamically create steps based on runtime data:
-
-```elixir
-template :dynamic_processors do
-  argument :processor_configs, input(:configs)
-
-  # Creates steps based on the processor_configs at runtime
-end
-```
-
 ## Error Handling and Compensation
 
 ### Compensation
