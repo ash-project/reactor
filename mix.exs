@@ -64,7 +64,8 @@ defmodule Reactor.MixProject do
   defp package do
     [
       name: :reactor,
-      files: ~w[lib .formatter.exs mix.exs README* LICENSE* CHANGELOG* documentation usage-rules.md],
+      files:
+        ~w[lib .formatter.exs mix.exs README* LICENSE* CHANGELOG* documentation usage-rules.md],
       licenses: ["MIT"],
       links: %{
         GitHub: "https://github.com/ash-project/reactor"
