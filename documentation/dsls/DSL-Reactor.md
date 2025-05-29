@@ -47,6 +47,11 @@ The top-level reactor DSL
    * wait_for
    * where
    * guard
+ * [recurse](#reactor-recurse)
+   * argument
+   * wait_for
+   * where
+   * guard
  * [step](#reactor-step)
    * argument
    * wait_for
@@ -1980,6 +1985,258 @@ Target: `Reactor.Dsl.Guard`
 ### Introspection
 
 Target: `Reactor.Dsl.Map`
+
+### reactor.recurse
+```elixir
+recurse name, reactor
+```
+
+
+Execute a reactor recursively until an exit condition is met or maximum iterations are reached.
+
+Allows the output of one iteration to become the input of the next. The reactor must have
+input/output compatibility to ensure that the outputs from iteration i can be fed into
+iteration i+1.
+
+
+### Nested DSLs
+ * [argument](#reactor-recurse-argument)
+ * [wait_for](#reactor-recurse-wait_for)
+ * [where](#reactor-recurse-where)
+ * [guard](#reactor-recurse-guard)
+
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-recurse-name){: #reactor-recurse-name .spark-required} | `atom` |  | A unique name for the step. Allows the result of the recursed reactor to be depended upon by steps in this reactor. |
+| [`reactor`](#reactor-recurse-reactor){: #reactor-recurse-reactor .spark-required} | `Reactor \| module` |  | The reactor module or struct to recurse on. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-recurse-description){: #reactor-recurse-description } | `String.t` |  | An optional description for the step. |
+| [`async?`](#reactor-recurse-async?){: #reactor-recurse-async? } | `boolean` | `true` | Whether the recursed steps should be run asynchronously. |
+| [`max_iterations`](#reactor-recurse-max_iterations){: #reactor-recurse-max_iterations } | `pos_integer` |  | The maximum number of iterations to execute. If not specified, will rely solely on exit_condition. |
+| [`exit_condition`](#reactor-recurse-exit_condition){: #reactor-recurse-exit_condition } | `nil \| (any -> any) \| mfa` |  | A function that takes the result of an iteration and returns a boolean. When true, the recursion will stop. If not provided, will rely solely on max_iterations. |
+
+
+### reactor.recurse.argument
+```elixir
+argument name, source \\ nil
+```
+
+
+Specifies an argument to a Reactor step.
+
+Each argument is a value which is either the result of another step, or an input value.
+
+Individual arguments can be transformed with an arbitrary function before
+being passed to any steps.
+
+
+
+
+### Examples
+```
+argument :name, input(:name)
+
+```
+
+```
+argument :year, input(:date, [:year])
+
+```
+
+```
+argument :user, result(:create_user)
+
+```
+
+```
+argument :user_id, result(:create_user) do
+  transform & &1.id
+end
+
+```
+
+```
+argument :user_id, result(:create_user, [:id])
+
+```
+
+```
+argument :three, value(3)
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`name`](#reactor-recurse-argument-name){: #reactor-recurse-argument-name .spark-required} | `atom` |  | The name of the argument which will be used as the key in the `arguments` map passed to the implementation. |
+| [`source`](#reactor-recurse-argument-source){: #reactor-recurse-argument-source .spark-required} | `Reactor.Template.Element \| Reactor.Template.Input \| Reactor.Template.Result \| Reactor.Template.Value` |  | What to use as the source of the argument. See `Reactor.Dsl.Argument` for more information. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-recurse-argument-description){: #reactor-recurse-argument-description } | `String.t \| nil` |  | An optional description for the argument. |
+| [`transform`](#reactor-recurse-argument-transform){: #reactor-recurse-argument-transform } | `(any -> any) \| module \| nil` |  | An optional transformation function which can be used to modify the argument before it is passed to the step. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Argument`
+
+### reactor.recurse.wait_for
+```elixir
+wait_for names
+```
+
+
+Wait for the named step to complete before allowing this one to start.
+
+Desugars to `argument :_, result(step_to_wait_for)`
+
+
+
+
+### Examples
+```
+wait_for :create_user
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`names`](#reactor-recurse-wait_for-names){: #reactor-recurse-wait_for-names .spark-required} | `atom \| list(atom)` |  | The name of the step to wait for. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-recurse-wait_for-description){: #reactor-recurse-wait_for-description } | `String.t` |  | An optional description. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.WaitFor`
+
+### reactor.recurse.where
+```elixir
+where predicate
+```
+
+
+Only execute the surrounding step if the predicate function returns true.
+
+This is a simple version of `guard` which provides more flexibility at the cost of complexity.
+
+
+
+
+### Examples
+```
+step :read_file do
+  argument :path, input(:path)
+  run &File.read(&1.path)
+  where &File.exists?(&1.path)
+end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`predicate`](#reactor-recurse-where-predicate){: #reactor-recurse-where-predicate .spark-required} | `(any -> any) \| mfa \| (any, any -> any) \| mfa` |  | Provide a function which takes the step arguments and optionally the context and returns a boolean value. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-recurse-where-description){: #reactor-recurse-where-description } | `String.t` |  | An optional description of the guard. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Where`
+
+### reactor.recurse.guard
+```elixir
+guard fun
+```
+
+
+Provides a flexible method for conditionally executing a step, or replacing it's result.
+
+Expects a two arity function which takes the step's arguments and context and returns one of the following:
+
+- `:cont` - the guard has passed.
+- `{:halt, result}` - the guard has failed - instead of executing the step use the provided result.
+
+
+
+
+### Examples
+```
+step :read_file_via_cache do
+  argument :path, input(:path)
+  run &File.read(&1.path)
+  guard fn %{path: path}, %{cache: cache} ->
+    case Cache.get(cache, path) do
+      {:ok, content} -> {:halt, {:ok, content}}
+      _ -> :cont
+    end
+  end
+end
+
+```
+
+
+
+### Arguments
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`fun`](#reactor-recurse-guard-fun){: #reactor-recurse-guard-fun .spark-required} | `(any, any -> any) \| mfa` |  | The guard function. |
+### Options
+
+| Name | Type | Default | Docs |
+|------|------|---------|------|
+| [`description`](#reactor-recurse-guard-description){: #reactor-recurse-guard-description } | `String.t` |  | An optional description of the guard. |
+
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Guard`
+
+
+
+
+### Introspection
+
+Target: `Reactor.Dsl.Recurse`
 
 ### reactor.step
 ```elixir
