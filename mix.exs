@@ -25,6 +25,7 @@ defmodule Reactor.MixProject do
           extras: [
             "README.md",
             "documentation/tutorials/getting-started-with-reactor.md",
+            "documentation/tutorials/reactor-cheatsheet.cheatmd",
             {"documentation/dsls/DSL-Reactor.md",
              search_data: Spark.Docs.search_data_for(Reactor.Dsl)}
           ],
