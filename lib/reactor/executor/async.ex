@@ -211,6 +211,7 @@ defmodule Reactor.Executor.Async do
   defp normalise_result({:error, reason}), do: {:error, reason}
   defp normalise_result({:halt, reason}), do: {:halt, reason}
   defp normalise_result(:retry), do: {:retry, nil}
+  defp normalise_result({:retry, reason}), do: {:retry, reason}
   defp normalise_result({:ok, value}), do: {:ok, value, []}
   defp normalise_result({:ok, value, steps}) when is_list(steps), do: {:ok, value, steps}
   defp normalise_result({:skip, result}), do: {:skip, normalise_result(result)}
