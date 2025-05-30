@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.15.4](https://github.com/ash-project/reactor/compare/v0.15.3...v0.15.4) (2025-05-30)
+
+
+
+
+### Improvements:
+
+* add support for recursive sub-reactors (#215)
+
+* add support for recursive sub-reactors
+
 ## [v0.15.3](https://github.com/ash-project/reactor/compare/v0.15.2...v0.15.3) (2025-05-24)
 
 
@@ -492,6 +503,3 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 * implement basic reactor behaviour. (#1)
 
 ## [v0.1.0](https://github.com/ash-project/reactor/compare/v0.1.0...v0.1.0) (2023-04-19)
-
-
-
