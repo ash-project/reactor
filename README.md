@@ -44,9 +44,32 @@ end
 
 ## Documentation
 
-Documentation for the latest release will be [available on
-hexdocs](https://hexdocs.pm/reactor) and for the [`main`
-branch](https://ash-project.github.io/reactor).
+Our documentation is organized to help you find exactly what you need:
+
+### 🎓 **Learning Reactor** - Tutorials
+Step-by-step guides that teach Reactor through hands-on practice:
+- **[Getting Started](documentation/tutorials/01-getting-started.md)** - Build your first Reactor
+- **[Recursive Execution](documentation/tutorials/05-recursive-execution.md)** - Advanced iterative patterns
+
+### 🔧 **Solving Problems** - How-to Guides
+Practical solutions for real-world scenarios:
+- **[Payment Processing](documentation/how-to/payment-processing.md)** - E-commerce workflows
+- **[Data Pipelines](documentation/how-to/data-pipelines.md)** - ETL orchestration
+- **[Testing Strategies](documentation/how-to/testing-strategies.md)** - Testing approaches
+
+### 📚 **API Reference**
+Complete technical reference:
+- **[DSL Documentation](documentation/dsls/DSL-Reactor.md)** - Complete DSL syntax (auto-generated)
+- **[HexDocs](https://hexdocs.pm/reactor)** - Generated API documentation
+- **[Latest (main branch)](https://ash-project.github.io/reactor)** - Development docs
+
+### 💡 **Understanding Reactor** - Explanations
+Conceptual guides about how and why Reactor works:
+- **[Core Concepts](documentation/explanation/concepts.md)** - Sagas, DAGs, compensation
+- **[Architecture](documentation/explanation/architecture.md)** - Internal design
+- **[Ecosystem](documentation/explanation/ecosystem.md)** - Integration patterns
+
+**Quick Start:** New to Reactor? Start with the [Getting Started tutorial](documentation/tutorials/01-getting-started.md)!
 
 ## Contributing
 

@@ -24,16 +24,41 @@ defmodule Reactor.MixProject do
           logo: "logos/reactor-logo-light-small.png",
           extras: [
             "README.md",
-            "documentation/tutorials/getting-started-with-reactor.md",
+            # Tutorials
+            "documentation/tutorials/01-getting-started.md",
+            "documentation/tutorials/02-error-handling.md",
+            "documentation/tutorials/03-async-workflows.md",
+            "documentation/tutorials/04-composition.md",
+            "documentation/tutorials/05-recursive-execution.md",
             "documentation/tutorials/reactor-cheatsheet.cheatmd",
+            # How-to Guides
+            "documentation/how-to/payment-processing.md",
+            "documentation/how-to/data-pipelines.md",
+            "documentation/how-to/api-orchestration.md",
+            "documentation/how-to/testing-strategies.md",
+            "documentation/how-to/debugging-workflows.md",
+            "documentation/how-to/performance-optimization.md",
+            # Reference
             {"documentation/dsls/DSL-Reactor.md",
-             search_data: Spark.Docs.search_data_for(Reactor.Dsl)}
+             search_data: Spark.Docs.search_data_for(Reactor.Dsl)},
+            "documentation/reference/glossary.md",
+            # Explanation
+            "documentation/explanation/concepts.md",
+            "documentation/explanation/architecture.md",
+            "documentation/explanation/design-decisions.md",
+            "documentation/explanation/ecosystem.md"
           ],
           groups_for_extras: extra_documentation_groups(),
           before_closing_head_tag: fn type ->
             if type == :html do
               """
+              <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.3/dist/mermaid.min.js"></script>
               <script>
+                mermaid.initialize({
+                  startOnLoad: true,
+                  theme: 'default'
+                });
+                
                 if (location.hostname === "hexdocs.pm") {
                   var script = document.createElement("script");
                   script.src = "https://plausible.io/js/script.js";
@@ -136,8 +161,32 @@ defmodule Reactor.MixProject do
 
   defp extra_documentation_groups do
     [
-      Tutorials: ~r'documentation/tutorials',
-      DSLs: ~r'documentation/dsls'
+      Tutorials: [
+        "documentation/tutorials/01-getting-started.md",
+        "documentation/tutorials/02-error-handling.md",
+        "documentation/tutorials/03-async-workflows.md",
+        "documentation/tutorials/04-composition.md",
+        "documentation/tutorials/05-recursive-execution.md",
+        "documentation/tutorials/reactor-cheatsheet.cheatmd"
+      ],
+      "How-to Guides": [
+        "documentation/how-to/payment-processing.md",
+        "documentation/how-to/data-pipelines.md",
+        "documentation/how-to/api-orchestration.md",
+        "documentation/how-to/testing-strategies.md",
+        "documentation/how-to/debugging-workflows.md",
+        "documentation/how-to/performance-optimization.md"
+      ],
+      Reference: [
+        "documentation/dsls/DSL-Reactor.md",
+        "documentation/reference/glossary.md"
+      ],
+      Explanation: [
+        "documentation/explanation/concepts.md",
+        "documentation/explanation/architecture.md",
+        "documentation/explanation/design-decisions.md",
+        "documentation/explanation/ecosystem.md"
+      ]
     ]
   end
 end
