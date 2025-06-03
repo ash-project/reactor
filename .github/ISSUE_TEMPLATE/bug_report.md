@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-A minimal set of resource definitions and calls that can reproduce the bug.
+A minimal set of reactor/step definitions and calls that can reproduce the bug.
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
@@ -20,7 +20,7 @@ A clear and concise description of what you expected to happen.
  - Elixir version
  - Erlang version
  - OS
- - Spark version
+ - Reactor version
  - any related extension versions
 
 **Additional context**
