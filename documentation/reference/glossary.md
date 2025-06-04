@@ -16,7 +16,7 @@ This glossary defines key terms, concepts, and technical vocabulary used through
 
 **Dependency Graph** - A directed acyclic graph (DAG) where vertices represent steps and edges represent dependencies, used to determine execution order.
 
-**DSL (Domain Specific Language)** - Declarative syntax built on Spark framework for defining reactors with inputs, steps, and their relationships.
+**DSL (Domain Specific Language)** - Declarative syntax built with Spark for defining reactors with inputs, steps, and their relationships.
 
 **Dynamic Step Creation** - The ability for steps to emit new steps during execution using `{:ok, result, new_steps}` return format.
 
@@ -141,7 +141,7 @@ This glossary defines key terms, concepts, and technical vocabulary used through
 
 **Framework Independence** - Design principle allowing Reactor to work with any Elixir application without framework dependencies.
 
-**Spark Framework** - Foundation library providing DSL infrastructure shared across the Ash ecosystem.
+**Spark** - Foundation library providing DSL infrastructure shared across the Ash ecosystem.
 
 ## Performance and Scalability Terms
 

@@ -304,7 +304,7 @@ end
 ### Design Constraints and Benefits
 
 **Constraints Accepted:**
-- Dependency on Spark framework
+- Dependency on Spark
 - Need to maintain compatibility with Ash patterns
 
 **Benefits Gained:**

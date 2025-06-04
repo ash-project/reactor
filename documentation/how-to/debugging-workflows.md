@@ -417,15 +417,6 @@ end
 
 ## Common Debugging Scenarios
 
-### Missing Arguments
-
-```elixir
-# Error: Missing argument 'user_id'
-debug :check_inputs do
-  argument :all_inputs, input(:*)  # Debug all inputs
-end
-```
-
 ### Step Not Executing
 
 ```elixir

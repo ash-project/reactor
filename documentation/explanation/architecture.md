@@ -76,7 +76,7 @@ defstruct context: %{},
 
 ### DSL Implementation
 
-Reactor's DSL is built on the Spark framework, providing a declarative way to define workflows:
+Reactor's DSL is built with Spark, providing a declarative way to define workflows:
 
 #### DSL Processing Flow
 
