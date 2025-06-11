@@ -3,8 +3,6 @@ defmodule Reactor.Mermaid.Utils do
   Utilities for generating Mermaid.
   """
 
-  @safe_id ~r/\A[a-zA-Z0-9\._-]+\Z/
-
   @doc "Escape markdown as needed"
   def md_escape(nil), do: ""
 
@@ -39,7 +37,7 @@ defmodule Reactor.Mermaid.Utils do
       |> to_string()
       |> deelixirify()
 
-    if Regex.match?(@safe_id, name) do
+    if Regex.match?(~r/\A[a-zA-Z0-9\._-]+\Z/, name) do
       "#{prefix}_#{name}"
     else
       "#{prefix}_#{:erlang.phash2(name)}"
@@ -47,7 +45,7 @@ defmodule Reactor.Mermaid.Utils do
   end
 
   def mermaid_id(name, prefix) when is_binary(name) do
-    if Regex.match?(@safe_id, name) do
+    if Regex.match?(~r/\A[a-zA-Z0-9\._-]+\Z/, name) do
       "#{prefix}_#{name}"
     else
       "#{prefix}_#{:erlang.phash2(name)}"
