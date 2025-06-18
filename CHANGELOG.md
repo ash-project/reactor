@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.15.5](https://github.com/ash-project/reactor/compare/v0.15.4...v0.15.5) (2025-06-18)
+
+
+
+
+### Bug Fixes:
+
+* don't use regexes in module attributes, for otp28 compat by Zach Daniel
+
 ## [v0.15.4](https://github.com/ash-project/reactor/compare/v0.15.3...v0.15.4) (2025-05-30)
 
 
