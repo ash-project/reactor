@@ -81,7 +81,7 @@ defmodule Reactor.Mermaid.Utils do
 
   @doc "Convert the direction atom into a mermaid direction"
   @spec direction(atom) :: String.t()
-  def direction(:top_to_bottom), do: "TD"
+  def direction(:top_to_bottom), do: "TB"
   def direction(:bottom_to_top), do: "BT"
   def direction(:left_to_right), do: "LR"
   def direction(:right_to_left), do: "RL"

@@ -11,7 +11,7 @@ This guide shows you how to build a robust payment processing workflow using Rea
 Here's the complete payment processing flow with error handling:
 
 ```mermaid
-flowchart TD
+flowchart TB
     Start([Order Received]) --> ValidatePayment[Validate Payment Details]
     ValidatePayment --> CheckInventory[Check Inventory]
     ValidatePayment --> ValidateAddress[Validate Shipping Address]

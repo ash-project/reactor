@@ -9,7 +9,7 @@ This guide explains the fundamental concepts that make Reactor work, providing d
 The Saga pattern provides transaction-like semantics across multiple distinct resources without requiring distributed transactions. Instead of traditional ACID properties, sagas use compensation to handle failures.
 
 ```mermaid
-graph TD
+graph TB
     subgraph "Forward Execution (Happy Path)"
         A[Step A: Reserve Inventory] --> B[Step B: Authorize Payment]
         B --> C[Step C: Create Order]
