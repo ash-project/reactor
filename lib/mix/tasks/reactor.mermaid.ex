@@ -207,7 +207,7 @@ defmodule Mix.Tasks.Reactor.Mermaid do
       end)
 
     diagram = """
-    flowchart TD
+    flowchart TB
     #{Enum.join(diagrams, "\n\n")}
     """
 
@@ -219,7 +219,7 @@ defmodule Mix.Tasks.Reactor.Mermaid do
   defp indent_diagram(diagram) do
     diagram
     |> String.split("\n")
-    # Remove the "flowchart TD" line
+    # Remove the "flowchart TB" line
     |> Enum.drop(1)
     |> Enum.map_join("\n", &("  " <> &1))
   end

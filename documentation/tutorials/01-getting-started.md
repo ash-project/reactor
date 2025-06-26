@@ -17,7 +17,7 @@ A user registration workflow that validates email, hashes passwords, and creates
 Here's what we'll build - a simple user registration workflow:
 
 ```mermaid
-graph TD
+graph TB
     A[input: email] --> B[validate_email]
     A2[input: password] --> C[hash_password]
     B --> D[create_user]
