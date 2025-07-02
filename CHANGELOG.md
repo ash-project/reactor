@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.15.6](https://github.com/ash-project/reactor/compare/v0.15.5...v0.15.6) (2025-07-02)
+
+
+
+
+### Bug Fixes:
+
+* mermaid: use TB instead of TD (#241) by ChristianAlexander
+
 ## [v0.15.5](https://github.com/ash-project/reactor/compare/v0.15.4...v0.15.5) (2025-06-18)
 
 
