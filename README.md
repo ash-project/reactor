@@ -32,6 +32,8 @@ this project's development.
 
 ## Installation
 
+Reactor contains an igniter installer, so if you have igniter installed already you can run `mix igniter.install reactor` to add Reactor to your app.
+
 The package can be installed by adding `reactor` to your list of dependencies in `mix.exs`:
 
 ```elixir
