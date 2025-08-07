@@ -140,7 +140,7 @@ defmodule Mix.Tasks.Reactor.Mermaid do
   end
 
   defp try_load_module(module) do
-    module = Module.concat([module])
+    module = Module.concat([String.trim(module)])
 
     case Code.ensure_loaded(module) do
       {:module, module} ->
