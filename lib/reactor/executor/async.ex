@@ -148,7 +148,7 @@ defmodule Reactor.Executor.Async do
       reactor
       |> drop_from_plan(task)
 
-    if Map.get(state.retries, step.ref) >= step.max_retries do
+    if Map.get(state.retries, step.ref) > step.max_retries do
       error =
         error ||
           RetriesExceededError.exception(
@@ -223,7 +223,7 @@ defmodule Reactor.Executor.Async do
   end
 
   defp increment_retries(state, step) do
-    %{state | retries: Map.update(state.retries, step.ref, 0, &(&1 + 1))}
+    %{state | retries: Map.update(state.retries, step.ref, 1, &(&1 + 1))}
   end
 
   defp drop_from_plan(reactor, step) do

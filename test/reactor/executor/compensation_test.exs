@@ -65,12 +65,6 @@ defmodule Reactor.Executor.CompensationTest do
              {:run_error, %RunStepError{error: :fail}, 0},
              {:compensate_start, %RunStepError{error: :fail}, 0},
              :compensate_retry,
-             # Current behavior (current_try does not immediately increment).
-             # Uncomment to make the test pass:
-            #  {:run_start, _, 0},
-            #  {:run_error, %RunStepError{error: :fail}, 0},
-            #  {:compensate_start, %RunStepError{error: :fail}, 0},
-            #  :compensate_retry,
              {:run_start, _, 1},
              {:run_error, %RunStepError{error: :fail}, 1},
              {:compensate_start, %RunStepError{error: :fail}, 1},

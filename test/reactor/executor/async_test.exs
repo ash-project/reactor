@@ -211,7 +211,7 @@ defmodule Reactor.Executor.AsyncTest do
       refute is_map_key(state.retries, doable.ref)
 
       assert {_, _reactor, state} = handle_completed_steps(reactor, state)
-      assert state.retries[doable.ref] == 0
+      assert state.retries[doable.ref] == 1
     end
 
     test "when one of the steps asks to retry (again), it increments the retry count for the step",
