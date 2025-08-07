@@ -81,39 +81,101 @@ Reactor provides two main mechanisms for error handling:
 - `:ok` - Successfully undone
 - `{:error, reason}` - Failed to undo (this will fail the reactor)
 
-## Step 3: Create a step with error handling
+## Step 3: Create services with realistic error handling
 
-Let's create a step that can fail and shows how to handle those failures. Create `lib/email_service.ex`:
+Let's create services that demonstrate different types of failures. Create `lib/email_service.ex`:
 
 ```elixir
 defmodule EmailService do
   use Reactor.Step
 
+  # Simulate realistic email service failures based on email content
   @impl true
   def run(arguments, _context, _options) do
-    if String.ends_with?(arguments.email, "@example.com") do
-      {:ok, %{message_id: "msg_123", sent_at: DateTime.utc_now()}}
-    else
-      {:error, %{type: :network_timeout, message: "Email service unavailable"}}
+    email = arguments.email
+    
+    cond do
+      # Simulate network timeout (temporary failure)
+      String.contains?(email, "timeout") ->
+        {:error, %{type: :network_timeout, message: "Network timeout - please retry"}}
+      
+      # Simulate rate limiting (temporary failure)  
+      String.contains?(email, "ratelimit") ->
+        {:error, %{type: :rate_limit, message: "Rate limit exceeded - please retry"}}
+      
+      # Simulate blocked email (permanent failure)
+      String.contains?(email, "blocked") ->
+        {:error, %{type: :blocked_email, message: "Email address is blocked"}}
+      
+      # Simulate invalid email (permanent failure)
+      not String.contains?(email, "@") ->
+        {:error, %{type: :invalid_email, message: "Invalid email format"}}
+      
+      # Success case - all other emails work
+      true ->
+        {:ok, %{
+          message_id: "msg_#{:rand.uniform(10000)}", 
+          sent_at: DateTime.utc_now(),
+          recipient: email
+        }}
     end
   end
 
   @impl true
   def compensate(error, _arguments, _context, _options) do
     case error do
-      %{type: :network_timeout} ->
-        # Network errors are usually temporary, so retry
+      # Temporary failures - retry with helpful logging
+      %{type: :network_timeout} -> 
+        IO.puts("🔄 Network timeout - retrying email send...")
         :retry
       
-      _other ->
-        # Other errors are permanent, don't retry
+      %{type: :rate_limit} -> 
+        IO.puts("🔄 Rate limited - retrying email send...")
+        :retry
+      
+      # Permanent failures - don't retry
+      %{type: :blocked_email} -> 
+        IO.puts("❌ Email blocked - cannot retry")
+        :ok
+      
+      %{type: :invalid_email} -> 
+        IO.puts("❌ Invalid email - cannot retry")
+        :ok
+      
+      _other -> 
         :ok
     end
   end
 
   @impl true
   def undo(result, _arguments, _context, _options) do
-    IO.puts("Canceling email message #{result.message_id}")
+    IO.puts("📧 Canceling email #{result.message_id} to #{result.recipient}")
+    :ok
+  end
+end
+```
+
+Now create `lib/notification_service.ex` for internal admin notifications:
+
+```elixir
+defmodule NotificationService do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    user = arguments.user
+    
+    # Admin notifications always succeed (internal system)
+    {:ok, %{
+      notification_id: "notif_#{:rand.uniform(10000)}",
+      sent_at: DateTime.utc_now(),
+      message: "New user registered: #{user.email}"
+    }}
+  end
+
+  @impl true
+  def undo(result, _arguments, _context, _options) do
+    IO.puts("🔔 Canceling admin notification #{result.notification_id}")
     :ok
   end
 end
@@ -201,8 +263,7 @@ defmodule ResilientUserRegistration do
     max_retries 2
   end
 
-  step :send_admin_notification, EmailService do
-    argument :email, value("admin@company.com")
+  step :send_admin_notification, NotificationService do
     argument :user, result(:create_user)
     max_retries 1
   end
@@ -220,34 +281,52 @@ iex -S mix
 ```
 
 ```elixir
-# Test with a valid @example.com email (should succeed)
+# ✅ SUCCESS: Normal email succeeds
 {:ok, user} = Reactor.run(ResilientUserRegistration, %{
   email: "alice@example.com",
   password: "secretpassword123"
 })
 
-# Test with a non-@example.com email (will trigger retry logic)
+# 🔄 RETRY: Network timeout triggers retry logic
 {:error, reason} = Reactor.run(ResilientUserRegistration, %{
-  email: "bob@gmail.com",
+  email: "timeout@example.com",  # Will trigger network timeout
   password: "secretpassword123"
 })
 
-# Test with invalid inputs
+# 🔄 RETRY: Rate limiting triggers retry logic  
 {:error, reason} = Reactor.run(ResilientUserRegistration, %{
-  email: "bad",
-  password: "short"
+  email: "ratelimit@example.com",  # Will trigger rate limit
+  password: "secretpassword123"
+})
+
+# ❌ PERMANENT FAILURE: Blocked email fails immediately
+{:error, reason} = Reactor.run(ResilientUserRegistration, %{
+  email: "blocked@example.com",  # Will fail permanently
+  password: "secretpassword123"
+})
+
+# ❌ VALIDATION FAILURE: Invalid inputs fail immediately
+{:error, reason} = Reactor.run(ResilientUserRegistration, %{
+  email: "invalid-email",  # No @ symbol
+  password: "short"        # Too short
 })
 ```
 
 ## Step 7: Understanding the behaviour
 
-When you run the tests, you'll see different behaviours:
+When you run the tests, you'll see different behaviours based on the email content:
 
-**Successful execution** (with @example.com email): All steps succeed, user is created and emails are sent.
+**Successful execution** (`alice@example.com`): All steps succeed, user is created, welcome email is sent, and admin notification is sent.
 
-**Retry scenario** (with non-@example.com email): EmailService fails with network timeout, compensation returns `:retry`, step retries up to max_retries limit.
+**Retry scenarios**: 
+- `timeout@example.com` - Triggers network timeout, compensation returns `:retry`, step retries up to max_retries limit
+- `ratelimit@example.com` - Triggers rate limiting, compensation returns `:retry`, step retries up to max_retries limit
 
-**Validation failures**: Invalid input fails immediately without retries - compensation logic determines these are permanent errors.
+**Permanent failures**: 
+- `blocked@example.com` - Email is blocked, compensation returns `:ok` (no retry)
+- `invalid-email` - Invalid format, compensation returns `:ok` (no retry)
+
+**Validation failures**: Invalid input (short passwords, malformed emails) fails immediately without retries - these are caught by the validation steps before reaching the email service.
 
 
 ## What you learned
