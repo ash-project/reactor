@@ -5,6 +5,7 @@ defmodule Reactor.Dsl.Compose do
   See the `d:Reactor.compose`.
   """
   defstruct __identifier__: nil,
+            allow_async?: true,
             arguments: [],
             async?: nil,
             description: nil,
@@ -16,6 +17,7 @@ defmodule Reactor.Dsl.Compose do
 
   @type t :: %Dsl.Compose{
           __identifier__: any,
+          allow_async?: boolean,
           arguments: [Dsl.Argument.t() | Dsl.WaitFor.t()],
           async?: nil | boolean,
           description: nil | String.t(),
@@ -32,6 +34,15 @@ defmodule Reactor.Dsl.Compose do
       Compose another Reactor into this one.
 
       Allows place another Reactor into this one as if it were a single step.
+
+      ## Example
+
+          compose :create_user, UserReactor do
+            argument :name, input(:user_name)
+            argument :email, input(:user_email)
+            allow_async? false
+          end
+
       """,
       args: [:name, :reactor],
       target: Dsl.Compose,
@@ -64,6 +75,14 @@ defmodule Reactor.Dsl.Compose do
           The reactor module or struct to compose upon.
           """
         ],
+        allow_async?: [
+          type: :boolean,
+          required: false,
+          default: true,
+          doc: """
+          Whether the composed reactor is allowed to run its steps asynchronously.
+          """
+        ],
         async?: [
           type: :boolean,
           required: false,
@@ -80,6 +99,7 @@ defmodule Reactor.Dsl.Compose do
 
     def build(step, reactor) do
       Builder.compose(reactor, step.name, step.reactor, step.arguments,
+        allow_async?: step.allow_async?,
         async?: step.async?,
         description: step.description,
         guards: step.guards

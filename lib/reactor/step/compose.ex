@@ -14,10 +14,16 @@ defmodule Reactor.Step.Compose do
   @impl true
   def run(arguments, context, options) do
     reactor = Keyword.fetch!(options, :reactor)
+    allow_async? = Keyword.get(options, :allow_async?, true)
+
+    # Child reactor can only run async if both parent allows async AND allow_async? is true
+    # Use the context.async? field which contains the parent reactor's async state
+    parent_async? = Map.get(context, :async?, true)
+    child_async? = parent_async? and allow_async?
 
     Reactor.run(reactor, arguments, context,
       concurrency_key: context.concurrency_key,
-      async?: options[:async?] || false
+      async?: child_async?
     )
   end
 

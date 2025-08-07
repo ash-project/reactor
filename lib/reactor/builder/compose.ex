@@ -11,6 +11,12 @@ defmodule Reactor.Builder.Compose do
   alias Reactor.{Builder, Error.Internal.ComposeError}
 
   @opt_schema Spark.Options.new!(
+                allow_async?: [
+                  type: :boolean,
+                  required: false,
+                  default: true,
+                  doc: "Whether the composed reactor is allowed to run its steps asynchronously"
+                ],
                 guards: [
                   type: {:list, {:protocol, Reactor.Guard.Build}},
                   required: false,
@@ -40,7 +46,7 @@ defmodule Reactor.Builder.Compose do
         Builder.add_step(
           reactor,
           name,
-          {Reactor.Step.Compose, reactor: inner_reactor},
+          {Reactor.Step.Compose, reactor: inner_reactor, allow_async?: options[:allow_async?]},
           arguments,
           async?: options[:async?],
           guards: options[:guards] || [],

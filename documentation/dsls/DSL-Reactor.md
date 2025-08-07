@@ -638,6 +638,15 @@ Compose another Reactor into this one.
 
 Allows place another Reactor into this one as if it were a single step.
 
+#### Example
+
+compose :create_user, UserReactor do
+argument :name, input(:user_name)
+argument :email, input(:user_email)
+allow_async? false
+end
+
+
 
 ### Nested DSLs
  * [argument](#reactor-compose-argument)
@@ -659,6 +668,7 @@ Allows place another Reactor into this one as if it were a single step.
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
+| [`allow_async?`](#reactor-compose-allow_async?){: #reactor-compose-allow_async? } | `boolean` | `true` | Whether the composed reactor is allowed to run its steps asynchronously. |
 | [`async?`](#reactor-compose-async?){: #reactor-compose-async? } | `boolean` | `true` | Whether the composed steps should be run asynchronously. |
 
 

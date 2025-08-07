@@ -452,7 +452,8 @@ defmodule Reactor.Executor.StepRunner do
         current_step: step,
         concurrency_key: concurrency_key,
         current_try: current_try,
-        retries_remaining: retries_remaining
+        retries_remaining: retries_remaining,
+        async?: state.async?
       })
       |> Map.put(:current_step, step)
       |> Map.put(:concurrency_key, concurrency_key)
