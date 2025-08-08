@@ -79,6 +79,15 @@ defmodule Reactor.Planner do
   end
 
   defp reduce_arguments_into_graph(graph, current_step, steps_by_name, intermediate_results) do
+    # First handle regular arguments
+    with {:ok, graph} <-
+           add_regular_dependencies(graph, current_step, steps_by_name, intermediate_results) do
+      # Then handle nested step dependencies
+      add_nested_dependencies(graph, current_step, steps_by_name, intermediate_results)
+    end
+  end
+
+  defp add_regular_dependencies(graph, current_step, steps_by_name, intermediate_results) do
     reduce_while_ok(current_step.arguments, graph, fn
       argument, graph
       when is_from_result(argument) and is_map_key(intermediate_results, argument.source.name) ->
@@ -107,7 +116,75 @@ defmodule Reactor.Planner do
              )}
         end
 
-      argument, graph when is_from_input(argument) or is_from_value(argument) ->
+      argument, graph
+      when is_from_input(argument) or is_from_value(argument) or is_from_element(argument) ->
+        {:ok, graph}
+    end)
+  end
+
+  defp add_nested_dependencies(graph, current_step, steps_by_name, intermediate_results) do
+    nested_steps = Step.nested_steps(current_step)
+
+    reduce_while_ok(nested_steps, graph, fn nested_step, graph ->
+      add_nested_step_dependencies(
+        graph,
+        current_step,
+        nested_step,
+        steps_by_name,
+        intermediate_results
+      )
+    end)
+  end
+
+  defp add_nested_step_dependencies(
+         graph,
+         containing_step,
+         nested_step,
+         steps_by_name,
+         _intermediate_results
+       ) do
+    reduce_while_ok(nested_step.arguments, graph, fn
+      argument, graph when is_from_result(argument) ->
+        dependency_name = argument.source.name
+
+        # Check if this is a cross-scope dependency (not in nested steps)
+        case Map.fetch(steps_by_name, dependency_name) do
+          {:ok, dependency} when dependency.name != containing_step.name ->
+            # This is a cross-scope dependency - add it as a nested dependency edge
+            {:ok,
+             Graph.add_edge(graph, dependency, containing_step,
+               label:
+                 {:nested_dependency, nested_step.name, argument.name, :for, containing_step.name}
+             )}
+
+          _ ->
+            # Either not found or is the containing step itself
+            {:ok, graph}
+        end
+
+      argument, graph when is_from_element(argument) ->
+        # For element references, we need to track them as nested dependencies
+        # if they refer to a parent/outer map
+        element_name = argument.source.name
+
+        # Check if this element refers to a map step that's not the containing step
+        case Map.fetch(steps_by_name, element_name) do
+          {:ok, map_step} when map_step.name != containing_step.name ->
+            # This is a cross-scope element reference - track it as a nested dependency
+            # We'll need to pass the element value through the context
+            {:ok,
+             Graph.add_edge(graph, map_step, containing_step,
+               label:
+                 {:nested_element_dependency, nested_step.name, argument.name, element_name, :for,
+                  containing_step.name}
+             )}
+
+          _ ->
+            # Either the containing step itself or not found
+            {:ok, graph}
+        end
+
+      _argument, graph ->
         {:ok, graph}
     end)
   end

@@ -1,9 +1,8 @@
 defmodule Reactor.Step.Map do
   use Reactor.Step
   require Reactor.Argument
-  require Reactor.Error.Internal.UnreachableError
   require Iter
-  alias Reactor.{Argument, Builder, Error.Internal.UnreachableError, Step, Template}
+  alias Reactor.{Argument, Builder, Step, Template}
   alias Spark.Options
   import Reactor.Utils
 
@@ -91,7 +90,7 @@ defmodule Reactor.Step.Map do
   def run(arguments, context, options) do
     with {:ok, options} <- Options.validate(options, @option_schema) do
       case options[:state] do
-        :init -> do_init(arguments.source, arguments, options, context.current_step)
+        :init -> do_init(arguments.source, arguments, options, context.current_step, context)
         :iterating -> do_iterate(arguments, options, context.current_step)
       end
     end
@@ -99,19 +98,32 @@ defmodule Reactor.Step.Map do
 
   @doc false
   @impl true
+  def nested_steps(options) do
+    Keyword.get(options, :steps, [])
+  end
+
+  @doc false
+  @impl true
   def to_mermaid(step, options), do: __MODULE__.Mermaid.to_mermaid(step, options)
 
-  defp do_init(source, arguments, options, map_step) when Iter.is_iter(source) do
+  defp do_init(source, arguments, options, map_step, context) when Iter.is_iter(source) do
     source =
       source
       |> Iter.with_index()
 
-    extra_arguments =
+    # Collect regular extra arguments
+    regular_extra_arguments =
       arguments
       |> Map.drop([:source, :result])
       |> Enum.map(fn {name, value} ->
         Argument.from_value(name, value)
       end)
+
+    # Collect nested dependency arguments
+    nested_dep_arguments = build_nested_dependency_arguments(context)
+
+    # Merge both sets of extra arguments
+    extra_arguments = regular_extra_arguments ++ nested_dep_arguments
 
     options =
       options
@@ -124,10 +136,23 @@ defmodule Reactor.Step.Map do
     emit_batch(source, options, map_step, [])
   end
 
-  defp do_init(source, arguments, options, map_step) do
+  defp do_init(source, arguments, options, map_step, context) do
     source
     |> Iter.from()
-    |> do_init(arguments, options, map_step)
+    |> do_init(arguments, options, map_step, context)
+  end
+
+  defp build_nested_dependency_arguments(context) do
+    nested_deps = Map.get(context, :nested_dependencies, %{})
+
+    # Flatten all nested dependencies into arguments
+    nested_deps
+    |> Enum.flat_map(fn {_nested_step, args} ->
+      Enum.map(args, fn {arg_name, value} ->
+        Argument.from_value(arg_name, value)
+      end)
+    end)
+    |> Enum.uniq_by(& &1.name)
   end
 
   defp do_iterate(arguments, options, map_step) do
@@ -289,20 +314,21 @@ defmodule Reactor.Step.Map do
 
   defp rewrite_arguments(step, {element, index}, descendant_step_names, map_step) do
     map_while_ok(step.arguments, fn
-      argument
-      when Argument.is_from_element(argument) and argument.source.name != map_step.name ->
-        {:error,
-         UnreachableError.unreachable(
-           "Attempted to retrieve an element whose source doesn't match the current map step: #{inspect(argument.source.name)} vs #{inspect(map_step.name)}"
-         )}
-
       argument when Argument.is_from_element(argument) ->
-        argument =
-          argument.name
-          |> Argument.from_value(element)
-          |> Argument.sub_path(argument.source.sub_path)
+        # Check if this element reference is for the current map or should be inherited
+        if argument.source.name == map_step.name do
+          # This is for the current map - replace with the element value
+          argument =
+            argument.name
+            |> Argument.from_value(element)
+            |> Argument.sub_path(argument.source.sub_path)
 
-        {:ok, argument}
+          {:ok, argument}
+        else
+          # This is for a parent/outer map - it should have been provided as an extra_argument
+          # Keep it as-is, it will be resolved from extra_arguments
+          {:ok, argument}
+        end
 
       argument when Argument.is_from_result(argument) ->
         if MapSet.member?(descendant_step_names, argument.source.name) do
