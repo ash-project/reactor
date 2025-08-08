@@ -113,6 +113,10 @@ defmodule Reactor.Builder.Compose do
 
         {[], missing_args} ->
           {:error, {:missing_args, inputs, missing_args}}
+
+        {_extra_args, missing_args} ->
+          # Both extra and missing args - report missing args as primary issue
+          {:error, {:missing_args, inputs, missing_args}}
       end
     end
   end

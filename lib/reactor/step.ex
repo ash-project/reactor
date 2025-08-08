@@ -196,7 +196,29 @@ defmodule Reactor.Step do
   """
   @callback async?(step :: Step.t()) :: boolean
 
-  @optional_callbacks compensate: 4, undo: 4
+  @doc """
+  Extract nested steps from the step's options.
+
+  > This callback is automatically defined by `use Reactor.Step` however you're
+  > free to override it if you need specific behaviour.
+
+  This callback is called during the planning phase to extract any nested steps
+  that may be contained within this step's options. This allows the planner to
+  identify cross-scope dependencies and properly track them in the dependency graph.
+
+  The default implementation returns an empty list.
+
+  ## Arguments
+
+    - `options` - the keyword list of options provided to the step.
+
+  ## Return values
+
+    - A list of nested `Reactor.Step` structs contained within this step.
+  """
+  @callback nested_steps(options :: keyword) :: [Step.t()]
+
+  @optional_callbacks compensate: 4, undo: 4, nested_steps: 1
 
   @doc """
   Find out of a step has a capability.
@@ -249,6 +271,20 @@ defmodule Reactor.Step do
   def async?(step),
     do: module_and_options_from_step(step, fn module, _opts -> module.async?(step) end)
 
+  @doc """
+  Extract nested steps from a step.
+  """
+  @spec nested_steps(Step.t()) :: [Step.t()]
+  def nested_steps(step) do
+    module_and_options_from_step(step, fn module, options ->
+      if function_exported?(module, :nested_steps, 1) do
+        module.nested_steps(options)
+      else
+        []
+      end
+    end)
+  end
+
   defp module_and_options_from_step(%{impl: {module, options}} = step, fun)
        when is_struct(step, Step) and is_atom(module) and is_list(options) and is_function(fun, 2),
        do: fun.(module, options)
@@ -277,7 +313,11 @@ defmodule Reactor.Step do
       def async?(%{async?: fun}) when is_function(fun, 1), do: fun.([])
       def async?(_), do: false
 
-      defoverridable can?: 2, async?: 1
+      @doc false
+      @impl unquote(__MODULE__)
+      def nested_steps(_options), do: []
+
+      defoverridable can?: 2, async?: 1, nested_steps: 1
     end
   end
 end
