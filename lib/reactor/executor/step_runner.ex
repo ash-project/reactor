@@ -445,6 +445,9 @@ defmodule Reactor.Executor.StepRunner do
         max when is_integer(max) and max >= 0 -> max - current_try
       end
 
+    # Collect nested dependencies for this step
+    nested_dependencies = collect_nested_dependencies(reactor, step)
+
     context =
       step.context
       |> deep_merge(reactor.context)
@@ -453,12 +456,36 @@ defmodule Reactor.Executor.StepRunner do
         concurrency_key: concurrency_key,
         current_try: current_try,
         retries_remaining: retries_remaining,
-        async?: state.async?
+        async?: state.async?,
+        nested_dependencies: nested_dependencies
       })
       |> Map.put(:current_step, step)
       |> Map.put(:concurrency_key, concurrency_key)
 
     {:ok, context}
+  end
+
+  defp collect_nested_dependencies(reactor, step) do
+    # Find all edges to this step that are nested dependencies
+    case reactor.plan do
+      nil ->
+        %{}
+
+      graph ->
+        graph
+        |> Graph.in_edges(step)
+        |> Enum.filter(fn
+          {_, _, {:nested_dependency, _, _, :for, _}} -> true
+          _ -> false
+        end)
+        |> Enum.group_by(
+          fn {_, _, {:nested_dependency, nested_step, _, :for, _}} -> nested_step end,
+          fn {source_step, _, {:nested_dependency, _, arg_name, :for, _}} ->
+            {arg_name, Map.get(reactor.intermediate_results, source_step.name)}
+          end
+        )
+        |> Map.new(fn {nested_step, args} -> {nested_step, Map.new(args)} end)
+    end
   end
 
   defp maybe_replace_arguments(arguments, context) when is_nil(context.private.replace_arguments),

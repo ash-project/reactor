@@ -167,9 +167,16 @@ defmodule Reactor.Dsl.Map do
     alias Spark.{Dsl.Verifier, Error.DslError}
 
     def build(map, reactor) do
+      build(map, reactor, %{map_arguments: []})
+    end
+
+    def build(map, reactor, context) do
       sub_reactor = Builder.new(reactor.id)
 
-      with {:ok, sub_reactor} <- build_steps(sub_reactor, map) do
+      # Add current map's arguments to the context for nested steps
+      context = %{context | map_arguments: context.map_arguments ++ map.arguments}
+
+      with {:ok, sub_reactor} <- build_steps(sub_reactor, map, context) do
         arguments =
           map.arguments
           |> Enum.concat([Argument.from_template(:source, map.source)])
@@ -244,9 +251,35 @@ defmodule Reactor.Dsl.Map do
       end
     end
 
-    defp build_steps(reactor, map) do
+    defp build_steps(reactor, map, context) do
       map.steps
-      |> reduce_while_ok(reactor, &Dsl.Build.build/2)
+      |> reduce_while_ok(reactor, fn step, reactor ->
+        build_step_with_context(step, reactor, context)
+      end)
+    end
+
+    defp build_step_with_context(%Dsl.Compose{} = compose, reactor, context) do
+      # For compose steps, add the map's arguments to the compose arguments
+      # if they're not already present
+      inherited_args = context.map_arguments
+      explicit_arg_names = MapSet.new(compose.arguments, & &1.name)
+
+      additional_args =
+        inherited_args
+        |> Enum.reject(fn arg -> MapSet.member?(explicit_arg_names, arg.name) end)
+
+      compose_with_args = %{compose | arguments: compose.arguments ++ additional_args}
+      Dsl.Build.build(compose_with_args, reactor)
+    end
+
+    defp build_step_with_context(%Dsl.Map{} = nested_map, reactor, context) do
+      # For nested maps, pass the context down
+      build(nested_map, reactor, context)
+    end
+
+    defp build_step_with_context(step, reactor, _context) do
+      # For regular steps, use normal build
+      Dsl.Build.build(step, reactor)
     end
   end
 end
