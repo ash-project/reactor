@@ -104,7 +104,24 @@ defmodule Reactor do
   """
   @type concurrency_key_option :: {:concurrency_key, reference()}
 
-  @type options ::
+  @typedoc """
+  When this option is set the Reactor will return a copy of the completed Reactor
+  struct for potential future undo.
+  """
+  @type fully_reversible_option :: {:fully_reversible?, boolean}
+
+  @type run_options ::
+          Enumerable.t(
+            max_concurrency_option
+            | timeout_option
+            | max_iterations_option
+            | halt_timeout_option
+            | async_option
+            | concurrency_key_option
+            | fully_reversible_option
+          )
+
+  @type undo_options ::
           Enumerable.t(
             max_concurrency_option
             | timeout_option
@@ -135,7 +152,7 @@ defmodule Reactor do
   @spec is_reactor(any) :: Macro.t()
   defguard is_reactor(reactor) when is_struct(reactor, __MODULE__)
 
-  @option_schema [
+  @run_schema [
     max_concurrency: [
       type: :pos_integer,
       required: false,
@@ -168,6 +185,12 @@ defmodule Reactor do
       type: :any,
       required: false,
       doc: "A unique identifier for the Reactor run"
+    ],
+    fully_reversible?: [
+      type: :boolean,
+      required: false,
+      default: false,
+      doc: "Return the completed reactor as well as the result for possible later reversal"
     ]
   ]
 
@@ -185,10 +208,10 @@ defmodule Reactor do
 
   ## Options
 
-  #{Spark.Options.docs(@option_schema)}
+  #{Spark.Options.docs(@run_schema)}
   """
-  @doc spark_opts: [{4, @option_schema}]
-  @spec run(t | module, inputs, context_arg, options) :: {:ok, any} | {:error, any} | {:halted, t}
+  @spec run(t | module, inputs, context_arg, run_options) ::
+          {:ok, any} | {:error, any} | {:halted, t}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, inputs, context, options) when is_atom(reactor) do
@@ -215,13 +238,72 @@ defmodule Reactor do
   end
 
   @doc "Raising version of `run/4`."
-  @spec run!(t | module, inputs, context_arg, options) :: any | no_return
+  @spec run!(t | module, inputs, context_arg, run_options) :: any | no_return
   def run!(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run!(reactor, inputs, context, options) do
     case run(reactor, inputs, context, options) do
       {:ok, value} -> value
       {:error, reason} -> raise reason
+    end
+  end
+
+  @undo_options Keyword.drop(@run_schema, [:fully_reversible?])
+
+  @doc """
+  Attempt to undo a previously successful Reactor.
+
+  ## Arguments
+
+  * `reactor` - The previously successful Reactor struct.
+  * `context` - An arbitrary map that will be merged into the Reactor context and passed into each undo.
+
+  ## Options
+
+  #{Spark.Options.docs(@undo_options)}
+  """
+  @spec undo(t, context_arg, undo_options) :: :ok | {:error, any}
+  def undo(reactor, context, options \\ [])
+
+  def undo(reactor, _context, _options) when not is_struct(reactor, __MODULE__) do
+    {:error,
+     ArgumentError.exception(
+       message: "`reactor` value `#{inspect(reactor)}` is not a Reactor struct"
+     )}
+  end
+
+  def undo(reactor, _context, _options) when reactor.state != :successful do
+    {:error,
+     StateError.exception(
+       reactor: reactor,
+       state: reactor.state,
+       expected: ~w[successful]a
+     )}
+  end
+
+  def undo(_reactor, context, _options) when not is_map(context) do
+    {:error,
+     ArgumentError.exception(
+       message: "`context` value `#{inspect(context)}` is not valid context - must be a map"
+     )}
+  end
+
+  def undo(_reactor, _context, options) when not is_list(options) do
+    {:error,
+     ArgumentError.exception(
+       message: "`options` value `#{inspect(options)}` is not a keyword list"
+     )}
+  end
+
+  def undo(reactor, context, options) do
+    Reactor.Executor.undo(reactor, context, options)
+  end
+
+  @doc "A raising version of `undo/2`"
+  @spec undo!(t, context_arg, undo_options) :: :ok | no_return
+  def undo!(reactor, context, options) do
+    with {:error, reason} <- undo(reactor, context, options) do
+      raise reason
     end
   end
 end

@@ -8,7 +8,12 @@ defmodule Reactor.Executor.Init do
   import Reactor.Utils
 
   @doc false
-  @spec init(Reactor.t(), Reactor.inputs(), Reactor.context(), Reactor.options()) ::
+  @spec init(
+          Reactor.t(),
+          Reactor.inputs(),
+          Reactor.context(),
+          Reactor.run_options() | Reactor.undo_options()
+        ) ::
           {:ok, Reactor.t(), state :: map} | {:error, any}
   def init(reactor, _inputs, _context, _options) when not is_reactor(reactor),
     do: {:error, ArgumentError.exception(message: "`reactor` is not a Reactor.")}
@@ -24,7 +29,7 @@ defmodule Reactor.Executor.Init do
         reactor.context
         |> deep_merge(context)
         |> deep_merge(%{private: %{inputs: inputs}})
-        |> Map.put(:run_id, state.run_id)
+        |> Map.put_new(:run_id, state.run_id)
 
       {:ok, %{reactor | context: context}, state}
     end

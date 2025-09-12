@@ -53,8 +53,8 @@ defmodule Reactor.Executor do
 
   You probably shouldn't call this directly, but use `Reactor.run/4` instead.
   """
-  @spec run(Reactor.t(), Reactor.inputs(), Reactor.context(), Reactor.options()) ::
-          {:ok, any} | {:halted, Reactor.t()} | {:error, any}
+  @spec run(Reactor.t(), Reactor.inputs(), Reactor.context(), Reactor.run_options()) ::
+          {:ok, any} | {:ok, any, Reactor.t()} | {:halted, Reactor.t()} | {:error, any}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, _inputs, _context, _options) when is_nil(reactor.return),
@@ -75,6 +75,21 @@ defmodule Reactor.Executor do
          state: reactor.state,
          expected: ~w[pending halted]a
        )}
+
+  @doc """
+  Undo a previously successful Reactor.
+  """
+  @spec undo(Reactor.t(), Reactor.context(), Reactor.undo_options()) :: :ok | {:error, any}
+  def undo(reactor, context, options) do
+    inputs =
+      reactor.context
+      |> Map.get(:private, %{})
+      |> Map.get(:inputs, %{})
+
+    with {:ok, reactor, state} <- Executor.Init.init(reactor, inputs, context, options) do
+      handle_undo(reactor, state)
+    end
+  end
 
   defp execute(reactor, state) when state.max_iterations == 0 do
     {reactor, _status} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
@@ -107,10 +122,16 @@ defmodule Reactor.Executor do
           {:error, reason} -> {:error, reason}
         end
 
-      {:ok, result} ->
+      {:ok, result, reactor} ->
         maybe_release_pool(state)
 
-        Executor.Hooks.complete(reactor, result, reactor.context)
+        with {:ok, result} <- Executor.Hooks.complete(reactor, result, reactor.context) do
+          if state.fully_reversible? do
+            {:ok, result, reactor}
+          else
+            {:ok, result}
+          end
+        end
 
       {:error, reason} ->
         maybe_release_pool(state)
@@ -231,6 +252,8 @@ defmodule Reactor.Executor do
     handle_undo(%{reactor | state: :failed, undo: []}, state, Enum.reverse(reactor.undo))
   end
 
+  defp handle_undo(_reactor, state, []) when state.errors == [], do: :ok
+
   defp handle_undo(reactor, state, []) do
     error = Reactor.Error.to_class(state.errors)
     Executor.Hooks.error(reactor, error, reactor.context)
@@ -246,7 +269,7 @@ defmodule Reactor.Executor do
   defp all_done(reactor) do
     with 0 <- Graph.num_vertices(reactor.plan),
          {:ok, value} <- Map.fetch(reactor.intermediate_results, reactor.return) do
-      {:ok, value}
+      {:ok, value, %{reactor | state: :successful}}
     else
       :error ->
         {:error, MissingReturnResultError.exception(reactor: reactor)}

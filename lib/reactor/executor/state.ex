@@ -9,7 +9,8 @@ defmodule Reactor.Executor.State do
     async?: true,
     halt_timeout: 5000,
     max_iterations: :infinity,
-    timeout: :infinity
+    timeout: :infinity,
+    fully_reversible?: false
   }
 
   defstruct async?: @defaults.async?,
@@ -24,7 +25,8 @@ defmodule Reactor.Executor.State do
             run_id: nil,
             skipped: MapSet.new(),
             started_at: nil,
-            timeout: @defaults.timeout
+            timeout: @defaults.timeout,
+            fully_reversible?: @defaults.fully_reversible?
 
   alias Reactor.{Executor.ConcurrencyTracker, Step}
 
