@@ -670,6 +670,7 @@ end
 | [`description`](#reactor-compose-description){: #reactor-compose-description } | `String.t` |  | An optional description for the step. |
 | [`allow_async?`](#reactor-compose-allow_async?){: #reactor-compose-allow_async? } | `boolean` | `true` | Whether the composed reactor is allowed to run its steps asynchronously. |
 | [`async?`](#reactor-compose-async?){: #reactor-compose-async? } | `boolean` | `true` | Whether the composed steps should be run asynchronously. |
+| [`support_undo?`](#reactor-compose-support_undo?){: #reactor-compose-support_undo? } | `boolean` | `true` | Whether the composed reactor should also be undone on failure. |
 
 
 ### reactor.compose.argument

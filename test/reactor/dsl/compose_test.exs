@@ -352,4 +352,53 @@ defmodule Reactor.Dsl.ComposeTest do
              "Child reactor should run synchronously when parent is sync, regardless of allow_async? setting"
     end
   end
+
+  describe "compose with undo" do
+    defmodule UndoInnerReactor do
+      @moduledoc false
+      use Reactor
+
+      input :agent
+
+      step :undoable do
+        argument :agent, input(:agent)
+        run &do_run/1
+        undo &do_undo/2
+      end
+
+      defp do_run(args) do
+        Agent.update(args.agent, fn list -> [:run | list] end)
+        {:ok, :run_result}
+      end
+
+      defp do_undo(:run_result, args) do
+        Agent.update(args.agent, fn list -> [:undo | list] end)
+      end
+    end
+
+    defmodule UndoOuterReactor do
+      @moduledoc false
+      use Reactor
+
+      input :agent
+
+      compose :inner, UndoInnerReactor do
+        argument :agent, input(:agent)
+        support_undo?(true)
+      end
+
+      flunk :oops, "Deliberate failure" do
+        wait_for :inner
+      end
+
+      return :inner
+    end
+
+    test "composed reactors can be undone on failure" do
+      {:ok, agent} = Agent.start_link(fn -> [] end)
+
+      assert {:error, _} = Reactor.run(UndoOuterReactor, %{agent: agent})
+      assert [:undo, :run] = Agent.get(agent, &Function.identity/1)
+    end
+  end
 end
