@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.16.0](https://github.com/ash-project/reactor/compare/v0.15.6...v0.16.0) (2025-09-21)
+
+
+
+
+### Features:
+
+* Allow Reactors to be able to be undone after successful completion. (#262) by James Harton
+
+* add allow_async? flag to compose DSL (#256) by James Harton
+
+### Bug Fixes:
+
+* undo for composed reactors (#263) by James Harton
+
+* resolve nested step dependency and argument inheritance issues (#258) by James Harton
+
+* correct current_try increment during step retries (#257) by James Harton
+
+* correct current_try increment during step retries by James Harton
+
+* mermaid: trim whitespace from module names to prevent :nofile errors (#253) by James Harton
+
 ## [v0.15.6](https://github.com/ash-project/reactor/compare/v0.15.5...v0.15.6) (2025-07-02)
 
 
