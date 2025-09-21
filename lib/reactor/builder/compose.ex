@@ -28,6 +28,14 @@ defmodule Reactor.Builder.Compose do
                   required: false,
                   default: true,
                   doc: "Whether the nested Reactor is allowed to run async or not"
+                ],
+                support_undo?: [
+                  type: :boolean,
+                  required: false,
+                  default: true,
+                  doc: """
+                  Whether the composed reactor should also be undone on failure.
+                  """
                 ]
               )
 
@@ -46,7 +54,10 @@ defmodule Reactor.Builder.Compose do
         Builder.add_step(
           reactor,
           name,
-          {Reactor.Step.Compose, reactor: inner_reactor, allow_async?: options[:allow_async?]},
+          {Reactor.Step.Compose,
+           reactor: inner_reactor,
+           allow_async?: options[:allow_async?],
+           support_undo?: options[:support_undo?]},
           arguments,
           async?: options[:async?],
           guards: options[:guards] || [],

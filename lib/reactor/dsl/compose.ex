@@ -11,7 +11,8 @@ defmodule Reactor.Dsl.Compose do
             description: nil,
             guards: [],
             name: nil,
-            reactor: nil
+            reactor: nil,
+            support_undo?: true
 
   alias Reactor.{Builder, Dsl}
 
@@ -23,7 +24,8 @@ defmodule Reactor.Dsl.Compose do
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
-          reactor: module | Reactor.t()
+          reactor: module | Reactor.t(),
+          support_undo?: boolean
         }
 
   @doc false
@@ -90,6 +92,14 @@ defmodule Reactor.Dsl.Compose do
           doc: """
           Whether the composed steps should be run asynchronously.
           """
+        ],
+        support_undo?: [
+          type: :boolean,
+          required: false,
+          default: true,
+          doc: """
+          Whether the composed reactor should also be undone on failure.
+          """
         ]
       ]
     }
@@ -102,7 +112,8 @@ defmodule Reactor.Dsl.Compose do
         allow_async?: step.allow_async?,
         async?: step.async?,
         description: step.description,
-        guards: step.guards
+        guards: step.guards,
+        support_undo?: step.support_undo?
       )
     end
 

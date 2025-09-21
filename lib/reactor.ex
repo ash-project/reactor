@@ -211,7 +211,7 @@ defmodule Reactor do
   #{Spark.Options.docs(@run_schema)}
   """
   @spec run(t | module, inputs, context_arg, run_options) ::
-          {:ok, any} | {:error, any} | {:halted, t}
+          {:ok, any} | {:ok, any, t} | {:error, any} | {:halted, t}
   def run(reactor, inputs \\ %{}, context \\ %{}, options \\ [])
 
   def run(reactor, inputs, context, options) when is_atom(reactor) do
