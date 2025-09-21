@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Executor.ConcurrencyTracker do
   @moduledoc """
   Manage shared concurrency pools for multiple Reactors.

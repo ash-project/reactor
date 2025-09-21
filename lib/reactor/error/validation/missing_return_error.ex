@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Error.Validation.MissingReturnError do
   @moduledoc """
   An error returned when a Reactor cannot be validated because of a missing

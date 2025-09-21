@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Error.Invalid.UndoRetriesExceededError do
   @moduledoc """
   An error used when a step runs out of retry events and no other error is
