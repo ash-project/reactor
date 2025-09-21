@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Building Complex Workflows with Composition
 
 In this tutorial, you'll learn how to build large, maintainable workflows by composing smaller reactors together. This is essential for managing complexity in real-world applications.

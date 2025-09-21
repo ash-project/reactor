@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.MixProject do
   use Mix.Project
 
@@ -94,7 +98,9 @@ defmodule Reactor.MixProject do
         ~w[lib .formatter.exs mix.exs README* LICENSE* CHANGELOG* documentation usage-rules.md],
       licenses: ["MIT"],
       links: %{
-        GitHub: "https://github.com/ash-project/reactor"
+        "GitHub" => "https://github.com/ash-project/reactor",
+        "Changelog" => "https://github.com/ash-project/reactor/blob/main/CHANGELOG.md",
+        "REUSE Compliance" => "https://api.reuse.software/info/github.com/ash-project/reactor"
       },
       maintainers: [
         "James Harton <james@harton.nz>",

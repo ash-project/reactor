@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Building Iterative Workflows with Recursive Execution
 
 In this tutorial, you'll learn how to build iterative workflows that process data repeatedly until a condition is met. This is perfect for mathematical algorithms, data processing pipelines, and convergence calculations.

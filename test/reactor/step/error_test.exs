@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Step.ErrorTest do
   @moduledoc false
   use ExUnit.Case, async: true
@@ -34,7 +38,7 @@ defmodule Reactor.Step.ErrorTest do
     {:error, %{errors: [%{stacktrace: stacktrace}]}} = Reactor.run(ErrorReactor, %{})
     [{ErrorStep, :run, 3, opts} | _] = stacktrace.stacktrace
 
-    assert Keyword.get(opts, :line) == 11
+    assert Keyword.get(opts, :line) == 15
     assert Keyword.get(opts, :file) == ~c"test/reactor/step/error_test.exs"
   end
 
@@ -42,7 +46,7 @@ defmodule Reactor.Step.ErrorTest do
     {:error, %{errors: [%{stacktrace: stacktrace}]}} = Reactor.run(AnonErrorReactor, %{})
     [{AnonErrorReactor, _anon_fn_name, _arity, opts} | _] = stacktrace.stacktrace
 
-    assert Keyword.get(opts, :line) == 28
+    assert Keyword.get(opts, :line) == 32
     assert Keyword.get(opts, :file) == ~c"test/reactor/step/error_test.exs"
   end
 end

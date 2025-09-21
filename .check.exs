@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 [
   ## all available options with default values (see `mix check` docs for description)
   # parallel: true,
@@ -17,6 +21,7 @@
     # {:my_arbitrary_script, command: ["my_script", "argument with spaces"], cd: "scripts"}
 
     {:spark_formatter, "mix spark.formatter --check"},
-    {:spark_cheat_sheets, "mix spark.cheat_sheets --check"}
+    {:spark_cheat_sheets, "mix spark.cheat_sheets --check"},
+    {:reuse, command: ["pipx", "run", "reuse", "lint", "-q"]}
   ]
 ]

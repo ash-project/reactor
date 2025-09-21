@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Your First Reactor
 
 Welcome to Reactor! In this tutorial, you'll build your first reactor step by step, learning the core concepts through hands-on practice.

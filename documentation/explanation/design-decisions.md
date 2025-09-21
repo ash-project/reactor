@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Design Decisions
 
 This guide explains the reasoning behind Reactor's key design choices, helping you understand why the framework works the way it does and how these decisions benefit different use cases.
