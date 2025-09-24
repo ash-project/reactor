@@ -5,12 +5,16 @@ defmodule Reactor.Dsl.WaitFor do
   See `d:Reactor.step.wait_for`.
   """
 
-  defstruct __identifier__: nil, description: nil, names: []
+  defstruct __identifier__: nil, description: nil, names: [], __spark_metadata__: nil
 
   alias Reactor.{Argument, Dsl}
   import Reactor.Utils
 
-  @type t :: %Dsl.WaitFor{names: [atom], __identifier__: any}
+  @type t :: %Dsl.WaitFor{
+          names: [atom],
+          __identifier__: any,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
+        }
 
   @doc false
   def __entity__,

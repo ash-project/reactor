@@ -10,7 +10,8 @@ defmodule Reactor.Dsl.Collect do
             description: nil,
             guards: [],
             name: nil,
-            transform: nil
+            transform: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
 
@@ -20,7 +21,8 @@ defmodule Reactor.Dsl.Collect do
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
           transform: nil | (any -> any),
-          __identifier__: any
+          __identifier__: any,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

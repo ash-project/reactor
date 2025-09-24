@@ -8,7 +8,8 @@ defmodule Reactor.Dsl.Input do
   defstruct __identifier__: nil,
             description: nil,
             name: nil,
-            transform: nil
+            transform: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
 
@@ -16,7 +17,8 @@ defmodule Reactor.Dsl.Input do
           name: any,
           description: nil | String.t(),
           transform: {module, keyword},
-          __identifier__: any
+          __identifier__: any,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

@@ -10,7 +10,8 @@ defmodule Reactor.Dsl.Switch do
             description: nil,
             matches: [],
             name: nil,
-            on: nil
+            on: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{
     Dsl.Argument,
@@ -29,7 +30,8 @@ defmodule Reactor.Dsl.Switch do
           description: nil | String.t(),
           matches: [Match.t()],
           name: atom,
-          on: Template.Input.t() | Template.Result.t() | Template.Value.t()
+          on: Template.Input.t() | Template.Result.t() | Template.Value.t(),
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @switch_match %Spark.Dsl.Entity{

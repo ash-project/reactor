@@ -10,7 +10,8 @@ defmodule Reactor.Dsl.Template do
             description: nil,
             guards: [],
             name: nil,
-            template: nil
+            template: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
   require EEx
@@ -21,7 +22,8 @@ defmodule Reactor.Dsl.Template do
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
           template: String.t(),
-          __identifier__: any
+          __identifier__: any,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

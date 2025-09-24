@@ -7,12 +7,13 @@ defmodule Reactor.Dsl.Middleware do
 
   alias Reactor.{Dsl.Build, Middleware}
 
-  defstruct __identifier__: nil, description: nil, module: nil
+  defstruct __identifier__: nil, description: nil, module: nil, __spark_metadata__: nil
 
   @type t :: %__MODULE__{
           __identifier__: any,
           description: nil | String.t(),
-          module: Middleware.t()
+          module: Middleware.t(),
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

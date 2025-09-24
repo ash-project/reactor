@@ -16,7 +16,8 @@ defmodule Reactor.Dsl.Map do
             return: nil,
             source: nil,
             steps: [],
-            strict_ordering?: true
+            strict_ordering?: true,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step, Template}
 
@@ -32,7 +33,8 @@ defmodule Reactor.Dsl.Map do
           return: atom,
           source: Template.t(),
           steps: [Dsl.Step.t()],
-          strict_ordering?: boolean
+          strict_ordering?: boolean,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

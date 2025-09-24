@@ -12,7 +12,8 @@ defmodule Reactor.Dsl.Group do
             description: nil,
             guards: [],
             name: nil,
-            steps: []
+            steps: [],
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
 
@@ -25,7 +26,8 @@ defmodule Reactor.Dsl.Group do
           description: nil | String.t(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
-          steps: [Dsl.Step.t()]
+          steps: [Dsl.Step.t()],
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false
