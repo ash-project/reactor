@@ -318,15 +318,264 @@ When you run the tests, you'll see different behaviours based on the email conte
 
 **Successful execution** (`alice@example.com`): All steps succeed, user is created, welcome email is sent, and admin notification is sent.
 
-**Retry scenarios**: 
+**Retry scenarios**:
 - `timeout@example.com` - Triggers network timeout, compensation returns `:retry`, step retries up to max_retries limit
 - `ratelimit@example.com` - Triggers rate limiting, compensation returns `:retry`, step retries up to max_retries limit
 
-**Permanent failures**: 
+**Permanent failures**:
 - `blocked@example.com` - Email is blocked, compensation returns `:ok` (no retry)
 - `invalid-email` - Invalid format, compensation returns `:ok` (no retry)
 
 **Validation failures**: Invalid input (short passwords, malformed emails) fails immediately without retries - these are caught by the validation steps before reaching the email service.
+
+## Step 8: Adding retry backoff for better resilience
+
+When steps retry immediately, they might overwhelm failing external services. Reactor supports **backoff** - adding delays between retry attempts. Importantly, the executor doesn't block during backoff - it continues processing other ready steps while the failed step waits to be rescheduled.
+
+> #### Note {: .info}
+>
+> Backoff delays are **minimum delays** - the actual retry time will be at least the specified delay, but may be longer because the executor prioritises processing other ready steps before checking for expired backoffs. Let's enhance our email service with intelligent retry delays.
+
+### Understanding backoff timing
+
+Here's how backoff integrates with Reactor's retry flow:
+
+```mermaid
+sequenceDiagram
+    participant Executor
+    participant Step
+    participant BackoffStep as Step.backoff/4
+    participant Scheduler
+    participant OtherSteps as Other Ready Steps
+
+    Executor->>Step: run()
+    Step-->>Executor: {:error, reason}
+
+    Note over Executor: Begin compensation
+    Executor->>Step: compensate()
+    Step-->>Executor: :retry
+
+    Note over Executor: Check for backoff
+    Executor->>BackoffStep: backoff(error, args, context, step)
+    BackoffStep-->>Executor: 5000 (5 seconds)
+
+    Note over Executor: Schedule retry after delay
+    Executor->>Scheduler: schedule step retry in 5000ms
+
+    Note over Executor: Continue with other work
+    Executor->>OtherSteps: process ready steps
+    OtherSteps-->>Executor: results
+
+    Note over Scheduler: 5 seconds later...
+    Scheduler-->>Executor: step ready for retry
+
+    Note over Executor: Retry now ready
+    Executor->>Step: run()
+    Step-->>Executor: {:ok, result}
+```
+
+### Implementing backoff strategies
+
+Update the `EmailService` to include backoff logic:
+
+```elixir
+defmodule EmailService do
+  use Reactor.Step
+
+  @impl true
+  def run(arguments, _context, _options) do
+    email = arguments.email
+
+    cond do
+      String.contains?(email, "timeout") ->
+        {:error, %{type: :network_timeout, message: "Network timeout - please retry"}}
+
+      String.contains?(email, "ratelimit") ->
+        {:error, %{type: :rate_limit, message: "Rate limit exceeded - please retry"}}
+
+      String.contains?(email, "blocked") ->
+        {:error, %{type: :blocked_email, message: "Email address is blocked"}}
+
+      not String.contains?(email, "@") ->
+        {:error, %{type: :invalid_email, message: "Invalid email format"}}
+
+      true ->
+        {:ok, %{
+          message_id: "msg_#{:rand.uniform(10000)}",
+          sent_at: DateTime.utc_now(),
+          recipient: email
+        }}
+    end
+  end
+
+  @impl true
+  def compensate(error, _arguments, _context, _options) do
+    case error do
+      %{type: :network_timeout} ->
+        IO.puts("🔄 Network timeout - retrying email send...")
+        :retry
+
+      %{type: :rate_limit} ->
+        IO.puts("🔄 Rate limited - retrying email send...")
+        :retry
+
+      %{type: :blocked_email} ->
+        IO.puts("❌ Email blocked - cannot retry")
+        :ok
+
+      %{type: :invalid_email} ->
+        IO.puts("❌ Invalid email - cannot retry")
+        :ok
+
+      _other ->
+        :ok
+    end
+  end
+
+  # NEW: Backoff implementation
+  @impl true
+  def backoff(error, _arguments, context, _step) do
+    case error do
+      %{type: :network_timeout} ->
+        # Exponential backoff for network issues
+        retry_count = Map.get(context, :current_try, 0)
+        delay_ms = :math.pow(2, retry_count) * 1000 |> round() |> min(30_000)
+        IO.puts("⏰ Network timeout - backing off for #{delay_ms}ms")
+        delay_ms
+
+      %{type: :rate_limit} ->
+        # Longer fixed delay for rate limiting
+        delay_ms = 10_000  # 10 seconds
+        IO.puts("⏰ Rate limited - backing off for #{delay_ms}ms")
+        delay_ms
+
+      _other ->
+        # No backoff for non-retryable errors
+        :now
+    end
+  end
+
+  @impl true
+  def undo(result, _arguments, _context, _options) do
+    IO.puts("📧 Canceling email #{result.message_id} to #{result.recipient}")
+    :ok
+  end
+end
+```
+
+### Using backoff in DSL steps
+
+You can also define backoff logic directly in DSL steps when using anonymous functions for `run`, `compensate`, etc. (The DSL `backoff` option is not available when using implementation modules):
+
+```elixir
+defmodule BackoffUserRegistration do
+  use Reactor
+
+  input :email
+  input :password
+
+  step :validate_email do
+    argument :email, input(:email)
+
+    run fn %{email: email}, _context ->
+      if String.contains?(email, "@") and String.length(email) > 5 do
+        {:ok, email}
+      else
+        {:error, "Email must contain @ and be longer than 5 characters"}
+      end
+    end
+  end
+
+  step :hash_password do
+    argument :password, input(:password)
+
+    run fn %{password: password}, _context ->
+      if String.length(password) >= 8 do
+        hashed = :crypto.hash(:sha256, password) |> Base.encode16()
+        {:ok, hashed}
+      else
+        {:error, "Password must be at least 8 characters"}
+      end
+    end
+  end
+
+  step :create_user do
+    argument :email, result(:validate_email)
+    argument :password_hash, result(:hash_password)
+    max_retries 3
+
+    run fn %{email: email, password_hash: hash}, _context ->
+      user = %{
+        id: :rand.uniform(10000),
+        email: email,
+        password_hash: hash,
+        created_at: DateTime.utc_now()
+      }
+      {:ok, user}
+    end
+
+    compensate fn _error, _args, _context ->
+      :retry  # Database errors are usually retryable
+    end
+
+    # DSL backoff function (only available with anonymous run functions)
+    backoff fn _error, _args, context, _step ->
+      retry_count = Map.get(context, :current_try, 0)
+      # Exponential backoff: 1s, 2s, 4s, 8s...
+      delay = :math.pow(2, retry_count) * 1000 |> round()
+      IO.puts("🔄 Database retry #{retry_count + 1} - waiting #{delay}ms")
+      delay
+    end
+  end
+
+  step :send_welcome_email, EmailService do
+    argument :email, result(:validate_email)
+    argument :user, result(:create_user)
+    max_retries 3
+    # EmailService module has its own backoff/4 callback
+  end
+
+  step :send_admin_notification, NotificationService do
+    argument :user, result(:create_user)
+    max_retries 1
+  end
+
+  return :create_user
+end
+```
+
+### Testing backoff behaviour
+
+Test the improved retry behaviour:
+
+```elixir
+# This will now retry with exponential backoff delays
+{:error, reason} = Reactor.run(BackoffUserRegistration, %{
+  email: "timeout@example.com",  # Triggers network timeout with backoff
+  password: "secretpassword123"
+})
+
+# Watch the console output:
+# 🔄 Network timeout - retrying email send...
+# ⏰ Network timeout - backing off for 1000ms
+# (1 second delay)
+# 🔄 Network timeout - retrying email send...
+# ⏰ Network timeout - backing off for 2000ms
+# (2 second delay)
+# 🔄 Network timeout - retrying email send...
+# ⏰ Network timeout - backing off for 4000ms
+# (4 second delay - final retry)
+```
+
+### Backoff strategies explained
+
+**Exponential backoff**: Doubles delay each retry (1s, 2s, 4s, 8s...) - good for network issues and service overload.
+
+**Fixed backoff**: Same delay each time - good for rate limiting where you know the reset interval.
+
+**No backoff**: Use `:now` for errors that don't benefit from delays.
+
+**Custom strategies**: Implement any timing logic based on error type, retry count, or external factors.
 
 
 ## What you learned
@@ -334,10 +583,12 @@ When you run the tests, you'll see different behaviours based on the email conte
 You now understand Reactor's error handling mechanisms:
 
 - **[Compensation](../reference/glossary.md#compensation)** handles step failures with retry logic
+- **Backoff strategies** add intelligent delays between retry attempts to prevent overwhelming services
 - **Undo operations** roll back successful steps when later steps fail
 - **Max retries** controls how many times compensation can retry a step
-- **Error types** should be handled differently (retry vs fail)
-- **Context contains retry state** for intelligent retry logic
+- **Error types** should be handled differently (retry vs fail, with or without backoff)
+- **Context contains retry state** for intelligent retry and backoff logic
+- **DSL backoff functions** allow inline backoff logic without full step modules
 
 ## What's next
 

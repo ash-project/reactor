@@ -232,7 +232,7 @@ defmodule Reactor.Step do
   This callback is called when Reactor is scheduling a retry. If a positive integer
   is returned then Reactor will wait **at least** as many milliseconds before
   calling the step's `run/3` callback again.  If `:now` is returned then the step
-  is retried immediately.
+  is available to the next scheduler run.
 
   The default implementation returns `:now`, meaning that the step is retried
   immediately without any backoff.
