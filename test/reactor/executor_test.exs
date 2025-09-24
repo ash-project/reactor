@@ -2,6 +2,7 @@ defmodule Reactor.ExecutorTest do
   @moduledoc false
   alias Reactor.Executor.ConcurrencyTracker
   use ExUnit.Case, async: true
+  use Mimic
 
   describe "synchronous execution" do
     defmodule SyncReactor do
@@ -538,5 +539,42 @@ defmodule Reactor.ExecutorTest do
     end
 
     Reactor.run(ParentReactor)
+  end
+
+  describe "retry backoff" do
+    defmodule RetryReactor do
+      use Reactor
+
+      step :that_retry_lifestyle, Example.Step.Doable, max_retries: 10
+    end
+
+    test "steps can provide their own retry backoff" do
+      Example.Step.Doable
+      |> stub(:run, fn _, _, _ -> :retry end)
+      |> expect(:backoff, 10, fn _, _, _, _ -> 10 end)
+
+      start_time = System.monotonic_time(:millisecond)
+
+      Reactor.run(RetryReactor, %{}, async?: false)
+
+      end_time = System.monotonic_time(:millisecond)
+      elapsed = end_time - start_time
+
+      assert elapsed >= 100
+    end
+
+    test "steps without a backoff retry quickly" do
+      Example.Step.Doable
+      |> stub(:run, fn _, _, _ -> :retry end)
+
+      start_time = System.monotonic_time(:millisecond)
+
+      Reactor.run(RetryReactor, %{}, async?: false)
+
+      end_time = System.monotonic_time(:millisecond)
+      elapsed = end_time - start_time
+
+      assert elapsed < 100
+    end
   end
 end

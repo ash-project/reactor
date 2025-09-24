@@ -40,6 +40,7 @@ defmodule Reactor.Executor do
     Error.Validation.MissingReturnError,
     Error.Validation.StateError,
     Executor,
+    Executor.Backoff,
     Executor.ConcurrencyTracker,
     Planner,
     Step
@@ -105,6 +106,7 @@ defmodule Reactor.Executor do
          {:continue, reactor, state} <- start_ready_async_steps(reactor, state, ready_steps),
          {:continue, reactor, state} <- run_ready_sync_step(reactor, state, ready_steps),
          {:continue, reactor, state} <- maybe_run_any_step_sync(reactor, state, ready_steps),
+         {:continue, reactor, state} <- prune_expired_backoffs(reactor, state),
          {:continue, reactor} <- all_done(reactor) do
       execute(reactor, subtract_iteration(state))
     else
@@ -302,6 +304,21 @@ defmodule Reactor.Executor do
     |> case do
       nil -> {:continue, []}
       step -> {:continue, [step]}
+    end
+  end
+
+  defp prune_expired_backoffs(reactor, state) do
+    now = System.monotonic_time(:millisecond)
+
+    reactor.plan
+    |> Graph.vertices()
+    |> Enum.filter(&(is_struct(&1, Backoff) && &1.expires_at <= now))
+    |> case do
+      [] ->
+        {:continue, reactor, state}
+
+      to_remove ->
+        {:recurse, %{reactor | plan: Graph.delete_vertices(reactor.plan, to_remove)}, state}
     end
   end
 

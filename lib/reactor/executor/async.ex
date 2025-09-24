@@ -109,6 +109,18 @@ defmodule Reactor.Executor.Async do
     handle_completed_step(reactor, state, {task, step, result})
   end
 
+  defp handle_completed_step(reactor, state, {task, step, {:backoff, delay, result}}) do
+    backoff = Executor.Backoff.delay(delay)
+
+    plan =
+      reactor.plan
+      |> Graph.add_vertex(backoff)
+      |> Graph.add_edge(backoff, step, label: :backoff)
+
+    reactor = %{reactor | plan: plan}
+    handle_completed_step(reactor, state, {task, step, result})
+  end
+
   defp handle_completed_step(reactor, state, {task, step, {:ok, value, new_steps}}) do
     state =
       state
@@ -215,6 +227,9 @@ defmodule Reactor.Executor.Async do
   defp normalise_result({:ok, value}), do: {:ok, value, []}
   defp normalise_result({:ok, value, steps}) when is_list(steps), do: {:ok, value, steps}
   defp normalise_result({:skip, result}), do: {:skip, normalise_result(result)}
+
+  defp normalise_result({:backoff, delay, result}),
+    do: {:backoff, delay, normalise_result(result)}
 
   defp drop_task(state, task) do
     ConcurrencyTracker.release(state.concurrency_key, 1)

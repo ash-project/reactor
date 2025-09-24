@@ -63,6 +63,11 @@ defmodule Reactor.Step do
   """
   @type undo_result :: :ok | :retry | {:retry | :error, reason :: any}
 
+  @typedoc """
+  Possible valid return values for the `c:backoff/4` callback.
+  """
+  @type backoff_result :: :now | (millis :: pos_integer())
+
   @doc """
   Execute the step.
 
@@ -248,7 +253,7 @@ defmodule Reactor.Step do
               arguments :: Reactor.inputs(),
               context :: Reactor.context(),
               options :: keyword
-            ) :: pos_integer() | :now
+            ) :: backoff_result()
 
   @optional_callbacks backoff: 4, compensate: 4, undo: 4, nested_steps: 1
 
@@ -316,6 +321,21 @@ defmodule Reactor.Step do
       end
     end)
   end
+
+  @doc """
+  Generate the backoff for a step
+  """
+  @spec backoff(
+          Step.t(),
+          reason :: any,
+          arguments :: Reactor.inputs(),
+          context :: Reactor.context()
+        ) :: backoff_result()
+  def backoff(step, reason, arguments, context),
+    do:
+      module_and_options_from_step(step, fn module, options ->
+        module.backoff(reason, arguments, context, options)
+      end)
 
   defp module_and_options_from_step(%{impl: {module, options}} = step, fun)
        when is_struct(step, Step) and is_atom(module) and is_list(options) and is_function(fun, 2),
