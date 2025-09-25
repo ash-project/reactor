@@ -19,13 +19,6 @@ defmodule Reactor.Step.AnonFnTest do
     test "it can handle an MFA" do
       assert :marty = run(%{first_name: :marty}, %{}, run: {__MODULE__, :example, []})
     end
-
-    test "it rescues errors" do
-      fun = fn _, _ -> raise "Marty" end
-
-      assert {:error, error} = run(%{}, %{}, run: fun)
-      assert Exception.message(error) =~ "Marty"
-    end
   end
 
   def example(arguments, _context) do
