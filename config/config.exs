@@ -15,3 +15,5 @@ if Mix.env() == :dev do
 
   config :spark, :formatter, remove_parens?: true
 end
+
+config :spark, :skip_diagnostic_warnings, true

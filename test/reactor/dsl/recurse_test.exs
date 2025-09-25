@@ -150,15 +150,18 @@ defmodule Reactor.Dsl.RecurseTest do
   end
 
   test "recurse fails when neither max_iterations nor exit_condition is provided" do
-    assert_raise Spark.Error.DslError, ~r/Missing constraints for recursion/, fn ->
-      defmodule InvalidRecurseReactor do
-        use Reactor
+    warning =
+      ExUnit.CaptureIO.capture_io(:stderr, fn ->
+        defmodule InvalidRecurseReactor do
+          use Reactor
 
-        recurse :invalid, FactorialReactor do
-          argument :n, value(5)
-          argument :acc, value(1)
+          recurse :invalid, FactorialReactor do
+            argument :n, value(5)
+            argument :acc, value(1)
+          end
         end
-      end
-    end
+      end)
+
+    assert warning =~ "Missing constraints for recursion"
   end
 end

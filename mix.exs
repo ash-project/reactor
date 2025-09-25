@@ -115,7 +115,7 @@ defmodule Reactor.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:spark, "~> 2.0"},
+      {:spark, "~> 2.3 and >= 2.3.3"},
       {:splode, "~> 0.2"},
       {:libgraph, "~> 0.16"},
       {:igniter, "~> 0.4", optional: true},
