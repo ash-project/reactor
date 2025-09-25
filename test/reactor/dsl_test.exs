@@ -166,4 +166,21 @@ defmodule Reactor.DslTest do
       assert middlewares == [ExampleMiddleware]
     end
   end
+
+  describe "description" do
+    test "descriptions can be added" do
+      defmodule DescribedReactor do
+        use Reactor
+
+        description "A reactor that does nothing useful"
+
+        step :noop do
+          run fn _, _ -> {:ok, :noop} end
+        end
+      end
+
+      assert "A reactor that does nothing useful" ==
+               DescribedReactor.reactor() |> Map.fetch!(:description)
+    end
+  end
 end

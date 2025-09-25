@@ -16,7 +16,8 @@ defmodule Reactor.Info do
 
   def to_struct(module) do
     with {:ok, reactor} <- entities_to_struct(module),
-         {:ok, reactor} <- maybe_set_return(module, reactor) do
+         {:ok, reactor} <- maybe_set_return(module, reactor),
+         {:ok, reactor} <- maybe_set_description(module, reactor) do
       add_middleware(module, reactor)
     end
   end
@@ -50,6 +51,13 @@ defmodule Reactor.Info do
     case reactor_return(module) do
       {:ok, value} -> {:ok, %{reactor | return: value}}
       :error -> {:ok, reactor}
+    end
+  end
+
+  defp maybe_set_description(module, reactor) do
+    case reactor_description(module) do
+      {:ok, value} when byte_size(value) > 0 -> {:ok, %{reactor | description: value}}
+      _ -> {:ok, reactor}
     end
   end
 

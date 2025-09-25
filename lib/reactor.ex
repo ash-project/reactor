@@ -37,6 +37,7 @@ defmodule Reactor do
   """
 
   defstruct context: %{},
+            description: nil,
             id: nil,
             input_descriptions: %{},
             inputs: [],
@@ -136,6 +137,7 @@ defmodule Reactor do
 
   @type t :: %Reactor{
           context: context,
+          description: nil | String.t(),
           id: any,
           input_descriptions: %{atom => String.t()},
           inputs: [atom],
