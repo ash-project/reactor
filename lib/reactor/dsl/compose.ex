@@ -12,7 +12,8 @@ defmodule Reactor.Dsl.Compose do
             guards: [],
             name: nil,
             reactor: nil,
-            support_undo?: true
+            support_undo?: true,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl}
 
@@ -25,7 +26,8 @@ defmodule Reactor.Dsl.Compose do
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: any,
           reactor: module | Reactor.t(),
-          support_undo?: boolean
+          support_undo?: boolean,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

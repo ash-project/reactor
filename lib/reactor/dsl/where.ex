@@ -5,7 +5,7 @@ defmodule Reactor.Dsl.Where do
   See `d:Reactor.step.where`.
   """
 
-  defstruct __identifier__: nil, description: nil, predicate: nil
+  defstruct __identifier__: nil, description: nil, predicate: nil, __spark_metadata__: nil
 
   alias Reactor.Guard
 
@@ -13,7 +13,8 @@ defmodule Reactor.Dsl.Where do
           __identifier__: any,
           description: nil | String.t(),
           predicate:
-            (Reactor.inputs() -> boolean) | (Reactor.inputs(), Reactor.context() -> boolean)
+            (Reactor.inputs() -> boolean) | (Reactor.inputs(), Reactor.context() -> boolean),
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

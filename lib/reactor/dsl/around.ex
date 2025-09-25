@@ -11,7 +11,8 @@ defmodule Reactor.Dsl.Around do
             fun: nil,
             guards: [],
             name: nil,
-            steps: []
+            steps: [],
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
 
@@ -23,7 +24,8 @@ defmodule Reactor.Dsl.Around do
           fun: mfa | Step.Around.around_fun(),
           guards: [Dsl.Where.t() | Dsl.Guard.t()],
           name: atom,
-          steps: [Dsl.Step.t()]
+          steps: [Dsl.Step.t()],
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

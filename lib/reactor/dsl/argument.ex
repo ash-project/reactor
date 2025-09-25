@@ -9,7 +9,8 @@ defmodule Reactor.Dsl.Argument do
             description: nil,
             name: nil,
             source: nil,
-            transform: nil
+            transform: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{Argument, Dsl, Step, Template}
 
@@ -18,7 +19,8 @@ defmodule Reactor.Dsl.Argument do
           name: atom,
           source: Template.t(),
           transform: nil | (any -> any) | {module, keyword} | mfa,
-          __identifier__: any
+          __identifier__: any,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc ~S"""

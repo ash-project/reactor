@@ -21,7 +21,8 @@ defmodule Reactor.Dsl.Flunk do
             description: nil,
             guards: [],
             name: nil,
-            message: nil
+            message: nil,
+            __spark_metadata__: nil
 
   @type t :: %Flunk{
           __identifier__: any,
@@ -29,7 +30,8 @@ defmodule Reactor.Dsl.Flunk do
           description: nil | String.t(),
           guards: [Where.t() | Guard.t()],
           message: Template.t(),
-          name: atom
+          name: atom,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

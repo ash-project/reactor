@@ -5,14 +5,15 @@ defmodule Reactor.Dsl.Guard do
   See `d:Reactor.step.guard`
   """
 
-  defstruct __identifier__: nil, description: nil, fun: nil
+  defstruct __identifier__: nil, description: nil, fun: nil, __spark_metadata__: nil
 
   alias Reactor.Guard
 
   @type t :: %__MODULE__{
           __identifier__: any,
           description: nil | String.t(),
-          fun: (Reactor.inputs(), Reactor.context() -> :cont | {:halt, Reactor.Step.run_result()})
+          fun: (Reactor.inputs(), Reactor.context() -> :cont | {:halt, Reactor.Step.run_result()}),
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

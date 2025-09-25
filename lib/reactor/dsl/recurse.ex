@@ -12,7 +12,8 @@ defmodule Reactor.Dsl.Recurse do
             name: nil,
             reactor: nil,
             max_iterations: nil,
-            exit_condition: nil
+            exit_condition: nil,
+            __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl}
   alias Spark.Dsl.Transformer
@@ -26,7 +27,8 @@ defmodule Reactor.Dsl.Recurse do
           name: any,
           reactor: module | Reactor.t(),
           max_iterations: nil | pos_integer(),
-          exit_condition: nil | (any -> boolean)
+          exit_condition: nil | (any -> boolean),
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

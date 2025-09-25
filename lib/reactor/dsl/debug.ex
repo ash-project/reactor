@@ -10,7 +10,8 @@ defmodule Reactor.Dsl.Debug do
             description: nil,
             guards: [],
             level: :debug,
-            name: nil
+            name: nil,
+            __spark_metadata__: nil
 
   alias Reactor.Dsl.{Argument, Build, Debug, Guard, WaitFor, Where}
 
@@ -20,7 +21,8 @@ defmodule Reactor.Dsl.Debug do
           description: nil | String.t(),
           guards: [Where.t() | Guard.t()],
           level: Logger.level(),
-          name: atom
+          name: atom,
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 
   @doc false

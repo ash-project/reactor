@@ -9,7 +9,8 @@ defmodule Reactor.Dsl.Switch.Match do
             allow_async?: true,
             predicate: nil,
             return: nil,
-            steps: []
+            steps: [],
+            __spark_metadata__: nil
 
   alias Reactor.Dsl.Step
 
@@ -18,6 +19,7 @@ defmodule Reactor.Dsl.Switch.Match do
           allow_async?: boolean,
           predicate: (any -> any),
           return: nil | atom,
-          steps: [Step.t()]
+          steps: [Step.t()],
+          __spark_metadata__: Spark.Dsl.Entity.spark_meta()
         }
 end
