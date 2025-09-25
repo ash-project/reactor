@@ -77,6 +77,7 @@ The top-level reactor DSL
 | Name | Type | Default | Docs |
 |------|------|---------|------|
 | [`return`](#reactor-return){: #reactor-return } | `atom` |  | Specify which step result to return upon completion. |
+| [`description`](#reactor-description){: #reactor-description } | `String.t` |  | An optional description for the Reactor. |
 
 
 ### reactor.middlewares

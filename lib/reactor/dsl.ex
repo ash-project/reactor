@@ -21,6 +21,13 @@ defmodule Reactor.Dsl do
         doc: """
         Specify which step result to return upon completion.
         """
+      ],
+      description: [
+        type: :string,
+        required: false,
+        doc: """
+        An optional description for the Reactor.
+        """
       ]
     ],
     entities: [
