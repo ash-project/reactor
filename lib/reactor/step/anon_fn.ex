@@ -29,8 +29,6 @@ defmodule Reactor.Step.AnonFn do
       {m, f, a} when is_atom(m) and is_atom(f) and is_list(a) ->
         apply(m, f, [arguments, context] ++ a)
     end
-  rescue
-    error -> {:error, error}
   end
 
   @doc false

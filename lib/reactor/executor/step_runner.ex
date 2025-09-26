@@ -161,7 +161,7 @@ defmodule Reactor.Executor.StepRunner do
     |> handle_run_result(reactor, step, arguments, context)
   rescue
     reason ->
-      error = RunStepError.exception(step: step, error: reason)
+      error = RunStepError.exception(step: step, error: reason, stacktrace: __STACKTRACE__)
       Hooks.event(reactor, {:run_error, error}, step, context)
 
       maybe_compensate(reactor, step, error, arguments, context)
