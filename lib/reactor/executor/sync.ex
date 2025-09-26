@@ -25,6 +25,18 @@ defmodule Reactor.Executor.Sync do
     end
   end
 
+  defp handle_completed_step(reactor, state, step, {:backoff, delay, result}) do
+    backoff = Executor.Backoff.delay(delay)
+
+    plan =
+      reactor.plan
+      |> Graph.add_vertex(backoff)
+      |> Graph.add_edge(backoff, step, label: :backoff)
+
+    reactor = %{reactor | plan: plan}
+    handle_completed_step(reactor, state, step, result)
+  end
+
   defp handle_completed_step(reactor, state, step, :retry) do
     handle_completed_step(reactor, state, step, {:retry, nil})
   end

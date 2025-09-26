@@ -144,6 +144,24 @@ defmodule Reactor.Executor.StepRunnerTest do
       assert :retry = run(reactor, state, step, nil)
     end
 
+    test "when the step asks to be retried with a backoff, it returns a backoff tuple", %{
+      reactor: reactor,
+      state: state
+    } do
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Doable)
+      step = reactor.steps |> hd()
+
+      Example.Step.Doable
+      |> stub(:run, fn _, _, _ ->
+        :retry
+      end)
+      |> stub(:backoff, fn _, _, _, _ ->
+        100
+      end)
+
+      assert {:backoff, 100, :retry} = run(reactor, state, step, nil)
+    end
+
     test "when a step returns an error and cannot be compensated, it returns an error tuple", %{
       reactor: reactor,
       state: state
@@ -197,6 +215,32 @@ defmodule Reactor.Executor.StepRunnerTest do
       |> stub(:compensate, fn :doc, _, _, _ -> :ok end)
 
       assert {:error, %RunStepError{error: :doc}} = run(reactor, state, step, nil)
+    end
+
+    test "when a step returns an error and can be compensated and the compensation asks for a retry it returns a retry tuple",
+         %{reactor: reactor, state: state} do
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Compensable)
+      step = reactor.steps |> hd()
+
+      Example.Step.Compensable
+      |> stub(:run, fn _, _, _ -> {:error, :doc} end)
+      |> stub(:compensate, fn :doc, _, _, _ -> :retry end)
+
+      assert {:retry, %RunStepError{error: :doc}} = run(reactor, state, step, nil)
+    end
+
+    test "when a step returns an error and can be compensated and the compensation asks for a retry and a backoff it returns a backoff tuple",
+         %{reactor: reactor, state: state} do
+      {:ok, reactor} = Builder.add_step(reactor, :marty, Example.Step.Compensable)
+      step = reactor.steps |> hd()
+
+      Example.Step.Compensable
+      |> stub(:run, fn _, _, _ -> {:error, :doc} end)
+      |> stub(:compensate, fn :doc, _, _, _ -> :retry end)
+      |> stub(:backoff, fn _, _, _, _ -> 100 end)
+
+      assert {:backoff, 100, {:retry, %RunStepError{error: :doc}}} =
+               run(reactor, state, step, nil)
     end
   end
 

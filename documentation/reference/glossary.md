@@ -94,17 +94,25 @@ This glossary defines key terms, concepts, and technical vocabulary used through
 
 ## Error Handling Concepts
 
+**Backoff** - Delay mechanism that adds intelligent waiting periods between retry attempts to prevent overwhelming external services and improve system stability. Backoff delays are minimum delays - actual retry timing may be longer as the executor prioritises processing ready steps before checking for expired backoffs.
+
+**Backoff Callback** - Optional `c:Reactor.Step.backoff/4` callback that determines retry delay based on arguments, context, step metadata, and error reason.
+
 **Compensation Logic** - Step-level error handling that decides whether to retry, continue with alternative values, or fail.
 
 **Error Classification** - Categorisation of errors using splode library into Invalid, Internal, Unknown, and Validation types.
 
-**Exponential Backoff** - Retry strategy where delay increases exponentially with each retry attempt.
+**Exponential Backoff** - Retry strategy where delay increases exponentially with each retry attempt (1s, 2s, 4s, 8s...), commonly used for network issues and service overload.
+
+**Fixed Backoff** - Retry strategy using consistent delays between attempts, often used for rate limiting when reset intervals are known.
+
+**Jittered Backoff** - Backoff strategy that adds randomness to delays to prevent thundering herd problems when multiple clients retry simultaneously.
 
 **Max Retries** - Configuration limiting how many times a step can be retried through compensation.
 
-**Retry Logic** - Automatic re-execution of failed steps when compensation returns `:retry`.
+**Retry Logic** - Automatic re-execution of failed steps when compensation returns `:retry`, now enhanced with optional backoff delays.
 
-**Three-Tier Error Handling** - Reactor's approach using compensation (retry), undo (rollback), and global rollback levels.
+**Three-Tier Error Handling** - Reactor's approach using compensation (retry), backoff (delay), undo (rollback), and global rollback levels.
 
 **Undo Stack** - Last-in-first-out collection of successfully completed undoable steps for rollback purposes.
 

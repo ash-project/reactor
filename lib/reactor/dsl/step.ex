@@ -8,6 +8,7 @@ defmodule Reactor.Dsl.Step do
   defstruct __identifier__: nil,
             arguments: [],
             async?: true,
+            backoff: nil,
             compensate: nil,
             description: nil,
             guards: [],
@@ -24,6 +25,7 @@ defmodule Reactor.Dsl.Step do
   @type t :: %__MODULE__{
           arguments: [Dsl.Argument.t()],
           async?: boolean,
+          backoff: nil | (any, Reactor.inputs(), Reactor.context() -> :now | pos_integer()),
           compensate:
             nil | (any, Reactor.inputs(), Reactor.context() -> :ok | :retry | {:continue, any}),
           description: nil | String.t(),
@@ -113,14 +115,21 @@ defmodule Reactor.Dsl.Step do
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements a `undo/1-3` callback. Cannot be provided at the same time as the `impl` argument.
+          Provide an anonymous function which implements a `undo/1..3` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         compensate: [
           type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
           required: false,
           doc: """
-          Provide an anonymous function which implements a `compensate/1-3` callback. Cannot be provided at the same time as the `impl` argument.
+          Provide an anonymous function which implements a `compensate/1..3` callback. Cannot be provided at the same time as the `impl` argument.
+          """
+        ],
+        backoff: [
+          type: {:or, [{:mfa_or_fun, 1}, {:mfa_or_fun, 2}, {:mfa_or_fun, 3}]},
+          required: false,
+          doc: """
+          Provide an anonymous function which implements a `backoff/1..3` callback. Cannot be provided at the same time as the `impl` argument.
           """
         ],
         max_retries: [
@@ -205,9 +214,18 @@ defmodule Reactor.Dsl.Step do
            message: "Step has both an implementation module and a undo function"
          )}
 
+    defp rewrite_step(step, module) when not is_nil(step.impl) and not is_nil(step.backoff),
+      do:
+        {:error,
+         DslError.exception(
+           module: module,
+           path: [:reactor, :step, step.name],
+           message: "Step has both an implementation module and a backoff function"
+         )}
+
     defp rewrite_step(step, _dsl_state)
          when is_nil(step.run) and is_nil(step.compensate) and is_nil(step.undo) and
-                not is_nil(step.impl),
+                is_nil(step.backoff) and not is_nil(step.impl),
          do: {:ok, step}
 
     defp rewrite_step(step, _dsl_state),
@@ -216,10 +234,12 @@ defmodule Reactor.Dsl.Step do
          %{
            step
            | impl:
-               {Reactor.Step.AnonFn, run: step.run, compensate: step.compensate, undo: step.undo},
+               {Reactor.Step.AnonFn,
+                run: step.run, compensate: step.compensate, undo: step.undo, backoff: step.backoff},
              run: nil,
              compensate: nil,
-             undo: nil
+             undo: nil,
+             backoff: nil
          }}
   end
 end

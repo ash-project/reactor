@@ -50,6 +50,10 @@ defmodule Reactor.DslTest do
           compensate(fn _result, _, _ ->
             :ok
           end)
+
+          backoff(fn _result, _, _ ->
+            :now
+          end)
         end
       end
 
@@ -64,6 +68,7 @@ defmodule Reactor.DslTest do
       assert is_function(opts[:run], 2)
       assert is_function(opts[:compensate], 3)
       assert is_function(opts[:undo], 3)
+      assert is_function(opts[:backoff], 3)
     end
 
     test "steps with no implementation fail to compile" do
@@ -132,6 +137,25 @@ defmodule Reactor.DslTest do
 
             compensate(fn _result, _, _ ->
               :ok
+            end)
+          end
+        end
+      end
+    end
+
+    test "steps with impl and backoff fail to compile" do
+      assert_raise DslError, ~r/both an implementation module and a backoff function/, fn ->
+        defmodule DoubleImplBackoffReactor do
+          @moduledoc false
+          use Reactor
+
+          input :whom
+
+          step :example, Greeter do
+            argument :whom, input(:whom)
+
+            backoff(fn _result, _, _ ->
+              :now
             end)
           end
         end

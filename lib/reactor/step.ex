@@ -63,6 +63,11 @@ defmodule Reactor.Step do
   """
   @type undo_result :: :ok | :retry | {:retry | :error, reason :: any}
 
+  @typedoc """
+  Possible valid return values for the `c:backoff/4` callback.
+  """
+  @type backoff_result :: :now | (millis :: pos_integer())
+
   @doc """
   Execute the step.
 
@@ -218,7 +223,39 @@ defmodule Reactor.Step do
   """
   @callback nested_steps(options :: keyword) :: [Step.t()]
 
-  @optional_callbacks compensate: 4, undo: 4, nested_steps: 1
+  @doc """
+  Generate a backoff time (in milliseconds) before the step is retried.
+
+  > This callback is automatically defined by `use Reactor.Step` however you should
+  > override it if you wish to perform any step backoff on retry.
+
+  This callback is called when Reactor is scheduling a retry. If a positive integer
+  is returned then Reactor will wait **at least** as many milliseconds before
+  calling the step's `run/3` callback again.  If `:now` is returned then the step
+  is available to the next scheduler run.
+
+  The default implementation returns `:now`, meaning that the step is retried
+  immediately without any backoff.
+
+  ## Arguments
+    - `reason` - the error or retry reason returned from `c:run/3` or `c:compensate/4`.
+    - `arguments` - the arguments passed to the step.
+    - `context` - the reactor context.
+    - `options` - a keyword list of options provided to the step (if any).
+
+  ## Return values
+
+    - `:now` - the step should be retried immediately.
+    - a possitive integer expressing a minimum delay in milliseconds. 
+  """
+  @callback backoff(
+              reason :: nil | any,
+              arguments :: Reactor.inputs(),
+              context :: Reactor.context(),
+              options :: keyword
+            ) :: backoff_result()
+
+  @optional_callbacks backoff: 4, compensate: 4, undo: 4, nested_steps: 1
 
   @doc """
   Find out of a step has a capability.
@@ -285,6 +322,21 @@ defmodule Reactor.Step do
     end)
   end
 
+  @doc """
+  Generate the backoff for a step
+  """
+  @spec backoff(
+          Step.t(),
+          reason :: any,
+          arguments :: Reactor.inputs(),
+          context :: Reactor.context()
+        ) :: backoff_result()
+  def backoff(step, reason, arguments, context),
+    do:
+      module_and_options_from_step(step, fn module, options ->
+        module.backoff(reason, arguments, context, options)
+      end)
+
   defp module_and_options_from_step(%{impl: {module, options}} = step, fun)
        when is_struct(step, Step) and is_atom(module) and is_list(options) and is_function(fun, 2),
        do: fun.(module, options)
@@ -317,7 +369,11 @@ defmodule Reactor.Step do
       @impl unquote(__MODULE__)
       def nested_steps(_options), do: []
 
-      defoverridable can?: 2, async?: 1, nested_steps: 1
+      @doc false
+      @impl unquote(__MODULE__)
+      def backoff(_, _, _, _), do: :now
+
+      defoverridable can?: 2, async?: 1, nested_steps: 1, backoff: 4
     end
   end
 end

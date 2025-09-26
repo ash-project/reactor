@@ -556,6 +556,200 @@ end
 ```
 
 
+## Backoff Strategies for External Services
+
+### 1. Choosing the Right Backoff Strategy
+
+When dealing with external services, proper backoff strategies can significantly improve both reliability and performance:
+
+```elixir
+defmodule SmartAPIStep do
+  use Reactor.Step
+
+  @impl true
+  def run(args, _context, _options) do
+    case HTTPoison.get(args.url) do
+      {:ok, %{status_code: 200} = response} ->
+        {:ok, response.body}
+      {:ok, %{status_code: 429}} ->
+        {:error, %{type: :rate_limit, retry_after: get_retry_after(response)}}
+      {:ok, %{status_code: 503}} ->
+        {:error, %{type: :service_unavailable}}
+      {:error, %{reason: :timeout}} ->
+        {:error, %{type: :network_timeout}}
+      other ->
+        {:error, other}
+    end
+  end
+
+  @impl true
+  def compensate(error, _args, _context, _options) do
+    case error do
+      %{type: type} when type in [:rate_limit, :service_unavailable, :network_timeout] ->
+        :retry
+      _other ->
+        :ok  # Don't retry permanent errors
+    end
+  end
+
+  @impl true
+  # Respect server's Retry-After header
+  def backoff(%{type: :rate_limit, retry_after: seconds}, _args, context, _step) when is_integer(seconds), do: (seconds + 1) * 1000
+
+  # No Retry-After header - use conservative fixed delay
+  def backoff(%{type: :rate_limit}, _args, _context, _step), do: 30_000
+
+  # Service temporarily down - exponential backoff with jitter
+  def backoff(%{type: :service_unavailable}, _args, context, _step) do
+    retry_count = Map.get(context, :current_try, 0)
+    base_delay = :math.pow(2, retry_count) * 1000 |> round()
+    jitter = :rand.uniform(1000)  # 0-1000ms jitter
+    min(base_delay + jitter, 60_000)  # Cap at 1 minute
+  end
+
+  def backoff(_, _args, _context, _step), do: :now
+
+  defp get_retry_after(response) do
+    case HTTPoison.Response.get_header(response, "retry-after") do
+      [value] -> String.to_integer(value)
+      _ -> nil
+    end
+  end
+end
+```
+
+### 2. Backoff Impact on Throughput
+
+Understanding how backoff affects system throughput is crucial for performance tuning:
+
+```elixir
+defmodule BackoffBenchmark do
+  def compare_backoff_strategies do
+    # Simulate API that fails 30% of the time
+    defmodule FlakeyAPI do
+      use Reactor.Step
+
+      @impl true
+      def run(_args, _context, _options) do
+        if :rand.uniform() < 0.3 do
+          {:error, %{type: :transient_failure}}
+        else
+          {:ok, "success"}
+        end
+      end
+
+      @impl true
+      def compensate(_error, _args, _context, _options), do: :retry
+    end
+
+    # No backoff strategy
+    defmodule NoBackoffAPI do
+      use Reactor.Step
+      defdelegate run(args, context, options), to: FlakeyAPI
+      defdelegate compensate(error, args, context, options), to: FlakeyAPI
+
+      @impl true
+      def backoff(_error, _args, _context, _step), do: :now
+    end
+
+    # Fixed backoff strategy
+    defmodule FixedBackoffAPI do
+      use Reactor.Step
+      defdelegate run(args, context, options), to: FlakeyAPI
+      defdelegate compensate(error, args, context, options), to: FlakeyAPI
+
+      @impl true
+      def backoff(_error, _args, _context, _step), do: 100  # 100ms fixed delay
+    end
+
+    data = Enum.to_list(1..100)
+
+    Benchee.run(
+      %{
+        "no_backoff" => fn ->
+          reactor = build_reactor(NoBackoffAPI, data)
+          Reactor.run(reactor, %{items: data}, %{}, max_concurrency: 10)
+        end,
+        "fixed_backoff" => fn ->
+          reactor = build_reactor(FixedBackoffAPI, data)
+          Reactor.run(reactor, %{items: data}, %{}, max_concurrency: 10)
+        end
+      },
+      warmup: 1,
+      time: 3
+    )
+  end
+end
+```
+
+### 3. Adaptive Backoff for Complex Scenarios
+
+For sophisticated systems, implement adaptive backoff that responds to system conditions:
+
+```elixir
+defmodule AdaptiveBackoffStep do
+  use Reactor.Step
+  use GenServer
+
+  # Track error rates in a GenServer
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  end
+
+  @impl true
+  def init(state), do: {:ok, %{error_count: 0, success_count: 0, window_start: System.monotonic_time()}}
+
+  @impl true
+  def run(args, _context, _options) do
+    result = call_external_service(args)
+
+    case result do
+      {:ok, data} ->
+        GenServer.cast(__MODULE__, :record_success)
+        {:ok, data}
+      {:error, reason} ->
+        GenServer.cast(__MODULE__, :record_error)
+        {:error, reason}
+    end
+  end
+
+  @impl true
+  def compensate(_error, _args, _context, _options), do: :retry
+
+  @impl true
+  def backoff(_error, _args, _context, _step) do
+    error_rate = GenServer.call(__MODULE__, :get_error_rate)
+
+    base_delay = case error_rate do
+      rate when rate > 0.5 -> 10_000  # High error rate - long delays
+      rate when rate > 0.2 -> 5_000   # Moderate error rate - medium delays
+      rate when rate > 0.1 -> 2_000   # Low error rate - short delays
+      _ -> 500                        # Very low error rate - minimal delays
+    end
+
+    # Add jitter to prevent thundering herd
+    jitter = :rand.uniform(1000)
+    base_delay + jitter
+  end
+
+  # GenServer callbacks for tracking error rates
+  @impl true
+  def handle_cast(:record_success, state) do
+    {:noreply, %{state | success_count: state.success_count + 1}}
+  end
+
+  def handle_cast(:record_error, state) do
+    {:noreply, %{state | error_count: state.error_count + 1}}
+  end
+
+  def handle_call(:get_error_rate, _from, state) do
+    total = state.error_count + state.success_count
+    rate = if total > 0, do: state.error_count / total, else: 0.0
+    {:reply, rate, state}
+  end
+end
+```
+
 ## Performance Benchmarking
 
 ### 1. Using Benchee for Reactor Performance Testing
@@ -754,33 +948,8 @@ end
 - Map steps with batch sizes that are too large
 - Streams not being processed lazily
 
-**Problem**: External service rate limiting errors  
-**Solution**: Use compensation with exponential backoff and reduce `max_concurrency`:
-
-```elixir
-step :api_call do
-  run fn args, _context ->
-    call_external_api(args)
-  end
-  
-  compensate fn _args, context ->
-    # Use current_try for exponential backoff
-    retry_count = context.current_try
-    delay_ms = :math.pow(2, retry_count) * 1000 |> round()
-    
-    Process.sleep(delay_ms)
-    :retry
-  end
-end
-
-# Also reduce concurrency to respect service limits
-{:ok, result} = Reactor.run(
-  APIReactor,
-  inputs,
-  %{},
-  max_concurrency: 5  # Lower concurrency for rate-limited APIs
-)
-```
+**Problem**: External service rate limiting errors
+**Solution**: Use backoff strategies and reduce `max_concurrency`.
 
 **Problem**: Inconsistent performance  
 **Solution**: Ensure proper resource isolation and monitoring:

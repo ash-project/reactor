@@ -30,7 +30,9 @@ defmodule Reactor.Executor.StepRunner do
   Collect the arguments and and run a step, with compensation if required.
   """
   @spec run(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key()) ::
-          Step.run_result() | {:skip, Step.run_result()}
+          Step.run_result()
+          | {:skip, Step.run_result()}
+          | {:backoff, pos_integer(), Step.run_result()}
   def run(reactor, state, step, concurrency_key) do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
@@ -62,7 +64,9 @@ defmodule Reactor.Executor.StepRunner do
   This is a simple wrapper around `run/4` except that it emits more events.
   """
   @spec run_async(Reactor.t(), State.t(), Step.t(), ConcurrencyTracker.pool_key(), map) ::
-          Step.run_result() | {:skip, Step.run_result()}
+          Step.run_result()
+          | {:skip, Step.run_result()}
+          | {:backoff, pos_integer(), Step.run_result()}
   def run_async(reactor, state, step, concurrency_key, process_contexts) do
     Hooks.set_process_contexts(process_contexts)
     Hooks.event(reactor, {:process_start, self()}, step, reactor.context)
@@ -180,16 +184,28 @@ defmodule Reactor.Executor.StepRunner do
     {:ok, value, steps}
   end
 
-  defp handle_run_result({:retry, reason}, reactor, step, _arguments, context) do
+  defp handle_run_result({:retry, reason}, reactor, step, arguments, context) do
     Hooks.event(reactor, {:run_retry, reason}, step, context)
 
-    {:retry, reason}
+    case Step.backoff(step, reason, arguments, context) do
+      delay when is_integer(delay) and delay > 0 ->
+        {:backoff, delay, {:retry, reason}}
+
+      _ ->
+        {:retry, reason}
+    end
   end
 
-  defp handle_run_result(:retry, reactor, step, _arguments, context) do
+  defp handle_run_result(:retry, reactor, step, arguments, context) do
     Hooks.event(reactor, :run_retry, step, context)
 
-    :retry
+    case Step.backoff(step, nil, arguments, context) do
+      delay when is_integer(delay) and delay > 0 ->
+        {:backoff, delay, :retry}
+
+      _ ->
+        :retry
+    end
   end
 
   defp handle_run_result({:error, reason}, reactor, step, arguments, context) do
@@ -228,7 +244,7 @@ defmodule Reactor.Executor.StepRunner do
 
     step
     |> Step.compensate(error.error, arguments, context)
-    |> handle_compensate_result(reactor, step, context, error)
+    |> handle_compensate_result(reactor, step, arguments, context, error)
   rescue
     error ->
       error =
@@ -249,25 +265,31 @@ defmodule Reactor.Executor.StepRunner do
       {:error, error}
   end
 
-  defp handle_compensate_result({:continue, value}, reactor, step, context, _) do
+  defp handle_compensate_result({:continue, value}, reactor, step, _arguments, context, _) do
     Hooks.event(reactor, {:compensate_continue, value}, step, context)
 
     {:ok, value, []}
   end
 
-  defp handle_compensate_result({:retry, reason}, reactor, step, context, _) do
+  defp handle_compensate_result({:retry, reason}, reactor, step, arguments, context, _) do
     Hooks.event(reactor, {:compensate_retry, reason}, step, context)
 
-    {:retry, reason}
+    case Step.backoff(step, reason, arguments, context) do
+      delay when is_integer(delay) and delay > 0 -> {:backoff, delay, {:retry, reason}}
+      _ -> {:retry, reason}
+    end
   end
 
-  defp handle_compensate_result(:retry, reactor, step, context, reason) do
+  defp handle_compensate_result(:retry, reactor, step, arguments, context, reason) do
     Hooks.event(reactor, :compensate_retry, step, context)
 
-    {:retry, reason}
+    case Step.backoff(step, reason, arguments, context) do
+      delay when is_integer(delay) and delay > 0 -> {:backoff, delay, {:retry, reason}}
+      _ -> {:retry, reason}
+    end
   end
 
-  defp handle_compensate_result({:error, reason}, reactor, step, context, _) do
+  defp handle_compensate_result({:error, reason}, reactor, step, _arguments, context, _) do
     error = CompensateStepError.exception(reactor: reactor, step: step, error: reason)
 
     Hooks.event(reactor, {:compensate_error, error}, step, context)
@@ -275,7 +297,7 @@ defmodule Reactor.Executor.StepRunner do
     {:error, error}
   end
 
-  defp handle_compensate_result(:ok, reactor, step, context, error) do
+  defp handle_compensate_result(:ok, reactor, step, _arguments, context, error) do
     Hooks.event(reactor, :compensate_complete, step, context)
 
     {:error, error}
