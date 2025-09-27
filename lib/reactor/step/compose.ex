@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Step.Compose do
   @moduledoc """
   A built-in step which can embed one reactor inside another.

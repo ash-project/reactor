@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Dsl.Verifier do
   @moduledoc """
   Runs `Reactor.Dsl.Build.verify/2` for all the entities in the reactor.

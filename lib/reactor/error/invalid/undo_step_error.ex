@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Error.Invalid.UndoStepError do
   @moduledoc """
   This error is returned when an error occurs when attempting to undo step execution.

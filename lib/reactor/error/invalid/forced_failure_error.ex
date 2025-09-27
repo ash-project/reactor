@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Error.Invalid.ForcedFailureError do
   @moduledoc """
   This error is returned when the `flunk` DSL entity or the `Reactor.Step.Fail`
