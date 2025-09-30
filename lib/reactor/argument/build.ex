@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defprotocol Reactor.Argument.Build do
   @moduledoc """
   A protocol which can be used to convert something into an argument.

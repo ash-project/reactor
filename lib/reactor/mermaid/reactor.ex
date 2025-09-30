@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Mermaid.Reactor do
   @moduledoc false
   alias Reactor.Mermaid.{Node, Step}
