@@ -5,6 +5,29 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.17.0](https://github.com/ash-project/reactor/compare/v0.16.0...v0.17.0) (2025-09-30)
+
+
+
+
+### Features:
+
+* Add backoff support for retries. (#267) by James Harton
+
+### Bug Fixes:
+
+* Add stacktrace to exception (#265) by Rutgerdj
+
+* Add stacktrace to exception by Rutgerdj
+
+* remove rescue statement inside AnonFn.run/3 by Rutgerdj
+
+### Improvements:
+
+* Add `description` option to Reactor DSL and struct. (#268) by James Harton
+
+* Prepare Minimal Spark Update (#266) by Jonatan Männchen
+
 ## [v0.16.0](https://github.com/ash-project/reactor/compare/v0.15.6...v0.16.0) (2025-09-21)
 
 
