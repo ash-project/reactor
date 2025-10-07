@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 <img src="https://github.com/ash-project/reactor/blob/main/logos/reactor-logo-light-small.png?raw=true#gh-light-mode-only" alt="Logo Light" width="250">
 <img src="https://github.com/ash-project/reactor/blob/main/logos/reactor-logo-dark-small.png?raw=true#gh-dark-mode-only" alt="Logo Dark" width="250">
 

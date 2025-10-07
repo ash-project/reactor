@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Change Log
 
 All notable changes to this project will be documented in this file.

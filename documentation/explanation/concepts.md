@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Core Reactor Concepts
 
 This guide explains the fundamental concepts that make Reactor work, providing deep insight into how the framework approaches workflow orchestration, error handling, and concurrent execution.

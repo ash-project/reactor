@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Reactor in the Elixir Ecosystem
 
 Reactor is a framework-independent, dynamic, concurrent, dependency-resolving saga orchestrator for Elixir. While it's part of the ash-project organization and has excellent Ash framework integration, Reactor is designed to work with any Elixir application and can orchestrate workflows across diverse systems and frameworks.

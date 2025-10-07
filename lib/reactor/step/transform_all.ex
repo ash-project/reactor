@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Step.TransformAll do
   @moduledoc """
   A built-in step which applies a transformation function to all it's arguments.

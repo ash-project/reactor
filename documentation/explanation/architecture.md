@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Reactor Architecture
 
 This guide explains how Reactor works internally, providing insight into its components, execution flow, and design patterns. Understanding the architecture helps you make informed decisions about workflow design, performance optimization, and debugging.

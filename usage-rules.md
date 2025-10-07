@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+
+SPDX-License-Identifier: MIT
+-->
+
 # Reactor Usage Rules
 
 Reactor is a dynamic, concurrent, dependency-resolving saga orchestrator for Elixir providing saga orchestration, dependency resolution via DAG, concurrent execution, dynamic workflows, and composable DSL.

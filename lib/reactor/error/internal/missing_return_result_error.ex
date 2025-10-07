@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Reactor.Error.Internal.MissingReturnResultError do
   @moduledoc """
   This error is returned when the Reactor's return name doesn't match any of the

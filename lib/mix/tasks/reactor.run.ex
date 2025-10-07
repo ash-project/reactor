@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 James Harton, Zach Daniel, Alembic Pty and contributors
+#
+# SPDX-License-Identifier: MIT
+
 defmodule Mix.Tasks.Reactor.Run do
   @shortdoc "Run a Reactor from the command line"
   @moduledoc """
