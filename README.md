@@ -12,6 +12,7 @@ SPDX-License-Identifier: MIT
 ![Elixir CI](https://github.com/ash-project/reactor/actions/workflows/elixir.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Hex version badge](https://img.shields.io/hexpm/v/reactor.svg)](https://hex.pm/packages/reactor)
+[![REUSE status](https://api.reuse.software/badge/github.com/ash-project/reactor)](https://api.reuse.software/info/github.com/ash-project/reactor)
 
 Reactor is a dynamic, concurrent, dependency resolving saga orchestrator.
 
