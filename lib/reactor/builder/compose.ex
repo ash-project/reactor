@@ -137,7 +137,7 @@ defmodule Reactor.Builder.Compose do
   end
 
   defp reactor_inputs(reactor) when is_struct(reactor),
-    do: {:ok, MapSet.new(reactor.inputs)}
+    do: {:ok, MapSet.new(reactor.inputs, & &1.name)}
 
   defp reactor_inputs(reactor) when is_atom(reactor) do
     with {:ok, reactor} <- Reactor.Info.to_struct(reactor) do

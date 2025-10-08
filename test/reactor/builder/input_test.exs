@@ -13,7 +13,7 @@ defmodule Reactor.Builder.InputTest do
                Builder.new()
                |> Input.add_input(:marty, nil)
 
-      assert :marty in reactor.inputs
+      assert %Reactor.Input{name: :marty} in reactor.inputs
       assert [] = reactor.steps
     end
 
@@ -22,7 +22,7 @@ defmodule Reactor.Builder.InputTest do
                Builder.new()
                |> Input.add_input(:marty, &Function.identity/1)
 
-      assert :marty in reactor.inputs
+      assert %Reactor.Input{name: :marty} in reactor.inputs
       assert [step] = reactor.steps
 
       assert step.name == {:__reactor__, :transform, :input, :marty}
@@ -34,7 +34,7 @@ defmodule Reactor.Builder.InputTest do
                Builder.new()
                |> Input.add_input(:marty, {Step.Transform, fun: &Function.identity/1})
 
-      assert :marty in reactor.inputs
+      assert %Reactor.Input{name: :marty} in reactor.inputs
       assert [step] = reactor.steps
 
       assert step.name == {:__reactor__, :transform, :input, :marty}
