@@ -20,3 +20,4 @@ jobs:
       spark-formatter: true
       postgres: false
       igniter-upgrade: false
+      reuse: true
