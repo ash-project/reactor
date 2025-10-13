@@ -1,6 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
-  ]
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticPrefixChore",
+    "schedule:monthly",
+    ":assignee(jimsynz)",
+    ":rebaseStalePrs",
+    ":enableVulnerabilityAlerts",
+    ":disableDependencyDashboard"
+  ],
+  "rebaseWhen": "behind-base-branch",
+  "enabledManagers": ["asdf"]
 }
