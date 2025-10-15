@@ -39,7 +39,7 @@ defmodule Reactor.Step.ErrorTest do
     {:error, %{errors: [%{stacktrace: stacktrace}]}} = Reactor.run(ErrorReactor, %{})
     [{ErrorStep, :run, 3, opts} | _] = stacktrace.stacktrace
 
-    assert Keyword.get(opts, :line) == 15
+    assert Keyword.get(opts, :line) == 16
     assert Keyword.get(opts, :file) == ~c"test/reactor/step/error_test.exs"
   end
 
@@ -47,7 +47,7 @@ defmodule Reactor.Step.ErrorTest do
     {:error, %{errors: [%{stacktrace: stacktrace}]}} = Reactor.run(AnonErrorReactor, %{})
     [{AnonErrorReactor, _anon_fn_name, _arity, opts} | _] = stacktrace.stacktrace
 
-    assert Keyword.get(opts, :line) == 32
+    assert Keyword.get(opts, :line) == 33
     assert Keyword.get(opts, :file) == ~c"test/reactor/step/error_test.exs"
   end
 end
