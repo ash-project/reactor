@@ -20,7 +20,7 @@ defmodule Reactor.Step.Around.Mermaid do
       links =
         reactor.inputs
         |> Enum.map(fn input ->
-          [node.id, "-->", mermaid_id({reactor.id, input}, :input), "\n"]
+          [node.id, "-->", mermaid_id({reactor.id, input.name}, :input), "\n"]
         end)
         |> Enum.concat([inner_return_id, "-->", node.id, "\n"])
 

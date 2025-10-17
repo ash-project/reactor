@@ -51,11 +51,11 @@ defmodule Reactor.Executor.Init do
   end
 
   defp validate_inputs(reactor, inputs) do
-    valid_input_names = MapSet.new(reactor.inputs)
+    valid_input_names = MapSet.new(reactor.inputs, & &1.name)
     provided_input_names = inputs |> Map.keys() |> MapSet.new()
 
     if MapSet.subset?(valid_input_names, provided_input_names) do
-      {:ok, Map.take(inputs, reactor.inputs)}
+      {:ok, Map.take(inputs, Enum.to_list(valid_input_names))}
     else
       missing_inputs =
         valid_input_names

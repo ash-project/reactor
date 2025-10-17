@@ -57,8 +57,8 @@ defmodule Reactor.Mermaid.Reactor do
     |> map_while_ok(&generate_input(&1, reactor, options))
   end
 
-  defp generate_input(input_name, reactor, options) do
-    id = mermaid_id({reactor.id, input_name}, :input)
+  defp generate_input(input, reactor, options) do
+    id = mermaid_id({reactor.id, input.name}, :input)
 
     content =
       if options[:describe?] do
@@ -66,15 +66,15 @@ defmodule Reactor.Mermaid.Reactor do
           id,
           ">\"`",
           "**Input ",
-          to_string(input_name),
+          to_string(input.name),
           "**",
           "\n",
-          md_escape(Map.get(reactor.input_descriptions, input_name)),
+          md_escape(input.description),
           "`\"]",
           "\n"
         ]
       else
-        [id, ">\"Input ", to_string(input_name), "\"]\n"]
+        [id, ">\"Input ", to_string(input.name), "\"]\n"]
       end
 
     {:ok, %Node{id: id, pre: content}}

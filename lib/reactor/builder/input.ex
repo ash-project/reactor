@@ -43,38 +43,34 @@ defmodule Reactor.Builder.Input do
   @doc """
   Add a named input to the reactor.
   """
-  @spec add_input(Reactor.t(), any, options) :: {:ok, Reactor.t()} | {:error, any}
-  def add_input(reactor, name, options) do
-    case validate_options(options) do
-      {:ok, options} when is_nil(options.transform) ->
-        reactor =
-          reactor
-          |> do_add_input(name)
-          |> maybe_add_description(name, options.description)
+  @spec add_input(Reactor.t(), any, options | transform) :: {:ok, Reactor.t()} | {:error, any}
+  def add_input(reactor, name, nil), do: add_input(reactor, name, [])
 
-        {:ok, reactor}
+  def add_input(reactor, name, options) when is_list(options) do
+    with {:ok, options} <- Spark.Options.validate(options, @options) do
+      reactor =
+        reactor
+        |> do_add_input(name, options)
+        |> maybe_add_input_transform(name, options[:transform])
 
-      {:ok, options} ->
-        reactor =
-          reactor
-          |> do_add_input(name)
-          |> add_input_transform(name, options.transform)
-          |> maybe_add_description(name, options.description)
-
-        {:ok, reactor}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, reactor}
     end
   end
 
-  defp do_add_input(reactor, name), do: %{reactor | inputs: [name | reactor.inputs]}
-  defp maybe_add_description(reactor, _name, nil), do: reactor
+  def add_input(reactor, name, transform), do: add_input(reactor, name, transform: transform)
 
-  defp maybe_add_description(reactor, name, description),
-    do: %{reactor | input_descriptions: Map.put(reactor.input_descriptions, name, description)}
+  defp do_add_input(reactor, name, options) do
+    input = %Reactor.Input{
+      name: name,
+      description: options[:description]
+    }
 
-  defp add_input_transform(reactor, name, {module, options} = transform)
+    %{reactor | inputs: [input | reactor.inputs]}
+  end
+
+  defp maybe_add_input_transform(reactor, _name, nil), do: reactor
+
+  defp maybe_add_input_transform(reactor, name, {module, options} = transform)
        when is_atom(module) and is_list(options) do
     transform_step = %Step{
       arguments: [Argument.from_input(:value, name)],
@@ -89,14 +85,6 @@ defmodule Reactor.Builder.Input do
     %{reactor | steps: [transform_step | reactor.steps]}
   end
 
-  defp add_input_transform(reactor, name, transform),
-    do: add_input_transform(reactor, name, {Step.Transform, fun: transform})
-
-  defp validate_options(options) when is_list(options) do
-    with {:ok, options} <- Spark.Options.validate(options, @options) do
-      {:ok, Map.new(options)}
-    end
-  end
-
-  defp validate_options(transform), do: validate_options(transform: transform)
+  defp maybe_add_input_transform(reactor, name, transform),
+    do: maybe_add_input_transform(reactor, name, {Step.Transform, fun: transform})
 end

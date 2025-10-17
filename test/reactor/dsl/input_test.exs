@@ -58,6 +58,6 @@ defmodule Reactor.Dsl.InputTest do
 
     reactor = Reactor.Info.to_struct!(InputDescriptionReactor)
 
-    assert %{input: "An example input"} = reactor.input_descriptions
+    assert ["An example input"] = Enum.map(reactor.inputs, & &1.description)
   end
 end
