@@ -16,6 +16,8 @@ defmodule Reactor.Middleware.TelemetryTest do
       [
         [:reactor, :run, :start],
         [:reactor, :run, :stop],
+        [:reactor, :step, :guard, :start],
+        [:reactor, :step, :guard, :stop],
         [:reactor, :step, :process, :start],
         [:reactor, :step, :process, :stop],
         [:reactor, :step, :run, :start],
@@ -186,5 +188,118 @@ defmodule Reactor.Middleware.TelemetryTest do
              [:reactor, :step, :undo, :stop],
              [:reactor, :run, :stop]
            ] = Enum.map(events, & &1.event)
+  end
+
+  test "guard pass events", %{table: table} do
+    defmodule GuardPassReactor do
+      @moduledoc false
+      use Reactor
+
+      middlewares do
+        middleware Reactor.Middleware.Telemetry
+      end
+
+      step :noop do
+        guard fn _args, _context ->
+          :cont
+        end
+
+        run fn _, _ -> {:ok, :noop} end
+      end
+    end
+
+    {:ok, :noop} = Reactor.run(GuardPassReactor)
+
+    events = get_events(table)
+
+    assert [
+             [:reactor, :run, :start],
+             [:reactor, :step, :process, :start],
+             [:reactor, :step, :guard, :start],
+             [:reactor, :step, :guard, :stop],
+             [:reactor, :step, :run, :start],
+             [:reactor, :step, :run, :stop],
+             [:reactor, :step, :process, :stop],
+             [:reactor, :run, :stop]
+           ] = Enum.map(events, & &1.event)
+
+    guard_stop = Enum.at(events, 3)
+    assert guard_stop.metadata.status == :ok
+  end
+
+  test "guard halt events", %{table: table} do
+    defmodule GuardHaltReactor do
+      @moduledoc false
+      use Reactor
+
+      middlewares do
+        middleware Reactor.Middleware.Telemetry
+      end
+
+      step :guard do
+        guard fn _, _ ->
+          {:halt, {:error, :hodor}}
+        end
+
+        run fn _, _ -> {:ok, :noop} end
+      end
+    end
+
+    {:error, _} = Reactor.run(GuardHaltReactor)
+
+    events = get_events(table)
+
+    assert [
+             [:reactor, :run, :start],
+             [:reactor, :step, :process, :start],
+             [:reactor, :step, :guard, :start],
+             [:reactor, :step, :guard, :stop],
+             [:reactor, :step, :process, :stop],
+             [:reactor, :run, :stop]
+           ] = Enum.map(events, & &1.event)
+
+    guard_stop = Enum.at(events, 3)
+    assert guard_stop.metadata.status == :error
+    assert guard_stop.metadata.result == {:error, :hodor}
+  end
+
+  test "guard fail events", %{table: table} do
+    defmodule GuardFailReactor do
+      @moduledoc false
+      use Reactor
+
+      middlewares do
+        middleware Reactor.Middleware.Telemetry
+      end
+
+      step :guard do
+        guard fn _, _ ->
+          raise "winter is coming"
+        end
+
+        run fn _, _ -> {:ok, :noop} end
+      end
+    end
+
+    {:error, _} = Reactor.run(GuardFailReactor)
+
+    events = get_events(table)
+
+    assert [
+             [:reactor, :run, :start],
+             [:reactor, :step, :process, :start],
+             [:reactor, :step, :guard, :start],
+             [:reactor, :step, :guard, :stop],
+             [:reactor, :step, :process, :stop],
+             [:reactor, :run, :stop]
+           ] = Enum.map(events, & &1.event)
+
+    guard_stop = Enum.at(events, 3)
+    assert guard_stop.metadata.status == :error
+
+    assert match?(
+             {:error, %RuntimeError{message: "winter is coming"}},
+             guard_stop.metadata.result
+           )
   end
 end

@@ -13,6 +13,8 @@ defmodule Reactor.Middleware.Telemetry do
   * `[:reactor, :run, :stop]`
   * `[:reactor, :step, :run, :start]`
   * `[:reactor, :step, :run, :stop]`
+  * `[:reactor, :step, :guard, :start]`
+  * `[:reactor, :step, :guard, :stop]`
   * `[:reactor, :step, :process, :start]`
   * `[:reactor, :step, :process, :stop]`
   * `[:reactor, :step, :compensate, :start]`
@@ -292,6 +294,73 @@ defmodule Reactor.Middleware.Telemetry do
 
     :telemetry.execute(
       [:reactor, :step, :run, :stop],
+      %{
+        system_time: System.system_time(),
+        duration: duration
+      },
+      metadata
+    )
+  end
+
+  def event({:guard_start, guard, arguments}, step, %{__MODULE__ => %{metadata: metadata}}) do
+    metadata =
+      metadata
+      |> Map.merge(%{
+        step: step,
+        guard: guard,
+        arguments: arguments,
+        status: :guard
+      })
+
+    start_time = System.monotonic_time()
+    Process.put({__MODULE__, :guard_start_time, step.name, guard}, start_time)
+
+    :telemetry.execute(
+      [:reactor, :step, :guard, :start],
+      %{system_time: System.system_time()},
+      metadata
+    )
+  end
+
+  def event({:guard_fail, guard, result}, step, %{__MODULE__ => %{metadata: metadata}}) do
+    metadata =
+      metadata
+      |> Map.merge(%{
+        step: step,
+        guard: guard,
+        result: result,
+        status: :error
+      })
+
+    start_time = Process.delete({__MODULE__, :guard_start_time, step.name, guard})
+    end_time = System.monotonic_time()
+    duration = end_time - start_time
+
+    :telemetry.execute(
+      [:reactor, :step, :guard, :stop],
+      %{
+        system_time: System.system_time(),
+        duration: duration
+      },
+      metadata
+    )
+  end
+
+  def event({:guard_pass, guard}, step, %{__MODULE__ => %{metadata: metadata}}) do
+    metadata =
+      metadata
+      |> Map.merge(%{
+        step: step,
+        guard: guard,
+        status: :ok
+      })
+
+    start_time = Process.delete({__MODULE__, :guard_start_time, step.name, guard})
+    end_time = System.monotonic_time()
+    duration = end_time - start_time
+
+    :telemetry.execute(
+      [:reactor, :step, :guard, :stop],
       %{
         system_time: System.system_time(),
         duration: duration
