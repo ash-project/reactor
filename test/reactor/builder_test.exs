@@ -23,12 +23,12 @@ defmodule Reactor.BuilderTest do
 
     test "when the input doesn't have a transformer, it adds the input" do
       {:ok, reactor} = add_input(new(), :marty)
-      assert :marty in reactor.inputs
+      assert %Reactor.Input{name: :marty} in reactor.inputs
     end
 
     test "when the input has a transformer it adds a transform step and the input" do
       {:ok, reactor} = add_input(new(), :marty, &String.upcase/1)
-      assert :marty in reactor.inputs
+      assert %Reactor.Input{name: :marty} in reactor.inputs
       [transform_step] = reactor.steps
 
       assert transform_step.name == {:__reactor__, :transform, :input, :marty}
