@@ -441,7 +441,7 @@ defmodule EmailService do
 
   # NEW: Backoff implementation
   @impl true
-  def backoff(error, _arguments, context, _step) do
+  def backoff(error, _arguments, context, _options) do
     case error do
       %{type: :network_timeout} ->
         # Exponential backoff for network issues
@@ -526,7 +526,7 @@ defmodule BackoffUserRegistration do
     end
 
     # DSL backoff function (only available with anonymous run functions)
-    backoff fn _error, _args, context, _step ->
+    backoff fn _error, _args, context ->
       retry_count = Map.get(context, :current_try, 0)
       # Exponential backoff: 1s, 2s, 4s, 8s...
       delay = :math.pow(2, retry_count) * 1000 |> round()
