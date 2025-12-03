@@ -8,9 +8,7 @@ defmodule Reactor.Executor.Async do
   Handle the asynchronous execution of a batch of steps, along with any
   mutations to the reactor or execution state.
   """
-  alias Reactor.Error.Invalid.RetriesExceededError, as: RetriesExceededError
-  alias Reactor.Executor.ConcurrencyTracker
-  alias Reactor.{Executor, Step}
+  alias Reactor.{Error.Invalid.RetriesExceededError, Executor, Executor.ConcurrencyTracker, Step}
   require Logger
 
   @doc """
