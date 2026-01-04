@@ -9,7 +9,7 @@ defmodule Reactor.Error.Invalid do
   for user-caused errors.
   """
 
-  use Reactor.Error, fields: [:errors], class: :unknown
+  use Reactor.Error, fields: [:errors], class: :invalid
 
   @doc false
   @impl true
