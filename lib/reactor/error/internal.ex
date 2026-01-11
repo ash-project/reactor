@@ -8,7 +8,7 @@ defmodule Reactor.Error.Internal do
   The [Splode error class](e:splode:get-started-with-splode.html#error-classes)
   for Reactor-caused errors.
   """
-  use Reactor.Error, fields: [:errors], class: :reactor
+  use Reactor.Error, fields: [:errors], class: :internal
 
   @doc false
   @impl true
