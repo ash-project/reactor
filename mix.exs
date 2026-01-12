@@ -57,13 +57,7 @@ defmodule Reactor.MixProject do
           before_closing_head_tag: fn type ->
             if type == :html do
               """
-              <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.3/dist/mermaid.min.js"></script>
               <script>
-                mermaid.initialize({
-                  startOnLoad: true,
-                  theme: 'default'
-                });
-                
                 if (location.hostname === "hexdocs.pm") {
                   var script = document.createElement("script");
                   script.src = "https://plausible.io/js/script.js";
@@ -71,6 +65,19 @@ defmodule Reactor.MixProject do
                   script.setAttribute("data-domain", "ashhexdocs")
                   document.head.appendChild(script);
                 }
+              </script>
+              """
+            end
+          end,
+          before_closing_body_tag: fn type ->
+            if type == :html do
+              """
+              <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.3/dist/mermaid.min.js"></script>
+              <script>
+                mermaid.initialize({
+                  startOnLoad: true,
+                  theme: 'default'
+                });
               </script>
               """
             end
