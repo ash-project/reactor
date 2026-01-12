@@ -123,4 +123,76 @@ defmodule Reactor.Dsl.SwitchTest do
              end) =~ ~r/amscray/
     end
   end
+
+  describe "issue #273 - nested steps can refer to external step results with async execution" do
+    defmodule SwitchExternalResultAsyncReactor do
+      @moduledoc false
+      use Reactor
+
+      input :params
+
+      step :create_personal_organization do
+        run fn _, _ ->
+          Process.sleep(10)
+          {:ok, %{org_id: "org_123"}}
+        end
+      end
+
+      step :create_session_token do
+        run fn _, _ ->
+          {:ok, "token_abc"}
+        end
+      end
+
+      switch :populate_scope do
+        on input(:params)
+
+        matches? &(Map.get(&1, "invite_token") != nil) do
+          step :populate_scope do
+            argument :user_token, result(:create_session_token)
+            wait_for :create_personal_organization
+
+            run fn %{user_token: token}, _ ->
+              {:ok, %{token: token, source: :invite}}
+            end
+          end
+        end
+
+        default do
+          step :populate_scope do
+            argument :user_token, result(:create_session_token)
+            argument :scope, result(:create_personal_organization)
+
+            run fn %{scope: scope, user_token: token}, _ ->
+              {:ok, %{token: token, org_id: scope.org_id, source: :default}}
+            end
+          end
+        end
+      end
+
+      return :populate_scope
+    end
+
+    test "when switch nested steps depend on external results, they are resolved correctly with async execution" do
+      assert {:ok, result} =
+               Reactor.run(SwitchExternalResultAsyncReactor, %{params: %{}}, %{}, async?: true)
+
+      assert result.source == :default
+      assert result.org_id == "org_123"
+      assert result.token == "token_abc"
+    end
+
+    test "when switch nested steps depend on external results via wait_for, they are resolved correctly" do
+      assert {:ok, result} =
+               Reactor.run(
+                 SwitchExternalResultAsyncReactor,
+                 %{params: %{"invite_token" => "inv_123"}},
+                 %{},
+                 async?: true
+               )
+
+      assert result.source == :invite
+      assert result.token == "token_abc"
+    end
+  end
 end

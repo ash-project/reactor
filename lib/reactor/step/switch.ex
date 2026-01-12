@@ -70,6 +70,7 @@ defmodule Reactor.Step.Switch do
   @type on_option :: {:on, atom}
 
   @doc false
+  @impl true
   @spec run(Reactor.inputs(), Reactor.context(), options) :: {:ok, any} | {:error, any}
   def run(arguments, _context, options) do
     allow_async? = Keyword.get(options, :allow_async?, true)
@@ -89,6 +90,19 @@ defmodule Reactor.Step.Switch do
   @impl true
   def to_mermaid(step, options),
     do: __MODULE__.Mermaid.to_mermaid(step, options)
+
+  @doc false
+  @impl true
+  def nested_steps(options) do
+    matches = Keyword.get(options, :matches, [])
+    default = Keyword.get(options, :default, [])
+
+    match_steps =
+      matches
+      |> Enum.flat_map(fn {_predicate, steps} -> steps end)
+
+    match_steps ++ default
+  end
 
   defp find_match(matches, value) do
     Enum.reduce_while(matches, :no_match, fn {predicate, steps}, :no_match ->

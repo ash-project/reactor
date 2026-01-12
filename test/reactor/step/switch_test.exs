@@ -117,4 +117,41 @@ defmodule Reactor.Step.SwitchTest do
       assert error =~ ~r/no default branch/i
     end
   end
+
+  describe "nested_steps/1" do
+    test "returns all steps from matches and default", %{matches: matches, default: default} do
+      options = [matches: matches, default: default, on: :value]
+      nested = Switch.nested_steps(options)
+
+      step_names = Enum.map(nested, & &1.name)
+      assert :is_nil in step_names
+      assert :is_false in step_names
+      assert :is_other in step_names
+      assert length(nested) == 3
+    end
+
+    test "returns empty list when no matches or default", %{} do
+      assert [] == Switch.nested_steps(on: :value)
+    end
+
+    test "returns only match steps when no default", %{matches: matches} do
+      options = [matches: matches, on: :value]
+      nested = Switch.nested_steps(options)
+
+      step_names = Enum.map(nested, & &1.name)
+      assert :is_nil in step_names
+      assert :is_false in step_names
+      refute :is_other in step_names
+      assert length(nested) == 2
+    end
+
+    test "returns only default steps when no matches", %{default: default} do
+      options = [default: default, on: :value]
+      nested = Switch.nested_steps(options)
+
+      step_names = Enum.map(nested, & &1.name)
+      assert :is_other in step_names
+      assert length(nested) == 1
+    end
+  end
 end
