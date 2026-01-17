@@ -67,7 +67,6 @@ defmodule Reactor.Step.Group do
   """
 
   use Reactor.Step
-  require Reactor.Argument
   alias Reactor.{Argument, Builder, Step}
   import Reactor.Utils
 
