@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 defmodule Reactor.Step.Around do
-  require Reactor.Mermaid
-
   @moduledoc """
   Wrap the execution of a number of steps in a function.
 

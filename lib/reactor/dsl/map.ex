@@ -169,7 +169,6 @@ defmodule Reactor.Dsl.Map do
 
   defimpl Dsl.Build do
     import Reactor.Utils
-    require Reactor.Argument
     alias Reactor.Argument
     alias Spark.{Dsl.Verifier, Error.DslError}
 

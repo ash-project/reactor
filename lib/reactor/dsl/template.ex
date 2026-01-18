@@ -19,7 +19,6 @@ defmodule Reactor.Dsl.Template do
             __spark_metadata__: nil
 
   alias Reactor.{Builder, Dsl, Step}
-  require EEx
 
   @type t :: %__MODULE__{
           arguments: [Dsl.Argument.t()],
