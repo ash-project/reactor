@@ -126,15 +126,7 @@ defmodule Reactor do
             | fully_reversible_option
           )
 
-  @type undo_options ::
-          Enumerable.t(
-            max_concurrency_option
-            | timeout_option
-            | max_iterations_option
-            | halt_timeout_option
-            | async_option
-            | concurrency_key_option
-          )
+  @type undo_options :: Enumerable.t(concurrency_key_option)
 
   @type state :: :pending | :executing | :halted | :failed | :successful
   @type inputs :: %{optional(atom) => any}
@@ -253,10 +245,28 @@ defmodule Reactor do
     end
   end
 
-  @undo_options Keyword.drop(@run_schema, [:fully_reversible?])
+  @undo_options [
+    concurrency_key: [
+      type: :reference,
+      required: false,
+      hide: true
+    ]
+  ]
 
   @doc """
   Attempt to undo a previously successful Reactor.
+
+  Undo operations are always executed sequentially in reverse completion order.
+  This is intentional: while the forward execution graph captures data
+  dependencies between steps, it cannot capture the full set of constraints
+  that may apply during rollback. A step's undo logic may have side effects
+  that affect other steps in ways not expressed in the original dependency
+  graph, or external systems may have ordering constraints during rollback
+  that differ from forward execution.
+
+  Since undo operations are expected to be infrequent (only triggered on
+  explicit reversal requests), sequential execution is an acceptable trade-off
+  that ensures predictable rollback behaviour.
 
   ## Arguments
 
