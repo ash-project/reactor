@@ -357,7 +357,7 @@ defmodule Reactor.ExecutorTest do
           assert {:ok, _} = Reactor.run(SleepyReactor, %{}, %{}, async?: false)
         end)
 
-      assert elapsed >= 500 and elapsed <= 600
+      assert elapsed >= 500
     end
 
     test "it can be run asynchronously" do

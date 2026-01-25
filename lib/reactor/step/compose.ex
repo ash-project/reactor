@@ -39,11 +39,8 @@ defmodule Reactor.Step.Compose do
 
   @doc false
   @impl true
-  def undo(%{reactor: reactor}, _args, context, options) do
-    Reactor.undo(reactor, context,
-      concurrency_key: context.concurrency_key,
-      async?: options[:allow_async?]
-    )
+  def undo(%{reactor: reactor}, _args, context, _options) do
+    Reactor.undo(reactor, context, concurrency_key: context.concurrency_key)
   end
 
   def schedule_undoable_reactor_run(context) do
