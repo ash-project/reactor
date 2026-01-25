@@ -12,6 +12,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.0](https://github.com/ash-project/reactor/compare/v0.17.0...v1.0.0) (2026-01-25)
+### Breaking Changes:
+
+* Store inputs in their own struct (#269) by James Harton
+
+
+
+### Features:
+
+* add tests for guard telemetry events by Jaden
+
+### Bug Fixes:
+
+* remove unused async options from `Reactor.undo/3` (#292) by James Harton
+
+* move mermaid script to `before_closing_body_tag` for proper rendering (#289) by James Harton
+
+* implement `nested_steps/1` for `Step.Switch` to fix dependency resolution (#288) by James Harton
+
+* set proper class for reactor errors (#286) by Zach Daniel
+
+* Telemetry middleware crashes on unhandled guard events (#276) by Jaden
+
+* telemetry middleware implements guard steps by Jaden
+
+* tests failing because of REUSE annotations (#275) by James Harton
+
 ## [v0.17.0](https://github.com/ash-project/reactor/compare/v0.16.0...v0.17.0) (2025-09-30)
 
 
