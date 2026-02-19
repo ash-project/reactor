@@ -134,16 +134,18 @@ defmodule Reactor.Step.Around do
     allow_async? = Keyword.get(options, :allow_async?, true)
 
     with {:ok, reactor} <- build_nested_reactor(arguments, context.current_step.name, steps) do
-      options =
-        maybe_append_result([async?: allow_async?], fn ->
-          case Map.fetch(context, :concurrency_key) do
-            {:ok, value} -> {:concurrency_key, value}
-            :error -> nil
-          end
-        end)
-
+      options = reactor_run_options(allow_async?, context)
       Reactor.run(reactor, arguments, context, options)
     end
+  end
+
+  defp reactor_run_options(allow_async?, context) do
+    maybe_append_result([async?: allow_async?], fn ->
+      case Map.fetch(context, :concurrency_key) do
+        {:ok, value} -> {:concurrency_key, value}
+        :error -> nil
+      end
+    end)
   end
 
   defp build_nested_reactor(arguments, name, steps) do
