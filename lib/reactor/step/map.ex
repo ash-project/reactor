@@ -175,16 +175,21 @@ defmodule Reactor.Step.Map do
     emit_batch(source, options, map_step, result)
   end
 
-  defp collect_all_step_names(steps, into \\ MapSet.new())
-  defp collect_all_step_names([], into), do: into
-
-  defp collect_all_step_names([%{steps: [_ | _] = child_steps} = step | steps], into) do
-    into = collect_all_step_names(child_steps, MapSet.put(into, step.name))
-    collect_all_step_names(steps, into)
+  defp collect_all_step_names(steps) do
+    steps
+    |> do_collect_all_step_names([])
+    |> MapSet.new()
   end
 
-  defp collect_all_step_names([step | steps], into),
-    do: collect_all_step_names(steps, MapSet.put(into, step.name))
+  defp do_collect_all_step_names([], acc), do: acc
+
+  defp do_collect_all_step_names([%{steps: [_ | _] = child_steps} = step | steps], acc) do
+    acc = do_collect_all_step_names(child_steps, [step.name | acc])
+    do_collect_all_step_names(steps, acc)
+  end
+
+  defp do_collect_all_step_names([step | steps], acc),
+    do: do_collect_all_step_names(steps, [step.name | acc])
 
   defp emit_batch(source, options, map_step, result) do
     with {:done, batch} <- Iter.take_chunk(source, options[:batch_size]),
