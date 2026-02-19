@@ -131,19 +131,22 @@ defmodule Reactor.Executor do
 
       {:ok, result, reactor} ->
         maybe_release_pool(state)
-
-        with {:ok, result} <- Executor.Hooks.complete(reactor, result, reactor.context) do
-          if state.fully_reversible? do
-            {:ok, result, reactor}
-          else
-            {:ok, result}
-          end
-        end
+        handle_completion(reactor, result, state)
 
       {:error, reason} ->
         maybe_release_pool(state)
 
         Executor.Hooks.error(reactor, reason, reactor.context)
+    end
+  end
+
+  defp handle_completion(reactor, result, state) do
+    with {:ok, result} <- Executor.Hooks.complete(reactor, result, reactor.context) do
+      if state.fully_reversible? do
+        {:ok, result, reactor}
+      else
+        {:ok, result}
+      end
     end
   end
 

@@ -54,17 +54,21 @@ defmodule Reactor.Dsl.Verifier do
 
   defp recursively_verify_step(%{step: [_ | _]} = step, parent_step, dsl_state) do
     with :ok <- verify_step(step, parent_step, dsl_state) do
-      Enum.reduce_while(step.steps, :ok, fn child, :ok ->
-        case recursively_verify_step(child, step, dsl_state) do
-          :ok -> {:cont, :ok}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
-      end)
+      recursively_verify_child_steps(step.steps, step, dsl_state)
     end
   end
 
   defp recursively_verify_step(step, parent_step, dsl_state),
     do: verify_step(step, parent_step, dsl_state)
+
+  defp recursively_verify_child_steps(children, parent_step, dsl_state) do
+    Enum.reduce_while(children, :ok, fn child, :ok ->
+      case recursively_verify_step(child, parent_step, dsl_state) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
 
   defp verify_step(step, parent_step, dsl_state) do
     with :ok <- maybe_verify_element_arguments(step, parent_step, dsl_state) do

@@ -125,13 +125,7 @@ defmodule Reactor.Step.Group do
          {:ok, steps} <- fetch_steps(options),
          {:ok, arguments, context, steps} <- before_fun.(arguments, context, steps),
          {:ok, reactor} <- build_nested_reactor(arguments, name, steps),
-         options <-
-           maybe_append_result([async?: allow_async?], fn ->
-             case Map.fetch(context, :concurrency_key) do
-               {:ok, value} -> {:concurrency_key, value}
-               :error -> nil
-             end
-           end),
+         options <- reactor_run_options(allow_async?, context),
          {:ok, inner_result} <- Reactor.run(reactor, arguments, context, options),
          {:ok, result} <- after_fun.(inner_result) do
       {:ok, result}
@@ -232,6 +226,15 @@ defmodule Reactor.Step.Group do
 
   defp build_steps(reactor, steps) do
     {:ok, %{reactor | steps: Enum.concat(steps, reactor.steps)}}
+  end
+
+  defp reactor_run_options(allow_async?, context) do
+    maybe_append_result([async?: allow_async?], fn ->
+      case Map.fetch(context, :concurrency_key) do
+        {:ok, value} -> {:concurrency_key, value}
+        :error -> nil
+      end
+    end)
   end
 
   defp build_return_step(reactor, steps) do
