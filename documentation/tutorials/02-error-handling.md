@@ -442,7 +442,19 @@ defmodule EmailService do
   # NEW: Backoff implementation
   @impl true
   def backoff(error, _arguments, context, _options) do
+  
+  # Hello! I'm studying the examples from the documentation and really like your work. 
+  # I ran into an issue where, in backoff/4, the error argument is already wrapped in a Reactor.Error.Invalid.RunStepError struct, 
+  # so the backoff delay never triggers and the execution falls through to another branch, running without any delay.
+  
+  # Unwrap the error if it's wrapped in a RunStepError
+  reason =
     case error do
+      %Reactor.Error.Invalid.RunStepError{error: inner} -> inner
+      _ -> error
+    end
+    
+    case reason do
       %{type: :network_timeout} ->
         # Exponential backoff for network issues
         retry_count = Map.get(context, :current_try, 0)
