@@ -420,11 +420,11 @@ defmodule EmailService do
     case error do
       %{type: :network_timeout} ->
         IO.puts("🔄 Network timeout - retrying email send...")
-        :retry
+        {:retry, %{type: :network_timeout}} 
 
       %{type: :rate_limit} ->
         IO.puts("🔄 Rate limited - retrying email send...")
-        :retry
+        {:retry, %{type: :rate_limit}}
 
       %{type: :blocked_email} ->
         IO.puts("❌ Email blocked - cannot retry")
