@@ -288,7 +288,7 @@ defmodule Reactor.Executor.StepRunner do
   defp handle_compensate_result(:retry, reactor, step, arguments, context, reason) do
     Hooks.event(reactor, :compensate_retry, step, context)
 
-    case Step.backoff(step, reason, arguments, context) do
+    case Step.backoff(step, reason.error, arguments, context) do
       delay when is_integer(delay) and delay > 0 -> {:backoff, delay, {:retry, reason}}
       _ -> {:retry, reason}
     end
