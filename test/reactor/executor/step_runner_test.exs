@@ -242,7 +242,7 @@ defmodule Reactor.Executor.StepRunnerTest do
       Example.Step.Compensable
       |> stub(:run, fn _, _, _ -> {:error, :doc} end)
       |> stub(:compensate, fn :doc, _, _, _ -> :retry end)
-      |> stub(:backoff, fn _, _, _, _ -> 100 end)
+      |> stub(:backoff, fn :doc, _, _, _ -> 100 end)
 
       assert {:backoff, 100, {:retry, %RunStepError{error: :doc}}} =
                run(reactor, state, step, nil)
