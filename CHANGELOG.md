@@ -12,6 +12,19 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.1](https://github.com/ash-project/reactor/compare/v1.0.0...v1.0.1) (2026-04-06)
+
+
+
+
+### Bug Fixes:
+
+* pass unwrapped error to `backoff/4` when `compensate/4` returns bare `:retry` (#306) by James Harton
+
+* avoid `MapSet` opaque type in recursive accumulator for OTP 28 dialyzer by renovate[bot]
+
+* reduce function nesting depth to satisfy credo 1.7.16 by dependabot[bot]
+
 ## [v1.0.0](https://github.com/ash-project/reactor/compare/v0.17.0...v1.0.0) (2026-01-25)
 ### Breaking Changes:
 
