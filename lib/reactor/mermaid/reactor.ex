@@ -84,7 +84,7 @@ defmodule Reactor.Mermaid.Reactor do
     options = Keyword.put(options, :reactor_id, reactor.id)
 
     reactor.plan
-    |> Graph.vertices()
+    |> Multigraph.vertices()
     |> map_while_ok(&Step.to_mermaid(&1, options))
   end
 end

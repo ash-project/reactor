@@ -35,8 +35,8 @@ defmodule Reactor.Executor.Sync do
 
     plan =
       reactor.plan
-      |> Graph.add_vertex(backoff)
-      |> Graph.add_edge(backoff, step, label: :backoff)
+      |> Multigraph.add_vertex(backoff)
+      |> Multigraph.add_edge(backoff, step, label: :backoff)
 
     reactor = %{reactor | plan: plan}
     handle_completed_step(reactor, state, step, result)
@@ -110,7 +110,7 @@ defmodule Reactor.Executor.Sync do
   end
 
   defp drop_from_plan(reactor, step) do
-    %{reactor | plan: Graph.delete_vertex(reactor.plan, step)}
+    %{reactor | plan: Multigraph.delete_vertex(reactor.plan, step)}
   end
 
   defp maybe_store_undo(reactor, step, value, state) do
@@ -126,7 +126,7 @@ defmodule Reactor.Executor.Sync do
   end
 
   defp maybe_store_intermediate_result(reactor, step, value) do
-    if Graph.out_degree(reactor.plan, step) > 0 do
+    if Multigraph.out_degree(reactor.plan, step) > 0 do
       store_intermediate_result(reactor, step, value)
     else
       reactor

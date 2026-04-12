@@ -116,7 +116,7 @@ defmodule Reactor.Executor.Hooks do
   defp step_count(reactor) when is_nil(reactor.plan), do: length(reactor.steps)
 
   defp step_count(reactor) do
-    vertices = Graph.num_vertices(reactor.plan)
+    vertices = Multigraph.num_vertices(reactor.plan)
     length(reactor.steps) + vertices
   end
 end

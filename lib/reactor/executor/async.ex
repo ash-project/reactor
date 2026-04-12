@@ -117,8 +117,8 @@ defmodule Reactor.Executor.Async do
 
     plan =
       reactor.plan
-      |> Graph.add_vertex(backoff)
-      |> Graph.add_edge(backoff, step, label: :backoff)
+      |> Multigraph.add_vertex(backoff)
+      |> Multigraph.add_edge(backoff, step, label: :backoff)
 
     reactor = %{reactor | plan: plan}
     handle_completed_step(reactor, state, {task, step, result})
@@ -245,7 +245,7 @@ defmodule Reactor.Executor.Async do
   end
 
   defp drop_from_plan(reactor, step) do
-    %{reactor | plan: Graph.delete_vertex(reactor.plan, step)}
+    %{reactor | plan: Multigraph.delete_vertex(reactor.plan, step)}
   end
 
   defp add_error(state, error) do
@@ -269,7 +269,7 @@ defmodule Reactor.Executor.Async do
   end
 
   defp maybe_store_intermediate_result(reactor, step, value) do
-    if Graph.out_degree(reactor.plan, step) > 0 do
+    if Multigraph.out_degree(reactor.plan, step) > 0 do
       store_intermediate_result(reactor, step, value)
     else
       reactor
@@ -305,7 +305,7 @@ defmodule Reactor.Executor.Async do
       completed_step_results
       |> Enum.filter(fn
         {step, {:ok, _, []}} ->
-          Graph.out_degree(reactor.plan, step) > 0 || reactor.return == step.name
+          Multigraph.out_degree(reactor.plan, step) > 0 || reactor.return == step.name
 
         {_step, {:ok, _, _}} ->
           true
@@ -386,7 +386,7 @@ defmodule Reactor.Executor.Async do
   defp add_task_edges(reactor, started_tasks) do
     plan =
       Enum.reduce(started_tasks, reactor.plan, fn {task, step}, plan ->
-        Graph.add_edge(plan, task, step, label: :executing)
+        Multigraph.add_edge(plan, task, step, label: :executing)
       end)
 
     %{reactor | plan: plan}
@@ -395,12 +395,12 @@ defmodule Reactor.Executor.Async do
   defp delete_vertices(reactor, []), do: reactor
 
   defp delete_vertices(reactor, completed_tasks),
-    do: %{reactor | plan: Graph.delete_vertices(reactor.plan, completed_tasks)}
+    do: %{reactor | plan: Multigraph.delete_vertices(reactor.plan, completed_tasks)}
 
   defp delete_all_task_vertices(reactor) do
     task_vertices =
       reactor.plan
-      |> Graph.vertices()
+      |> Multigraph.vertices()
       |> Enum.filter(&is_struct(&1, Task))
 
     delete_vertices(reactor, task_vertices)

@@ -54,7 +54,7 @@ defmodule Reactor.Executor.AsyncTest do
     test "when steps are started, it adds an in edge to their reactor plan vertex",
          %{reactor: reactor, state: state, doable: doable, supervisor: supervisor} do
       assert {_, reactor, _state} = start_steps(reactor, state, [doable], supervisor)
-      assert Graph.in_degree(reactor.plan, doable) > 0
+      assert Multigraph.in_degree(reactor.plan, doable) > 0
     end
 
     test "when steps are started, they are started in the expected supervisor",
@@ -206,7 +206,7 @@ defmodule Reactor.Executor.AsyncTest do
       task = Task.Supervisor.async_nolink(supervisor, fn -> :retry end)
       state = %{state | current_tasks: %{task => step}}
       assert {_, reactor, _state} = handle_completed_steps(reactor, state)
-      assert Graph.has_vertex?(reactor.plan, step)
+      assert Multigraph.has_vertex?(reactor.plan, step)
     end
 
     test "when one of the steps asks to retry, it sets the retry count for the step",

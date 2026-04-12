@@ -51,7 +51,7 @@ defmodule ReactorTest do
 
       reactor = %{
         reactor
-        | plan: Graph.delete_vertex(reactor.plan, join_step),
+        | plan: Multigraph.delete_vertex(reactor.plan, join_step),
           steps: [join_step]
       }
 

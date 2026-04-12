@@ -277,7 +277,7 @@ defmodule Reactor.Executor do
   end
 
   defp all_done(reactor) do
-    with 0 <- Graph.num_vertices(reactor.plan),
+    with 0 <- Multigraph.num_vertices(reactor.plan),
          {:ok, value} <- Map.fetch(reactor.intermediate_results, reactor.return) do
       {:ok, value, %{reactor | state: :successful}}
     else
@@ -292,9 +292,9 @@ defmodule Reactor.Executor do
   defp find_ready_steps(reactor, state) when state.max_concurrency > 0 do
     steps =
       reactor.plan
-      |> Graph.vertices()
+      |> Multigraph.vertices()
       |> Stream.filter(fn
-        step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
+        step when is_struct(step, Step) -> Multigraph.in_degree(reactor.plan, step) == 0
         _ -> false
       end)
       |> Enum.take(state.max_concurrency)
@@ -304,9 +304,9 @@ defmodule Reactor.Executor do
 
   defp find_ready_steps(reactor, _state) do
     reactor.plan
-    |> Graph.vertices()
+    |> Multigraph.vertices()
     |> Enum.find(fn
-      step when is_struct(step, Step) -> Graph.in_degree(reactor.plan, step) == 0
+      step when is_struct(step, Step) -> Multigraph.in_degree(reactor.plan, step) == 0
       _ -> false
     end)
     |> case do
@@ -319,14 +319,14 @@ defmodule Reactor.Executor do
     now = System.monotonic_time(:millisecond)
 
     reactor.plan
-    |> Graph.vertices()
+    |> Multigraph.vertices()
     |> Enum.filter(&(is_struct(&1, Backoff) && &1.expires_at <= now))
     |> case do
       [] ->
         {:continue, reactor, state}
 
       to_remove ->
-        {:recurse, %{reactor | plan: Graph.delete_vertices(reactor.plan, to_remove)}, state}
+        {:recurse, %{reactor | plan: Multigraph.delete_vertices(reactor.plan, to_remove)}, state}
     end
   end
 

@@ -50,12 +50,12 @@ defmodule Reactor.Planner do
   @doc false
   def get_ref(%{ref: ref}), do: ref
 
-  defp empty_graph, do: Graph.new(type: :directed, vertex_identifier: &__MODULE__.get_ref/1)
+  defp empty_graph, do: Multigraph.new(type: :directed, vertex_identifier: &__MODULE__.get_ref/1)
 
   defp reduce_steps_into_graph(graph, steps, intermediate_results) do
     steps_by_name =
       graph
-      |> Graph.vertices()
+      |> Multigraph.vertices()
       |> Stream.filter(&is_struct(&1, Step))
       |> Stream.concat(steps)
       |> Map.new(&{&1.name, &1})
@@ -63,13 +63,13 @@ defmodule Reactor.Planner do
     steps
     |> reduce_while_ok(graph, fn
       step, graph when is_struct(step, Step) ->
-        if Graph.has_vertex?(graph, step) do
+        if Multigraph.has_vertex?(graph, step) do
           graph
-          |> Graph.replace_vertex(step, step)
+          |> Multigraph.replace_vertex(step, step)
           |> reduce_arguments_into_graph(step, steps_by_name, intermediate_results)
         else
           graph
-          |> Graph.add_vertex(step, step.name)
+          |> Multigraph.add_vertex(step, step.name)
           |> reduce_arguments_into_graph(step, steps_by_name, intermediate_results)
         end
 
@@ -107,7 +107,7 @@ defmodule Reactor.Planner do
 
           {:ok, dependency} ->
             {:ok,
-             Graph.add_edge(graph, dependency, current_step,
+             Multigraph.add_edge(graph, dependency, current_step,
                label: {:argument, argument.name, :for, current_step.name}
              )}
 
@@ -157,7 +157,7 @@ defmodule Reactor.Planner do
           {:ok, dependency} when dependency.name != containing_step.name ->
             # This is a cross-scope dependency - add it as a nested dependency edge
             {:ok,
-             Graph.add_edge(graph, dependency, containing_step,
+             Multigraph.add_edge(graph, dependency, containing_step,
                label:
                  {:nested_dependency, nested_step.name, argument.name, :for, containing_step.name}
              )}
@@ -178,7 +178,7 @@ defmodule Reactor.Planner do
             # This is a cross-scope element reference - track it as a nested dependency
             # We'll need to pass the element value through the context
             {:ok,
-             Graph.add_edge(graph, map_step, containing_step,
+             Multigraph.add_edge(graph, map_step, containing_step,
                label:
                  {:nested_element_dependency, nested_step.name, argument.name, element_name, :for,
                   containing_step.name}
@@ -195,7 +195,7 @@ defmodule Reactor.Planner do
   end
 
   defp assert_graph_not_cyclic(reactor, graph) do
-    if Graph.is_acyclic?(graph) do
+    if Multigraph.is_acyclic?(graph) do
       :ok
     else
       {:error,

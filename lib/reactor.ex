@@ -138,7 +138,7 @@ defmodule Reactor do
           inputs: [Reactor.Input.t()],
           intermediate_results: %{any => any},
           middleware: [Reactor.Middleware.t()],
-          plan: nil | Graph.t(),
+          plan: nil | Multigraph.t(),
           undo: [{Step.t(), any}],
           return: any,
           state: state,

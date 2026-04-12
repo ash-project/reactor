@@ -61,7 +61,7 @@ defmodule Reactor.Executor.SyncTest do
       |> stub(:run, fn _, _, _ -> :retry end)
 
       assert {_, reactor, _} = run(reactor, state, step)
-      assert Graph.has_vertex?(reactor.plan, step)
+      assert Multigraph.has_vertex?(reactor.plan, step)
     end
 
     test "when the step asks to retry, it increments the retries in the reactor state", %{
@@ -128,7 +128,7 @@ defmodule Reactor.Executor.SyncTest do
       |> stub(:run, fn _, _, _ -> {:ok, :marty} end)
 
       assert {_, reactor, _} = run(reactor, state, step)
-      refute Graph.has_vertex?(reactor.plan, step)
+      refute Multigraph.has_vertex?(reactor.plan, step)
     end
 
     test "when the step is unsuccessful it tells the reactor to undo", %{

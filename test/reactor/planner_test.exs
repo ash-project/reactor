@@ -34,7 +34,7 @@ defmodule Reactor.PlannerTest do
 
       planned_step_names =
         reactor.plan
-        |> Graph.vertices()
+        |> Multigraph.vertices()
         |> MapSet.new(& &1.name)
 
       expected_step_names = MapSet.new([:verify, :second_step])
@@ -53,7 +53,7 @@ defmodule Reactor.PlannerTest do
 
       created_graph_vertices =
         reactor.plan
-        |> Graph.vertices()
+        |> Multigraph.vertices()
         |> MapSet.new(& &1.name)
 
       expected_graph_vertices = MapSet.new([:a, :b])
@@ -61,7 +61,7 @@ defmodule Reactor.PlannerTest do
 
       created_graph_edges =
         reactor.plan
-        |> Graph.edges()
+        |> Multigraph.edges()
         |> Enum.map(& &1.label)
 
       expected_graph_edges = [{:argument, :a, :for, :b}]

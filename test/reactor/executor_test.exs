@@ -385,7 +385,7 @@ defmodule Reactor.ExecutorTest do
           assert {:halted, reactor} =
                    Reactor.run(SleepyReactor, %{}, %{}, async?: false, timeout: 200)
 
-          assert Graph.num_vertices(reactor.plan) == 3
+          assert Multigraph.num_vertices(reactor.plan) == 3
         end)
 
       assert elapsed <= 500

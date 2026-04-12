@@ -500,7 +500,7 @@ defmodule Reactor.Executor.StepRunner do
 
       graph ->
         graph
-        |> Graph.in_edges(step)
+        |> Multigraph.in_edges(step)
         |> Enum.filter(fn
           {_, _, {:nested_dependency, _, _, :for, _}} -> true
           _ -> false
