@@ -23,7 +23,7 @@ defmodule Reactor.Executor.ConcurrencyTracker do
 
   @type pool_key :: reference()
 
-  @type record ::
+  @type pool_record ::
           {pool_key, concurrency_limit :: pos_integer, available_slots :: non_neg_integer(),
            allocator :: pid}
 

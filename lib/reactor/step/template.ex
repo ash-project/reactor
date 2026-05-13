@@ -30,10 +30,11 @@ defmodule Reactor.Step.Template do
 
   @doc false
   @impl true
-  # sobelow_skip ["RCE.EEx"]
+  # sobelow_skip ["RCE.EEx", "RCE.CodeModule"]
   def run(arguments, _, options) do
     with {:ok, options} <- Spark.Options.validate(options, @opt_schema) do
-      result = EEx.eval_string(options[:template], [assigns: arguments], trim: options[:trim])
+      compiled = EEx.compile_string(options[:template], trim: options[:trim])
+      {result, _binding} = Code.eval_quoted(compiled, assigns: arguments)
       {:ok, result}
     end
   end
