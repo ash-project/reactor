@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.2](https://github.com/ash-project/reactor/compare/v1.0.1...v1.0.2) (2026-05-16)
+
+
+
+
+### Bug Fixes:
+
+* compile error with Elixir 1.19. (#313) by James Harton
+
 ## [v1.0.1](https://github.com/ash-project/reactor/compare/v1.0.0...v1.0.1) (2026-04-06)
 
 
