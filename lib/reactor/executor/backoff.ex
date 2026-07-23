@@ -11,7 +11,7 @@ defmodule Reactor.Executor.Backoff do
 
   @type t :: %__MODULE__{
           ref: reference(),
-          expires_at: pos_integer()
+          expires_at: integer()
         }
 
   @doc """
