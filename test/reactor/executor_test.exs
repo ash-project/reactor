@@ -5,7 +5,7 @@
 
 defmodule Reactor.ExecutorTest do
   @moduledoc false
-  alias Reactor.Executor.ConcurrencyTracker
+  alias Reactor.{Builder, Executor.ConcurrencyTracker}
   use ExUnit.Case, async: true
   use Mimic
 
@@ -580,6 +580,179 @@ defmodule Reactor.ExecutorTest do
       elapsed = end_time - start_time
 
       assert elapsed < 100
+    end
+
+    test "the executor does not spin while waiting for a retry backoff" do
+      test_pid = self()
+
+      Example.Step.Doable
+      |> expect(:run, 2, fn
+        _arguments, %{current_try: 0}, _options -> :retry
+        _arguments, %{current_try: 1}, _options -> {:ok, :finished}
+      end)
+      |> expect(:backoff, fn _reason, _arguments, _context, _options ->
+        send(test_pid, {:backoff_started, self()})
+
+        receive do
+          :start_backoff ->
+            send(test_pid, :backoff_returning)
+            500
+        end
+      end)
+
+      task =
+        Task.async(fn ->
+          Reactor.run(RetryReactor, %{}, %{}, async?: false)
+        end)
+
+      assert_receive {:backoff_started, executor_pid}, 500
+      assert executor_pid == task.pid
+
+      send(executor_pid, :start_backoff)
+      assert_receive :backoff_returning, 500
+
+      Process.sleep(10)
+
+      assert [status: :waiting, reductions: reductions_before] =
+               Process.info(task.pid, [:status, :reductions])
+
+      Process.sleep(50)
+
+      assert [status: :waiting, reductions: reductions_after] =
+               Process.info(task.pid, [:status, :reductions])
+
+      assert {:ok, :finished} = Task.await(task, 1_000)
+
+      # A suspended process should accrue almost no reductions. This generous ceiling
+      # allows for the executor finishing its backoff setup after sending the signal.
+      assert reductions_after - reductions_before < 100_000
+    end
+
+    test "waiting for a retry backoff does not exhaust the iteration limit" do
+      Example.Step.Doable
+      |> expect(:run, 2, fn
+        _arguments, %{current_try: 0}, _options -> :retry
+        _arguments, %{current_try: 1}, _options -> {:ok, :finished}
+      end)
+      |> expect(:backoff, fn _reason, _arguments, _context, _options -> 50 end)
+
+      assert {:ok, :finished} =
+               Reactor.run(RetryReactor, %{}, %{}, async?: false, max_iterations: 4)
+    end
+
+    test "the executor does not wait when the iteration limit cannot reach the retry" do
+      Example.Step.Doable
+      |> expect(:run, fn _arguments, %{current_try: 0}, _options -> :retry end)
+      |> expect(:backoff, fn _reason, _arguments, _context, _options -> 1_000 end)
+
+      task =
+        Task.async(fn ->
+          Reactor.run(RetryReactor, %{}, %{}, async?: false, max_iterations: 2)
+        end)
+
+      assert {:halted, _reactor} = Task.await(task, 250)
+    end
+
+    test "reactor timeout interrupts waiting for a retry backoff" do
+      test_pid = self()
+
+      Example.Step.Doable
+      |> expect(:run, fn _arguments, %{current_try: 0}, _options -> :retry end)
+      |> expect(:backoff, fn _reason, _arguments, _context, _options ->
+        send(test_pid, :backoff_started)
+        500
+      end)
+
+      task =
+        Task.async(fn ->
+          Reactor.run(RetryReactor, %{}, %{}, async?: false, timeout: 50)
+        end)
+
+      assert_receive :backoff_started, 500
+      assert {:halted, _reactor} = Task.await(task, 250)
+    end
+
+    test "active async tasks prevent sleeping until a retry backoff expires" do
+      test_pid = self()
+
+      backoff_step =
+        {Reactor.Step.AnonFn,
+         run: fn _arguments, %{current_try: 0} ->
+           :retry
+         end,
+         backoff: fn _reason, _arguments, _context ->
+           send(test_pid, {:backoff_started, self()})
+
+           receive do
+             :start_backoff ->
+               send(test_pid, :backoff_returning)
+               1_000
+           end
+         end}
+
+      halt_step =
+        {Reactor.Step.AnonFn,
+         run: fn _arguments, _context ->
+           send(test_pid, {:halt_step_started, self()})
+
+           receive do
+             :finish -> {:halt, :finished}
+           end
+         end}
+
+      reactor =
+        Builder.new()
+        |> Builder.add_step!(:backoff, backoff_step, [], max_retries: 1)
+        |> Builder.add_step!(:halt, halt_step)
+        |> Builder.return!(:backoff)
+
+      task = Task.async(fn -> Reactor.run(reactor) end)
+
+      assert_receive {:halt_step_started, halt_step_pid}, 500
+      assert_receive {:backoff_started, backoff_step_pid}, 500
+
+      send(backoff_step_pid, :start_backoff)
+      assert_receive :backoff_returning, 500
+
+      # Let the executor collect the backoff result and pass through another
+      # async-task polling window before completing the remaining task.
+      Process.sleep(250)
+
+      send(halt_step_pid, :finish)
+
+      assert {:halted, _reactor} = Task.await(task, 500)
+    end
+
+    test "the executor waits for the earliest retry backoff" do
+      test_pid = self()
+
+      step = fn name, delay ->
+        {Reactor.Step.AnonFn,
+         run: fn
+           _arguments, %{current_try: 0} ->
+             :retry
+
+           _arguments, %{current_try: 1} ->
+             send(test_pid, {:retried, name})
+             {:ok, name}
+         end,
+         backoff: fn _reason, _arguments, _context -> delay end}
+      end
+
+      reactor =
+        Builder.new()
+        |> Builder.add_step!(:short, step.(:short, 100), [], max_retries: 1)
+        |> Builder.add_step!(:long, step.(:long, 1_000), [], max_retries: 1)
+        |> Builder.return!(:short)
+
+      task =
+        Task.async(fn ->
+          Reactor.run(reactor, %{}, %{}, async?: false)
+        end)
+
+      assert_receive {:retried, :short}, 400
+      refute_receive {:retried, :long}, 100
+      assert {:ok, :short} = Task.await(task, 1_000)
     end
   end
 end
