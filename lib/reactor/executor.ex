@@ -112,9 +112,13 @@ defmodule Reactor.Executor do
          {:continue, reactor, state} <- run_ready_sync_step(reactor, state, ready_steps),
          {:continue, reactor, state} <- maybe_run_any_step_sync(reactor, state, ready_steps),
          {:continue, reactor, state} <- prune_expired_backoffs(reactor, state),
-         {:continue, reactor} <- all_done(reactor) do
+         {:continue, reactor} <- all_done(reactor),
+         {:continue, reactor, state} <- wait_for_next_backoff(reactor, state, ready_steps) do
       execute(reactor, subtract_iteration(state))
     else
+      {:spin, reactor, state} ->
+        execute(reactor, state)
+
       {:recurse, reactor, state} ->
         execute(reactor, subtract_iteration(state))
 
@@ -327,6 +331,67 @@ defmodule Reactor.Executor do
 
       to_remove ->
         {:recurse, %{reactor | plan: Multigraph.delete_vertices(reactor.plan, to_remove)}, state}
+    end
+  end
+
+  # Ready steps may be waiting for a shared concurrency slot, whose release does
+  # not emit a notification, so allow the executor to keep polling for one.
+  defp wait_for_next_backoff(reactor, state, [_step | _steps]),
+    do: {:continue, reactor, state}
+
+  # While async tasks are running, `Executor.Async` already waits for their
+  # completion, so no additional backoff wait is needed here.
+  defp wait_for_next_backoff(reactor, state, [])
+       when map_size(state.current_tasks) > 0,
+       do: {:continue, reactor, state}
+
+  # There are not enough iterations left to prune the backoff and retry the step.
+  # Skip sleeping so `execute/2` consumes the final iteration and halts.
+  defp wait_for_next_backoff(reactor, %{max_iterations: 1} = state, []),
+    do: {:continue, reactor, state}
+
+  # At this point there are no ready steps or running tasks. In a valid acyclic
+  # plan, the only remaining vertex whose state can change with time is a
+  # backoff, so its earliest expiry is the next opportunity to make progress.
+  defp wait_for_next_backoff(reactor, state, []) do
+    reactor.plan
+    |> Multigraph.vertices()
+    |> Enum.reduce(nil, fn
+      %Backoff{expires_at: expires_at}, nil -> expires_at
+      %Backoff{expires_at: expires_at}, earliest -> min(expires_at, earliest)
+      _vertex, earliest -> earliest
+    end)
+    |> case do
+      nil ->
+        {:continue, reactor, state}
+
+      expires_at ->
+        expires_at
+        |> backoff_wait_time(state)
+        |> Process.sleep()
+
+        {:spin, reactor, state}
+    end
+  end
+
+  # Periodically re-evaluate the executor state so an overlooked condition which
+  # can make progress cannot leave the process sleeping for an excessive period.
+  @max_backoff_sleep 1_000
+  defp backoff_wait_time(expires_at, state) do
+    wait_time = max(expires_at - System.monotonic_time(:millisecond), 0)
+
+    # Do not sleep past the Reactor timeout; wake so the next executor iteration
+    # can halt the run promptly.
+    case state.timeout do
+      :infinity ->
+        min(wait_time, @max_backoff_sleep)
+
+      timeout ->
+        elapsed = DateTime.diff(DateTime.utc_now(), state.started_at, :millisecond)
+
+        wait_time
+        |> min(max(timeout - elapsed, 0))
+        |> min(@max_backoff_sleep)
     end
   end
 
