@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.3](https://github.com/ash-project/reactor/compare/v1.0.2...v1.0.3) (2026-07-26)
+
+
+
+
+### Bug Fixes:
+
+* avoid spinning when waiting for retry backoffs (#322) by Marek Kaput
+
 ## [v1.0.2](https://github.com/ash-project/reactor/compare/v1.0.1...v1.0.2) (2026-05-16)
 
 
