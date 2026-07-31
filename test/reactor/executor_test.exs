@@ -8,6 +8,7 @@ defmodule Reactor.ExecutorTest do
   alias Reactor.{Builder, Executor.ConcurrencyTracker}
   use ExUnit.Case, async: true
   use Mimic
+  import ExUnit.CaptureLog
 
   describe "synchronous execution" do
     defmodule SyncReactor do
@@ -137,6 +138,65 @@ defmodule Reactor.ExecutorTest do
 
       assert {:ok, "MARTY"} =
                Reactor.Executor.run(reactor, %{name: :marty}, %{}, max_iterations: 100)
+    end
+  end
+
+  describe "halting while an asynchronous step is in flight" do
+    defmodule AsyncHaltReactor do
+      @moduledoc false
+      use Reactor
+
+      step :slow do
+        run(fn _arguments, %{test_pid: test_pid, sleep: sleep} ->
+          Process.sleep(sleep)
+          send(test_pid, :slow_ran)
+          {:ok, :slow}
+        end)
+      end
+
+      step :halter do
+        run(fn _arguments, _context -> {:halt, :waiting} end)
+      end
+
+      return(:slow)
+    end
+
+    test "the in-flight step is awaited and its result kept in the halted reactor" do
+      assert {:halted, halted} =
+               Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300}, async?: true)
+
+      assert_received :slow_ran
+      assert halted.intermediate_results[:slow] == :slow
+    end
+
+    test "no step is reported as abandoned when the in-flight step completes in time" do
+      log =
+        capture_log(fn ->
+          assert {:halted, _halted} =
+                   Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300},
+                     async?: true
+                   )
+        end)
+
+      refute log =~ "will be abandoned"
+    end
+
+    test "a reactor which abandoned an in-flight step can be resumed" do
+      capture_log(fn ->
+        assert {:halted, halted} =
+                 Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 500},
+                   async?: true,
+                   halt_timeout: 10
+                 )
+
+        refute_received :slow_ran
+
+        assert {:ok, :slow} =
+                 Reactor.run(halted, %{}, %{test_pid: self(), sleep: 0},
+                   async?: true,
+                   max_iterations: 100
+                 )
+      end)
     end
   end
 

@@ -125,7 +125,8 @@ defmodule Reactor.Executor do
       {:undo, reactor, state} ->
         handle_undo(reactor, state)
 
-      {:halt, reactor, _state} ->
+      {:halt, reactor, state} ->
+        {reactor, state} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
         maybe_release_pool(state)
 
         case Executor.Hooks.halt(reactor, reactor.context) do

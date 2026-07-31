@@ -348,7 +348,7 @@ defmodule Reactor.Executor.Async do
       remaining_task_results
       |> Map.new(fn {_task, step, result} -> {step, result} end)
 
-    finished_tasks = remaining_step_results |> Enum.map(&elem(&1, 0))
+    finished_tasks = Enum.map(remaining_task_results, &elem(&1, 0))
 
     reactor =
       reactor
@@ -357,7 +357,7 @@ defmodule Reactor.Executor.Async do
 
     unfinished_tasks =
       state.current_tasks
-      |> Map.delete(finished_tasks)
+      |> Map.drop(finished_tasks)
 
     unfinished_task_count = map_size(unfinished_tasks)
 
