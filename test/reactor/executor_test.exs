@@ -169,6 +169,21 @@ defmodule Reactor.ExecutorTest do
       assert halted.intermediate_results[:slow] == :slow
     end
 
+    test "a step which completed while the reactor halted is not run again on resume" do
+      assert {:halted, halted} =
+               Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300}, async?: true)
+
+      assert_received :slow_ran
+
+      assert {:ok, :slow} =
+               Reactor.run(halted, %{}, %{test_pid: self(), sleep: 0},
+                 async?: true,
+                 max_iterations: 100
+               )
+
+      refute_received :slow_ran
+    end
+
     test "no step is reported as abandoned when the in-flight step completes in time" do
       log =
         capture_log(fn ->

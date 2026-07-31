@@ -327,6 +327,17 @@ defmodule Reactor.Executor.Async do
     }
   end
 
+  defp drop_completed_steps_from_plan(reactor, completed_step_results) do
+    completed_step_results
+    |> Enum.filter(fn
+      {_step, {:ok, _value, []}} -> true
+      {_step, {:halt, _value}} -> true
+      _ -> false
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> then(&delete_vertices(reactor, &1))
+  end
+
   @doc """
   When the Reactor needs to shut down for any reason, we need to await all the
   currently running asynchronous steps and delete any task vertices.
@@ -354,6 +365,7 @@ defmodule Reactor.Executor.Async do
       reactor
       |> store_successful_results_in_the_undo_stack(remaining_step_results)
       |> store_intermediate_results(remaining_step_results)
+      |> drop_completed_steps_from_plan(remaining_step_results)
 
     unfinished_tasks =
       state.current_tasks
