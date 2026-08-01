@@ -135,22 +135,7 @@ defmodule Reactor.Executor.Async do
       |> maybe_store_undo(step, value, state)
       |> maybe_store_intermediate_result(step, value)
 
-    reactor =
-      case Enum.split_with(new_steps, &(&1.name == step.name)) do
-        {[], new_steps} ->
-          reactor
-          |> drop_from_plan(step)
-          |> append_steps(new_steps)
-
-        {recursive_steps, new_steps} ->
-          recursive_steps = Enum.map(recursive_steps, &%{&1 | ref: step.ref})
-
-          reactor
-          |> append_steps(recursive_steps)
-          |> append_steps(new_steps)
-      end
-
-    {:recurse, reactor, state}
+    {:recurse, fold_new_steps_into_plan(reactor, step, new_steps), state}
   end
 
   defp handle_completed_step(reactor, state, {task, step, {:retry, error}}) do
@@ -327,15 +312,45 @@ defmodule Reactor.Executor.Async do
     }
   end
 
-  defp drop_completed_steps_from_plan(reactor, completed_step_results) do
-    completed_step_results
-    |> Enum.filter(fn
-      {_step, {:ok, _value, []}} -> true
-      {_step, {:halt, _value}} -> true
-      _ -> false
+  defp fold_completed_steps_into_plan(reactor, completed_step_results) do
+    Enum.reduce(completed_step_results, reactor, fn
+      # The step completed, possibly emitting new steps. Fold it out of the
+      # plan exactly as normal completion does so that it is not run again on
+      # resume.
+      {step, {:ok, _value, new_steps}}, reactor ->
+        fold_new_steps_into_plan(reactor, step, new_steps)
+
+      # A halt result is a successful completion whose value has already been
+      # stored in the intermediate results, so the step is done.
+      {step, {:halt, _value}}, reactor ->
+        drop_from_plan(reactor, step)
+
+      # Retries, errors, skips and backoffs stay in the plan so that the step
+      # runs again on resume.
+      _other, reactor ->
+        reactor
     end)
-    |> Enum.map(&elem(&1, 0))
-    |> then(&delete_vertices(reactor, &1))
+  end
+
+  defp fold_new_steps_into_plan(reactor, step, new_steps) do
+    case Enum.split_with(new_steps, &(&1.name == step.name)) do
+      # Every emitted step is new work: the completed step is done, and the
+      # new steps are queued for planning.
+      {[], new_steps} ->
+        reactor
+        |> drop_from_plan(step)
+        |> append_steps(new_steps)
+
+      # The step emitted a replacement for itself (eg recursion): re-reference
+      # the replacement so it keeps the original's identity, leaving its
+      # vertex to be replaced when the replacement is planned.
+      {recursive_steps, new_steps} ->
+        recursive_steps = Enum.map(recursive_steps, &%{&1 | ref: step.ref})
+
+        reactor
+        |> append_steps(recursive_steps)
+        |> append_steps(new_steps)
+    end
   end
 
   @doc """
@@ -365,7 +380,7 @@ defmodule Reactor.Executor.Async do
       reactor
       |> store_successful_results_in_the_undo_stack(remaining_step_results)
       |> store_intermediate_results(remaining_step_results)
-      |> drop_completed_steps_from_plan(remaining_step_results)
+      |> fold_completed_steps_into_plan(remaining_step_results)
 
     unfinished_tasks =
       state.current_tasks
@@ -389,7 +404,10 @@ defmodule Reactor.Executor.Async do
 
       unfinished_tasks
       |> Map.keys()
-      |> Enum.each(&Task.ignore/1)
+      |> Enum.each(fn task ->
+        ConcurrencyTracker.release_on_exit(state.concurrency_key, task.pid)
+        Task.ignore(task)
+      end)
     end
 
     {delete_all_task_vertices(reactor), %{state | current_tasks: %{}}}

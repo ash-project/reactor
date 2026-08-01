@@ -48,6 +48,12 @@ defmodule Reactor.Executor.ConcurrencyTrackerTest do
       assert {:ok, 1} = acquire(pool)
       assert {:ok, 0, 1} = status(pool)
     end
+
+    test "acquiring zero slots acquires nothing" do
+      pool = allocate_pool(4)
+      assert {:ok, 0} = acquire(pool, 0)
+      assert {:ok, 4, 4} = status(pool)
+    end
   end
 
   describe "release/1" do
@@ -64,6 +70,13 @@ defmodule Reactor.Executor.ConcurrencyTrackerTest do
       assert {:ok, 16, 16} = status(pool)
       assert :error = release(pool)
       assert {:ok, 16, 16} = status(pool)
+    end
+
+    test "releasing zero slots releases nothing" do
+      pool = allocate_pool(4)
+      {:ok, 2} = acquire(pool, 2)
+      assert :ok = release(pool, 0)
+      assert {:ok, 2, 4} = status(pool)
     end
   end
 end
