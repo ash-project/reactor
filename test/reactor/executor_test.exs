@@ -8,6 +8,7 @@ defmodule Reactor.ExecutorTest do
   alias Reactor.{Builder, Executor.ConcurrencyTracker}
   use ExUnit.Case, async: true
   use Mimic
+  import ExUnit.CaptureLog
 
   describe "synchronous execution" do
     defmodule SyncReactor do
@@ -137,6 +138,215 @@ defmodule Reactor.ExecutorTest do
 
       assert {:ok, "MARTY"} =
                Reactor.Executor.run(reactor, %{name: :marty}, %{}, max_iterations: 100)
+    end
+  end
+
+  describe "halting while an asynchronous step is in flight" do
+    defmodule AsyncHaltReactor do
+      @moduledoc false
+      use Reactor
+
+      step :slow do
+        run(fn _arguments, %{test_pid: test_pid, sleep: sleep} ->
+          Process.sleep(sleep)
+          send(test_pid, :slow_ran)
+          {:ok, :slow}
+        end)
+      end
+
+      step :halter do
+        run(fn _arguments, _context -> {:halt, :waiting} end)
+      end
+
+      return(:slow)
+    end
+
+    test "the in-flight step is awaited and its result kept in the halted reactor" do
+      assert {:halted, halted} =
+               Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300}, async?: true)
+
+      assert_received :slow_ran
+      assert halted.intermediate_results[:slow] == :slow
+    end
+
+    test "a step which completed while the reactor halted is not run again on resume" do
+      assert {:halted, halted} =
+               Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300}, async?: true)
+
+      assert_received :slow_ran
+
+      assert {:ok, :slow} =
+               Reactor.run(halted, %{}, %{test_pid: self(), sleep: 0},
+                 async?: true,
+                 max_iterations: 100
+               )
+
+      refute_received :slow_ran
+    end
+
+    test "no step is reported as abandoned when the in-flight step completes in time" do
+      log =
+        capture_log(fn ->
+          assert {:halted, _halted} =
+                   Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 300},
+                     async?: true
+                   )
+        end)
+
+      refute log =~ "will be abandoned"
+    end
+
+    defmodule DynamicStepHaltReactor do
+      @moduledoc false
+      use Reactor
+
+      defmodule Producer do
+        @moduledoc false
+        use Reactor.Step
+
+        @impl true
+        def run(_arguments, context, _options) do
+          Process.sleep(100)
+          send(context.test_pid, :producer_ran)
+
+          {:ok, step} =
+            Reactor.Builder.new_step(
+              :dynamic,
+              {Reactor.Step.AnonFn, run: fn _arguments, _context -> {:ok, :dynamic} end}
+            )
+
+          {:ok, :produced, [step]}
+        end
+      end
+
+      step(:producer, Producer)
+
+      step :halter do
+        run(fn _arguments, _context -> {:halt, :waiting} end)
+      end
+
+      return(:producer)
+    end
+
+    test "a step which produced new steps while the reactor halted is not run again on resume" do
+      assert {:halted, halted} =
+               Reactor.run(DynamicStepHaltReactor, %{}, %{test_pid: self()}, async?: true)
+
+      assert_received :producer_ran
+
+      assert {:ok, :produced} =
+               Reactor.run(halted, %{}, %{test_pid: self()}, async?: true, max_iterations: 100)
+
+      refute_received :producer_ran
+    end
+
+    defmodule RecursiveHaltReactor do
+      @moduledoc false
+      use Reactor
+
+      defmodule CountDown do
+        @moduledoc false
+        use Reactor.Step
+
+        @impl true
+        def run(%{from: from}, context, _options) do
+          Process.sleep(100)
+          send(context.test_pid, {:counted, :initial})
+          {:ok, [from], [next_step()]}
+        end
+
+        def run(%{numbers: [0 | _] = numbers}, _context, _options),
+          do: {:ok, Enum.reverse(numbers)}
+
+        def run(%{numbers: [number | _] = numbers}, context, _options) do
+          send(context.test_pid, {:counted, number})
+          {:ok, [number - 1 | numbers], [next_step()]}
+        end
+
+        defp next_step do
+          {:ok, step} =
+            Reactor.Builder.new_step(:count_down, __MODULE__, numbers: {:result, :count_down})
+
+          step
+        end
+      end
+
+      input(:from)
+
+      step :count_down, CountDown do
+        argument(:from, input(:from))
+      end
+
+      step :halter do
+        run(fn _arguments, _context -> {:halt, :waiting} end)
+      end
+
+      return(:count_down)
+    end
+
+    test "a recursive step interrupted by a halt continues from where it left off on resume" do
+      assert {:halted, halted} =
+               Reactor.run(RecursiveHaltReactor, %{from: 3}, %{test_pid: self()}, async?: true)
+
+      assert_received {:counted, :initial}
+
+      assert {:ok, [3, 2, 1, 0]} =
+               Reactor.run(halted, %{from: 3}, %{test_pid: self()},
+                 async?: true,
+                 max_iterations: 100
+               )
+
+      refute_received {:counted, :initial}
+      assert_received {:counted, 3}
+    end
+
+    test "abandoning a step does not release its concurrency slot back to a shared pool" do
+      concurrency_key = ConcurrencyTracker.allocate_pool(4)
+
+      capture_log(fn ->
+        assert {:halted, _halted} =
+                 Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 500},
+                   async?: true,
+                   halt_timeout: 10,
+                   concurrency_key: concurrency_key
+                 )
+      end)
+
+      assert {:ok, 3, 4} = ConcurrencyTracker.status(concurrency_key)
+    end
+
+    test "an abandoned step's concurrency slot returns to a shared pool when the step eventually finishes" do
+      concurrency_key = ConcurrencyTracker.allocate_pool(4)
+
+      capture_log(fn ->
+        assert {:halted, _halted} =
+                 Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 200},
+                   async?: true,
+                   halt_timeout: 10,
+                   concurrency_key: concurrency_key
+                 )
+      end)
+
+      assert_receive :slow_ran, 1_000
+      assert {:ok, 4, 4} = await_status(concurrency_key, {:ok, 4, 4})
+    end
+
+    test "a reactor which abandoned an in-flight step can be resumed" do
+      capture_log(fn ->
+        assert {:halted, halted} =
+                 Reactor.run(AsyncHaltReactor, %{}, %{test_pid: self(), sleep: 500},
+                   async?: true,
+                   halt_timeout: 10
+                 )
+
+        refute_received :slow_ran
+
+        assert {:ok, :slow} =
+                 Reactor.run(halted, %{}, %{test_pid: self(), sleep: 0},
+                   async?: true,
+                   max_iterations: 100
+                 )
+      end)
     end
   end
 
@@ -369,6 +579,19 @@ defmodule Reactor.ExecutorTest do
       assert elapsed >= 100 and elapsed <= 500
     end
 
+    defp await_status(concurrency_key, expected) do
+      Enum.reduce_while(1..100, ConcurrencyTracker.status(concurrency_key), fn _, _ ->
+        case ConcurrencyTracker.status(concurrency_key) do
+          ^expected ->
+            {:halt, expected}
+
+          other ->
+            Process.sleep(10)
+            {:cont, other}
+        end
+      end)
+    end
+
     defp measure_elapsed(fun) do
       started_at = DateTime.utc_now()
 
@@ -379,6 +602,37 @@ defmodule Reactor.ExecutorTest do
   end
 
   describe "reactor timeout" do
+    defmodule SlowStepReactor do
+      @moduledoc false
+      use Reactor
+
+      step :slow do
+        run(fn _arguments, _context ->
+          Process.sleep(300)
+          {:ok, :slow}
+        end)
+      end
+
+      return(:slow)
+    end
+
+    test "an in-flight step completing within the halt timeout is kept and not reported as abandoned" do
+      log =
+        capture_log(fn ->
+          assert {:halted, halted} =
+                   Reactor.run(SlowStepReactor, %{}, %{},
+                     async?: true,
+                     timeout: 100,
+                     halt_timeout: 1_000
+                   )
+
+          assert halted.intermediate_results[:slow] == :slow
+          assert {:ok, :slow} = Reactor.run(halted, %{}, %{}, async?: true)
+        end)
+
+      refute log =~ "will be abandoned"
+    end
+
     test "when the timeout is elapsed, it halts the reactor" do
       elapsed =
         measure_elapsed(fn ->

@@ -125,7 +125,8 @@ defmodule Reactor.Executor do
       {:undo, reactor, state} ->
         handle_undo(reactor, state)
 
-      {:halt, reactor, _state} ->
+      {:halt, reactor, state} ->
+        {reactor, state} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
         maybe_release_pool(state)
 
         case Executor.Hooks.halt(reactor, reactor.context) do
@@ -159,7 +160,6 @@ defmodule Reactor.Executor do
 
   defp maybe_timeout(reactor, state) do
     if DateTime.diff(DateTime.utc_now(), state.started_at, :millisecond) >= state.timeout do
-      {reactor, _status} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
       {:halt, reactor, state}
     else
       {:continue, reactor, state}

@@ -33,24 +33,36 @@ defmodule Reactor.Executor.ConcurrencyTracker do
 
   @doc false
   @impl true
-  @spec init(any) :: {:ok, atom | :ets.tid()}
+  @spec init(any) :: {:ok, %{table: atom | :ets.tid(), releases: %{reference() => pool_key}}}
   def init(_) do
     table = :ets.new(__MODULE__, ~w[set named_table public]a)
-    {:ok, table}
+    {:ok, %{table: table, releases: %{}}}
   end
 
   @doc false
   @impl true
-  def handle_cast({:monitor, pid}, table) do
+  def handle_cast({:monitor, pid}, state) do
     Process.monitor(pid)
-    {:noreply, table}
+    {:noreply, state}
+  end
+
+  def handle_cast({:release_on_exit, pid, pool_key}, state) do
+    ref = Process.monitor(pid)
+    {:noreply, %{state | releases: Map.put(state.releases, ref, pool_key)}}
   end
 
   @doc false
   @impl true
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, table) do
-    :ets.select_delete(table, [{{:_, :_, :_, :"$1"}, [], [{:==, :"$1", pid}]}])
-    {:noreply, table}
+  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+    case Map.pop(state.releases, ref) do
+      {nil, _releases} ->
+        :ets.select_delete(state.table, [{{:_, :_, :_, :"$1"}, [], [{:==, :"$1", pid}]}])
+        {:noreply, state}
+
+      {pool_key, releases} ->
+        release(pool_key)
+        {:noreply, %{state | releases: releases}}
+    end
   end
 
   @doc """
@@ -80,8 +92,12 @@ defmodule Reactor.Executor.ConcurrencyTracker do
   @doc """
   Release concurrency allocation back to the pool.
   """
-  @spec release(pool_key, how_many :: pos_integer) :: :ok | :error
-  def release(key, how_many \\ 1) do
+  @spec release(pool_key, how_many :: non_neg_integer) :: :ok | :error
+  def release(key, how_many \\ 1)
+
+  def release(_key, 0), do: :ok
+
+  def release(key, how_many) do
     # generated using:
     #
     # :ets.fun2ms(fn {key, concurrency_limit, concurrency_available, owner}
@@ -104,6 +120,14 @@ defmodule Reactor.Executor.ConcurrencyTracker do
   end
 
   @doc """
+  Release a concurrency allocation back to the pool when the given process exits.
+  """
+  @spec release_on_exit(pool_key, pid) :: :ok
+  def release_on_exit(pool_key, pid) do
+    GenServer.cast(__MODULE__, {:release_on_exit, pid, pool_key})
+  end
+
+  @doc """
   Attempt to acquire a number of concurrency allocations from the pool.
 
   Returns `{:ok, n}` where `n` was the number of slots that were actually
@@ -114,8 +138,12 @@ defmodule Reactor.Executor.ConcurrencyTracker do
   It is possible for this function to return `{:ok, 0}` if there is no slots
   available.
   """
-  @spec acquire(pool_key, how_many :: pos_integer()) :: {:ok, non_neg_integer()}
-  def acquire(key, how_many \\ 1) do
+  @spec acquire(pool_key, how_many :: non_neg_integer()) :: {:ok, non_neg_integer()}
+  def acquire(key, how_many \\ 1)
+
+  def acquire(_key, 0), do: {:ok, 0}
+
+  def acquire(key, how_many) do
     # generated using:
     #
     # :ets.fun2ms(fn {key, concurrency_limit, concurrency_available, owner}
