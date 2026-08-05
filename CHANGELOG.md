@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.4](https://github.com/ash-project/reactor/compare/v1.0.3...v1.0.4) (2026-08-05)
+
+
+
+
+### Bug Fixes:
+
+* wrap async step task exits in a `RunStepError` (#328) by James Harton
+
+* await in-flight async steps when a step halts the reactor (#324) by Mike Buhot
+
 ## [v1.0.3](https://github.com/ash-project/reactor/compare/v1.0.2...v1.0.3) (2026-07-26)
 
 
