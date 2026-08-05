@@ -5,6 +5,7 @@
 
 defmodule Reactor.Executor.AsyncTest do
   alias Reactor.Error.Invalid.RetriesExceededError, as: RetriesExceededError
+  alias Reactor.Error.Invalid.RunStepError, as: RunStepError
   alias Reactor.Executor
   import Reactor.Executor.Async
   use ExUnit.Case, async: true
@@ -201,6 +202,29 @@ defmodule Reactor.Executor.AsyncTest do
       assert [{doable.name, :mcfly}] == Enum.to_list(reactor.intermediate_results)
     end
 
+    @tag :capture_log
+    test "when one of the step's tasks exits, the exit reason is wrapped in a run step error",
+         %{reactor: reactor, state: state, doable: doable, supervisor: supervisor} do
+      reason = {:noproc, {GenServer, :call, [:some_name, :ping, 5000]}}
+      state = %{state | current_tasks: %{exited_task(supervisor, reason) => doable}}
+
+      assert {:undo, _reactor, state} = handle_completed_steps(reactor, state)
+      assert [%RunStepError{step: ^doable, error: ^reason}] = state.errors
+    end
+
+    @tag :capture_log
+    test "when one of the step's tasks exits, the collected errors can be turned into a class",
+         %{reactor: reactor, state: state, doable: doable, supervisor: supervisor} do
+      reason = {:noproc, {GenServer, :call, [:some_name, :ping, 5000]}}
+      state = %{state | current_tasks: %{exited_task(supervisor, reason) => doable}}
+
+      assert {:undo, _reactor, state} = handle_completed_steps(reactor, state)
+
+      message = state.errors |> Reactor.Error.to_class() |> Exception.message()
+      assert message =~ "noproc"
+      assert message =~ "GenServer"
+    end
+
     test "when one of the steps asks to retry, it puts the step back in the reactor plan",
          %{reactor: reactor, state: state, doable: step, supervisor: supervisor} do
       task = Task.Supervisor.async_nolink(supervisor, fn -> :retry end)
@@ -235,5 +259,12 @@ defmodule Reactor.Executor.AsyncTest do
       assert {:undo, _reactor, %{errors: [%RetriesExceededError{}]}} =
                handle_completed_steps(reactor, state)
     end
+  end
+
+  defp exited_task(supervisor, reason) do
+    task = Task.Supervisor.async_nolink(supervisor, fn -> exit(reason) end)
+    ref = Process.monitor(task.pid)
+    assert_receive {:DOWN, ^ref, :process, _, _}, 5000
+    task
   end
 end

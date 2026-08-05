@@ -8,7 +8,14 @@ defmodule Reactor.Executor.Async do
   Handle the asynchronous execution of a batch of steps, along with any
   mutations to the reactor or execution state.
   """
-  alias Reactor.{Error.Invalid.RetriesExceededError, Executor, Executor.ConcurrencyTracker, Step}
+  alias Reactor.{
+    Error.Invalid.RetriesExceededError,
+    Error.Invalid.RunStepError,
+    Executor,
+    Executor.ConcurrencyTracker,
+    Step
+  }
+
   require Logger
 
   @doc """
@@ -196,17 +203,16 @@ defmodule Reactor.Executor.Async do
     |> Map.keys()
     |> Task.yield_many(opts)
     |> Stream.reject(&is_nil(elem(&1, 1)))
-    |> Stream.map(fn
-      {task, {:ok, result}} ->
-        {task, normalise_result(result)}
-
-      {task, {:exit, reason}} ->
-        {task, normalise_result({:error, reason})}
-    end)
-    |> Enum.map(fn {task, result} ->
-      {task, Map.fetch!(current_tasks, task), result}
+    |> Enum.map(fn {task, outcome} ->
+      step = Map.fetch!(current_tasks, task)
+      {task, step, normalise_outcome(outcome, step)}
     end)
   end
+
+  defp normalise_outcome({:ok, result}, _step), do: normalise_result(result)
+
+  defp normalise_outcome({:exit, reason}, step),
+    do: {:error, RunStepError.exception(step: step, error: reason)}
 
   defp normalise_result({:error, reason}), do: {:error, reason}
   defp normalise_result({:halt, reason}), do: {:halt, reason}
