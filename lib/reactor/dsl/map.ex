@@ -189,7 +189,7 @@ defmodule Reactor.Dsl.Map do
 
         step_options =
           map
-          |> Map.take([:allow_async?, :batch_size, :return, :strict_ordering])
+          |> Map.take([:allow_async?, :batch_size, :return, :strict_ordering?])
           |> Map.put(:state, :init)
           |> Map.put(:steps, sub_reactor.steps)
           |> Map.update!(:return, fn

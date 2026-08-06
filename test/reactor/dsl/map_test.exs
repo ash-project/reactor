@@ -38,4 +38,54 @@ defmodule Reactor.Dsl.MapTest do
     assert [0, 4, 8, 12, 16, 20] =
              Reactor.run!(MapOverNumbersReactor, %{numbers: numbers}, %{}, async?: false)
   end
+
+  defmodule MapWithStrictOrderingFalseReactor do
+    @moduledoc false
+    use Reactor
+
+    input :numbers
+
+    map :map_over_numbers do
+      source(input(:numbers))
+      strict_ordering?(false)
+
+      step :double do
+        argument :input, element(:map_over_numbers)
+
+        run fn %{input: input}, _ ->
+          {:ok, input * 2}
+        end
+      end
+    end
+  end
+
+  describe "strict_ordering? option" do
+    test "is passed through to the step" do
+      {:ok, reactor_struct} = Reactor.Info.to_struct(MapWithStrictOrderingFalseReactor)
+
+      map_step =
+        Enum.find(reactor_struct.steps, fn step ->
+          step.name == :map_over_numbers
+        end)
+
+      assert map_step != nil
+      assert match?({Reactor.Step.Map, _opts}, map_step.impl)
+      {_module, opts} = map_step.impl
+      assert Keyword.get(opts, :strict_ordering?) == false
+    end
+
+    test "defaults to true when not specified" do
+      {:ok, reactor_struct} = Reactor.Info.to_struct(MapOverNumbersReactor)
+
+      map_step =
+        Enum.find(reactor_struct.steps, fn step ->
+          step.name == :map_over_numbers
+        end)
+
+      assert map_step != nil
+      assert match?({Reactor.Step.Map, _opts}, map_step.impl)
+      {_module, opts} = map_step.impl
+      assert Keyword.get(opts, :strict_ordering?, true) == true
+    end
+  end
 end
