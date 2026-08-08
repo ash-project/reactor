@@ -12,6 +12,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.5](https://github.com/ash-project/reactor/compare/v1.0.4...v1.0.5) (2026-08-08)
+
+
+
+
+### Bug Fixes:
+
+* missing questionmark in strict_ordering? argument name (#329) by Rutgerdj
+
 ## [v1.0.4](https://github.com/ash-project/reactor/compare/v1.0.3...v1.0.4) (2026-08-05)
 
 
