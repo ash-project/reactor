@@ -51,6 +51,15 @@ defmodule Reactor.Executor.HooksTest do
       end
     end
 
+    defmodule SuccessfulReactor do
+      @moduledoc false
+      use Reactor
+
+      step :succeed do
+        run fn _, _ -> {:ok, :ok} end
+      end
+    end
+
     test "halt hooks can mutate the context" do
       defmodule MutateHaltMiddleware do
         @moduledoc false
@@ -67,6 +76,29 @@ defmodule Reactor.Executor.HooksTest do
 
       {:halted, halted_reactor} = Reactor.run(reactor, %{}, %{mutated?: false})
       assert halted_reactor.context.mutated?
+    end
+
+    test "halt hooks run when maximum iterations are exhausted" do
+      defmodule MaxIterationsHaltMiddleware do
+        @moduledoc false
+        @behaviour Reactor.Middleware
+
+        def halt(context) do
+          {:ok, Map.put(context, :halted_by_max_iterations?, true)}
+        end
+      end
+
+      reactor =
+        SuccessfulReactor.reactor()
+        |> Builder.add_middleware!(MaxIterationsHaltMiddleware)
+
+      {:halted, halted_reactor} =
+        Reactor.run(reactor, %{}, %{halted_by_max_iterations?: false},
+          async?: false,
+          max_iterations: 1
+        )
+
+      assert halted_reactor.context.halted_by_max_iterations?
     end
   end
 

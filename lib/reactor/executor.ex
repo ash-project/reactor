@@ -98,9 +98,7 @@ defmodule Reactor.Executor do
   end
 
   defp execute(reactor, state) when state.max_iterations == 0 do
-    {reactor, _status} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
-    maybe_release_pool(state)
-    {:halted, %{reactor | state: :halted}}
+    handle_halt(reactor, state)
   end
 
   defp execute(reactor, state) do
@@ -126,13 +124,7 @@ defmodule Reactor.Executor do
         handle_undo(reactor, state)
 
       {:halt, reactor, state} ->
-        {reactor, state} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
-        maybe_release_pool(state)
-
-        case Executor.Hooks.halt(reactor, reactor.context) do
-          {:ok, context} -> {:halted, %{reactor | context: context, state: :halted}}
-          {:error, reason} -> {:error, reason}
-        end
+        handle_halt(reactor, state)
 
       {:ok, result, reactor} ->
         maybe_release_pool(state)
@@ -152,6 +144,16 @@ defmodule Reactor.Executor do
       else
         {:ok, result}
       end
+    end
+  end
+
+  defp handle_halt(reactor, state) do
+    {reactor, state} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
+    maybe_release_pool(state)
+
+    case Executor.Hooks.halt(reactor, reactor.context) do
+      {:ok, context} -> {:halted, %{reactor | context: context, state: :halted}}
+      {:error, reason} -> {:error, reason}
     end
   end
 
