@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.6](https://github.com/ash-project/reactor/compare/v1.0.5...v1.0.6) (2026-08-12)
+
+
+
+
+### Bug Fixes:
+
+* emit run error event for invalid result (#331) by Marek Kaput
+
+* run halt hooks at iteration limit (#333) by Marek Kaput
+
 ## [v1.0.5](https://github.com/ash-project/reactor/compare/v1.0.4...v1.0.5) (2026-08-08)
 
 

@@ -6,7 +6,7 @@
 defmodule Reactor.MixProject do
   use Mix.Project
 
-  @version "1.0.5"
+  @version "1.0.6"
   @description "An asynchronous, graph-based execution engine"
 
   def project do
