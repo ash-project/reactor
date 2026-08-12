@@ -226,14 +226,18 @@ defmodule Reactor.Executor.StepRunner do
     {:halt, value}
   end
 
-  defp handle_run_result(result, reactor, step, arguments, _context) do
-    {:error,
-     InvalidResultError.exception(
-       reactor: reactor,
-       step: step,
-       result: result,
-       arguments: arguments
-     )}
+  defp handle_run_result(result, reactor, step, arguments, context) do
+    error =
+      InvalidResultError.exception(
+        reactor: reactor,
+        step: step,
+        result: result,
+        arguments: arguments
+      )
+
+    Hooks.event(reactor, {:run_error, error}, step, context)
+
+    {:error, error}
   end
 
   defp maybe_compensate(reactor, step, error, arguments, context) do

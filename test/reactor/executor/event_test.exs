@@ -7,6 +7,7 @@ defmodule Reactor.Executor.EventTest do
   use ExUnit.Case, async: true
 
   alias Reactor.Error.Invalid.CompensateStepError
+  alias Reactor.Error.Invalid.InvalidResultError
   alias Reactor.Error.Invalid.RunStepError
   alias Reactor.Error.Invalid.UndoRetriesExceededError
   alias Reactor.Error.Invalid.UndoStepError
@@ -71,6 +72,18 @@ defmodule Reactor.Executor.EventTest do
                {:run_error, %RunStepError{error: :marty}}
              ] =
                run(StepReactor, %{step_result: {:error, :marty}}, async?: false)
+    end
+
+    test "invalid step result" do
+      assert [
+               {:run_start, _},
+               {:run_error,
+                %InvalidResultError{
+                  result: :ok,
+                  arguments: %{step_result: :ok},
+                  step: %{name: :echo}
+                }}
+             ] = run(StepReactor, %{step_result: :ok}, async?: false)
     end
 
     test "halt step" do
