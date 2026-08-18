@@ -91,7 +91,7 @@ defmodule Reactor.MixProject do
             Internals: ~r/^Reactor\..*/
           ],
           extra_section: "GUIDES",
-          formatters: ["html"],
+          formatters: ["html", "markdown"],
           filter_modules: ~r/^Elixir.Reactor/,
           source_url_pattern: "https://github.com/ash-project/reactor/blob/main/%{path}/#L%{line}"
         ]
