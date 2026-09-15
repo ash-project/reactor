@@ -47,7 +47,7 @@ defmodule Reactor.Step.Recurse.Mermaid do
           "[\"`**",
           md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**",
           if(max_iterations, do: ["\n max_iterations: ", inspect(max_iterations)], else: []),
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
@@ -59,7 +59,7 @@ defmodule Reactor.Step.Recurse.Mermaid do
           "[\"",
           name(step.name),
           "(",
-          inspect(module),
+          name(module),
           ")\"]\n"
         ]
       end

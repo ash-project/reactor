@@ -66,7 +66,7 @@ defmodule Reactor.Mermaid.Reactor do
           id,
           ">\"`",
           "**Input ",
-          to_string(input.name),
+          name(input.name),
           "**",
           "\n",
           md_escape(input.description),
@@ -74,7 +74,7 @@ defmodule Reactor.Mermaid.Reactor do
           "\n"
         ]
       else
-        [id, ">\"Input ", to_string(input.name), "\"]\n"]
+        [id, ">\"Input ", name(input.name), "\"]\n"]
       end
 
     {:ok, %Node{id: id, pre: content}}

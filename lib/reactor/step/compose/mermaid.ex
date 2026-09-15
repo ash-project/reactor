@@ -46,7 +46,7 @@ defmodule Reactor.Step.Compose.Mermaid do
           "[\"`**",
           md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**",
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
           "`\"]\n"
@@ -57,7 +57,7 @@ defmodule Reactor.Step.Compose.Mermaid do
           "[\"",
           name(step.name),
           "(",
-          inspect(module),
+          name(module),
           ")\"]\n"
         ]
       end

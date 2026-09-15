@@ -66,7 +66,7 @@ defmodule Reactor.Mermaid.Argument do
 
   defp do_argument_link(source_id, target_id, argument, options) do
     if options[:describe?] && is_binary(argument.description) do
-      "#{source_id} -->|#{name(argument.name)} -- #{argument.description}|#{target_id}\n"
+      "#{source_id} -->|#{name(argument.name)} -- #{escape(argument.description)}|#{target_id}\n"
     else
       "#{source_id} -->|#{name(argument.name)}|#{target_id}\n"
     end

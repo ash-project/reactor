@@ -8,6 +8,27 @@ defmodule Reactor.Mermaid.Utils do
   Utilities for generating Mermaid.
   """
 
+  @doc """
+  Escape characters which would otherwise break out of a Mermaid label.
+
+  Every replacement is a named entity, so `md_escape/1` leaves the result alone.
+  A numeric entity would be corrupted by the `#` replacement in `md_escape/1`.
+  """
+  @spec escape(String.t()) :: String.t()
+  def escape(text) do
+    text
+    |> String.replace("&", "&amp;")
+    |> String.replace("\"", "&quot;")
+    |> String.replace("`", "&grave;")
+    |> String.replace("\\", "&bsol;")
+    |> String.replace("[", "&lsqb;")
+    |> String.replace("]", "&rsqb;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+    |> String.replace("|", "&verbar;")
+    |> String.replace(~r/\r\n|[\r\n]/, "&NewLine;")
+  end
+
   @doc "Escape markdown as needed"
   def md_escape(nil), do: ""
 
@@ -62,9 +83,9 @@ defmodule Reactor.Mermaid.Utils do
   @doc "Generate a name which can be used within a Mermaid node"
   def name(name) when is_binary(name) do
     if String.printable?(name) do
-      name
+      escape(name)
     else
-      inspect(name)
+      name |> inspect() |> escape()
     end
   end
 
@@ -72,9 +93,10 @@ defmodule Reactor.Mermaid.Utils do
     name
     |> to_string()
     |> deelixirify()
+    |> escape()
   end
 
-  def name(name), do: inspect(name)
+  def name(name), do: name |> inspect() |> escape()
 
   defp deelixirify(name) do
     if String.starts_with?(name, "Elixir.") do

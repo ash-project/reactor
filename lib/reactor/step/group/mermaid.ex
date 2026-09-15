@@ -52,7 +52,7 @@ defmodule Reactor.Step.Group.Mermaid do
           "[\"`**",
           md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**\n",
           functions,
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
@@ -64,7 +64,7 @@ defmodule Reactor.Step.Group.Mermaid do
           "[\"",
           name(step.name),
           "(",
-          inspect(module),
+          name(module),
           ")\"]\n"
         ]
       end
