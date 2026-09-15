@@ -34,16 +34,16 @@ defmodule Reactor.Step.AnonFn.Mermaid do
         [
           id,
           "[\"`**",
-          name(step.name),
+          md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**\n",
           functions,
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
           "`\"]\n"
         ]
       else
-        [id, "[\"", name(step.name), "(", inspect(module), ")\"]\n"]
+        [id, "[\"", name(step.name), "(", name(module), ")\"]\n"]
       end
 
     {:ok, %Node{id: id, pre: content}}

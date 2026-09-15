@@ -52,9 +52,9 @@ defmodule Reactor.Step.Switch.Mermaid do
         [
           id,
           "[\"`**",
-          name(step.name),
+          md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**",
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
           "`\"]\n"
@@ -65,7 +65,7 @@ defmodule Reactor.Step.Switch.Mermaid do
           "[\"",
           name(step.name),
           "(",
-          inspect(module),
+          name(module),
           ")\"]\n"
         ]
       end
@@ -115,7 +115,7 @@ defmodule Reactor.Step.Switch.Mermaid do
             "subgraph ",
             id,
             "[\"`match branch of ",
-            name(step.name),
+            md_escape(name(step.name)),
             "\n_",
             md_escape(inspect(predicate)),
             "_",

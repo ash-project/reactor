@@ -776,4 +776,82 @@ defmodule Reactor.MermaidTest do
                describe?: true
              )
   end
+
+  describe "label escaping" do
+    @hostile ~s|victim"]\ninjected["extra node"]\ntail["|
+    @hostile_atom :"victim\"]\ninjected[\"extra node\"]|tail"
+    @benign "victim"
+    @benign_atom :victim
+
+    for describe? <- [false, true] do
+      test "a hostile step name cannot inject nodes (describe?: #{describe?})" do
+        assert_no_injection(&plain_reactor/1, unquote(describe?))
+      end
+
+      test "a hostile anonymous function step name cannot inject nodes (describe?: #{describe?})" do
+        assert_no_injection(&anon_fn_reactor/1, unquote(describe?))
+      end
+
+      test "a hostile switch step name cannot inject nodes (describe?: #{describe?})" do
+        assert_no_injection(&switch_reactor/1, unquote(describe?))
+      end
+
+      test "a hostile argument name cannot inject links (describe?: #{describe?})" do
+        assert_no_injection(&argument_reactor/1, unquote(describe?), @hostile_atom, @benign_atom)
+      end
+    end
+
+    defp assert_no_injection(build, describe?, hostile_name \\ @hostile, benign_name \\ @benign) do
+      options = [output: :binary, describe?: describe?]
+      hostile = hostile_name |> build.() |> Reactor.Mermaid.to_mermaid!(options)
+      benign = benign_name |> build.() |> Reactor.Mermaid.to_mermaid!(options)
+
+      refute hostile =~ "injected["
+      assert node_count(hostile) == node_count(benign)
+      assert line_count(hostile) == line_count(benign)
+    end
+
+    defp plain_reactor(name) do
+      Reactor.Builder.new()
+      |> Reactor.Builder.add_step!(name, Reactor.Step.ReturnAllArguments)
+      |> Reactor.Builder.return!(name)
+    end
+
+    defp anon_fn_reactor(name) do
+      Reactor.Builder.new()
+      |> Reactor.Builder.add_step!(name, {Reactor.Step.AnonFn, run: fn _, _ -> {:ok, nil} end})
+      |> Reactor.Builder.return!(name)
+    end
+
+    defp switch_reactor(name) do
+      matches = [{&is_nil/1, [Reactor.Builder.new_step!(:matched, Example.Step.Doable)]}]
+      default = [Reactor.Builder.new_step!(:defaulted, Example.Step.Doable)]
+
+      Reactor.Builder.new()
+      |> Reactor.Builder.add_input!(:value)
+      |> Reactor.Builder.add_step!(
+        name,
+        {Reactor.Step.Switch, on: :value, matches: matches, default: default},
+        [Reactor.Argument.from_input(:value, :value)]
+      )
+      |> Reactor.Builder.return!(name)
+    end
+
+    defp argument_reactor(name) do
+      Reactor.Builder.new()
+      |> Reactor.Builder.add_input!(name)
+      |> Reactor.Builder.add_step!(:greet, Example.Step.Greeter, [
+        Reactor.Argument.from_input(name, name)
+      ])
+      |> Reactor.Builder.return!(:greet)
+    end
+
+    defp node_count(mermaid) do
+      mermaid
+      |> String.split("\n")
+      |> Enum.count(&Regex.match?(~r/^\s*[\w.]+[\[{>@]/, &1))
+    end
+
+    defp line_count(mermaid), do: mermaid |> String.split("\n") |> length()
+  end
 end

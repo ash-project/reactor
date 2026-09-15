@@ -79,7 +79,7 @@ defmodule Reactor.Step.Map.Mermaid do
           "[\"`**",
           md_escape(name(step.name)),
           " \\(",
-          inspect(module),
+          name(module),
           "\\)**",
           if(step.description, do: ["\n", md_escape(step.description)], else: []),
           "`\"]\n"
@@ -90,7 +90,7 @@ defmodule Reactor.Step.Map.Mermaid do
           "[\"",
           name(step.name),
           "(",
-          inspect(module),
+          name(module),
           ")\"]\n"
         ]
       end
