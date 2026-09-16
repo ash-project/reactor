@@ -165,7 +165,7 @@ defmodule Reactor.Builder.StepTest do
       assert %Step{context: %{awesome?: true}} = steps_by_name[:greet]
     end
 
-    test "max retries defaults to 100" do
+    test "max retries defaults to :infinity" do
       assert {:ok, reactor} =
                Builder.new()
                |> Builder.Step.add_step(
@@ -176,7 +176,7 @@ defmodule Reactor.Builder.StepTest do
                )
 
       steps_by_name = Map.new(reactor.steps, &{&1.name, &1})
-      assert %Step{max_retries: 100} = steps_by_name[:greet]
+      assert %Step{max_retries: :infinity} = steps_by_name[:greet]
     end
 
     test "max retries can be provided" do
