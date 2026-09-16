@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.7](https://github.com/ash-project/reactor/compare/v1.0.6...v1.0.7) (2026-09-16)
+
+
+
+
+### Bug Fixes:
+
+* builder: default `max_retries` to `:infinity` to match the DSL (#346) by James Harton
+
+* escape step and module names in Mermaid labels (#344) by James Harton
+
 ## [v1.0.6](https://github.com/ash-project/reactor/compare/v1.0.5...v1.0.6) (2026-08-12)
 
 
