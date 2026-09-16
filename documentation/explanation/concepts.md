@@ -276,19 +276,23 @@ This classification helps determine appropriate error handling strategies.
 Steps can be retried automatically:
 
 - **Compensation Return**: Return `:retry` from compensation
-- **Retry Limits**: Configure `max_retries` per step (default: 5)
+- **Retry Limits**: Configure `max_retries` per step (default: `:infinity`)
 - **Exponential Backoff**: Use `context.current_try` for delay calculation
+
+Reactor counts the retries and enforces `max_retries` for you. When a step goes past the limit, Reactor fails it with a `Reactor.Error.Invalid.RetriesExceededError`. A step with the default value retries without limit while `compensate/4` continues to return `:retry`. Set `max_retries` on each step that can retry, or make sure that `compensate/4` returns `:ok` at some point.
+
+```elixir
+step :fetch_rates, FetchRates do
+  max_retries 5
+end
+```
 
 ```elixir
 def compensate(reason, arguments, context, step) do
-  if context.current_try < step.max_retries do
-    # Wait longer each retry
-    delay = :math.pow(2, context.current_try) * 1000
-    Process.sleep(delay)
-    :retry
-  else
-    :ok  # Give up after max retries
-  end
+  # Wait longer each retry
+  delay = :math.pow(2, context.current_try) * 1000
+  Process.sleep(delay)
+  :retry
 end
 ```
 

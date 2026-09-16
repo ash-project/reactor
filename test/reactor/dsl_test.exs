@@ -8,10 +8,40 @@ defmodule Reactor.DslTest do
   use ExUnit.Case, async: true
 
   alias Example.Step.Greeter
-  alias Reactor.{Info, Step}
+  alias Reactor.{Builder, Info, Step}
   alias Spark.Error.DslError
 
   describe "transforming steps" do
+    test "steps built by the DSL and the builder share the same `max_retries` default" do
+      defmodule DefaultMaxRetriesReactor do
+        @moduledoc false
+        use Reactor
+
+        input :whom
+
+        step :example, Greeter do
+          argument :whom, input(:whom)
+        end
+      end
+
+      dsl_step =
+        DefaultMaxRetriesReactor
+        |> Info.to_struct!()
+        |> Map.get(:steps, [])
+        |> List.first()
+
+      builder_step =
+        Builder.new()
+        |> Builder.add_input!(:whom)
+        |> Builder.add_step!(:example, Greeter, whom: {:input, :whom})
+        |> Map.get(:steps, [])
+        |> List.first()
+
+      assert %Step{max_retries: :infinity} = dsl_step
+      assert %Step{max_retries: :infinity} = builder_step
+      assert dsl_step.max_retries == builder_step.max_retries
+    end
+
     test "steps with an implementation module compile correctly" do
       defmodule StepWithImplReactor do
         @moduledoc false

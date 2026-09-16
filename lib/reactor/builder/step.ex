@@ -23,7 +23,7 @@ defmodule Reactor.Builder.Step do
     ],
     max_retries: [
       type: {:or, [:non_neg_integer, {:literal, :infinity}]},
-      default: 100,
+      default: :infinity,
       required: false,
       doc: "The maximum number of times the step can ask to be retried"
     ],
