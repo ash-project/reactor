@@ -144,7 +144,7 @@ defmodule Reactor.MixProject do
       {:dialyxir, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.37-rc", only: [:dev, :test], runtime: false},
-      {:ex_check, "~> 0.16.0", only: [:dev, :test]},
+      {:ex_check, "~> 0.17.0", only: [:dev, :test]},
       {:git_ops, "~> 2.12.3", only: [:dev, :test]},
       {:mimic, "~> 2.0", only: :test},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
