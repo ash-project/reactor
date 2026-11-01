@@ -15,7 +15,8 @@ defmodule Reactor.Executor.State do
     halt_timeout: 5000,
     max_iterations: :infinity,
     timeout: :infinity,
-    fully_reversible?: false
+    fully_reversible?: false,
+    undo_timeout: 5000
   }
 
   defstruct async?: @defaults.async?,
@@ -31,7 +32,8 @@ defmodule Reactor.Executor.State do
             skipped: MapSet.new(),
             started_at: nil,
             timeout: @defaults.timeout,
-            fully_reversible?: @defaults.fully_reversible?
+            fully_reversible?: @defaults.fully_reversible?,
+            undo_timeout: @defaults.undo_timeout
 
   alias Reactor.{Executor.ConcurrencyTracker, Step}
 
@@ -48,7 +50,8 @@ defmodule Reactor.Executor.State do
           run_id: any,
           skipped: MapSet.t(),
           started_at: DateTime.t(),
-          timeout: pos_integer() | :infinity
+          timeout: pos_integer() | :infinity,
+          undo_timeout: pos_integer() | :infinity
         }
 
   @doc false

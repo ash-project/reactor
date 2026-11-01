@@ -410,6 +410,93 @@ defmodule Reactor.ExecutorTest do
     end
   end
 
+  describe "undoing while an asynchronous step is in flight" do
+    defmodule UndoInFlightReactor do
+      @moduledoc false
+      use Reactor
+
+      defmodule SlowUndoableStep do
+        @moduledoc false
+        use Reactor.Step
+
+        def run(%{sleep: sleep}, %{test_pid: test_pid}, _opts) do
+          send(test_pid, {:slow_started, self()})
+          Process.sleep(sleep)
+          send(test_pid, {:slow_finished, self()})
+          {:ok, :slow_value}
+        end
+
+        def undo(_value, _arguments, %{test_pid: test_pid}, _opts) do
+          send(test_pid, {:slow_undone, self()})
+          :ok
+        end
+      end
+
+      defmodule FailingStep do
+        @moduledoc false
+        use Reactor.Step
+
+        def run(%{fail_after: fail_after}, _context, _opts) do
+          Process.sleep(fail_after)
+          {:error, :boom}
+        end
+      end
+
+      input :sleep
+      input :fail_after
+
+      step :slow, SlowUndoableStep do
+        argument :sleep, input(:sleep)
+      end
+
+      step :fail, FailingStep do
+        argument :fail_after, input(:fail_after)
+      end
+    end
+
+    test "the in-flight step is undone when a sibling fails" do
+      assert {:error, _error} =
+               Reactor.run(UndoInFlightReactor, %{sleep: 300, fail_after: 0}, %{test_pid: self()})
+
+      assert_receive {:slow_started, _}
+      assert_receive {:slow_finished, _}
+      assert_receive {:slow_undone, _}
+    end
+
+    test "a step which completed before the failure is still undone" do
+      assert {:error, _error} =
+               Reactor.run(UndoInFlightReactor, %{sleep: 50, fail_after: 150}, %{test_pid: self()})
+
+      assert_receive {:slow_undone, _}
+    end
+
+    test "a straggler past undo_timeout is abandoned and not killed" do
+      log =
+        capture_log(fn ->
+          assert {:error, _error} =
+                   Reactor.run(
+                     UndoInFlightReactor,
+                     %{sleep: 200, fail_after: 0},
+                     %{test_pid: self()},
+                     undo_timeout: 10
+                   )
+        end)
+
+      assert log =~ "will be abandoned and cannot be undone"
+      refute_received {:slow_undone, _}
+      assert_receive {:slow_finished, _}, 1_000
+    end
+
+    test "the concurrency pool is released on the undo path" do
+      assert {:error, _error} =
+               Reactor.run(UndoInFlightReactor, %{sleep: 300, fail_after: 0}, %{test_pid: self()})
+
+      refute Enum.any?(:ets.tab2list(ConcurrencyTracker), fn
+               {_, _, _, allocator} -> allocator == self()
+             end)
+    end
+  end
+
   describe "dynamic step appending" do
     defmodule TerribleIdeaReactor do
       @moduledoc false
