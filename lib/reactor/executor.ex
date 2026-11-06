@@ -36,7 +36,13 @@ defmodule Reactor.Executor do
   2. When the step is unsuccessful (returns an error tuple or raises):
     a. If the step can be compensated then compensation is attempted up to five
        times before giving up.
-    b. The reactor iterates it's undo stack calling undo on each step.
+    b. Any in-flight asynchronous steps are awaited (up to `undo_timeout`),
+       with their successful results added to the undo stack.
+    c. The reactor iterates it's undo stack calling undo on each step.
+
+  Asynchronous steps still running after `undo_timeout` are logged and ignored
+  rather than killed, so that their `compensate/4` callbacks still have a chance
+  to run.
   3. When a step or compensation asks for a retry then the step is placed back
      in the graph to be run again next iteration.
   """
@@ -148,7 +154,9 @@ defmodule Reactor.Executor do
   end
 
   defp handle_halt(reactor, state) do
-    {reactor, state} = Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state)
+    {reactor, state} =
+      Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state, state.halt_timeout)
+
     maybe_release_pool(state)
 
     case Executor.Hooks.halt(reactor, reactor.context) do
@@ -265,6 +273,11 @@ defmodule Reactor.Executor do
     do: %{state | max_iterations: state.max_iterations - 1}
 
   defp handle_undo(reactor, state) do
+    {reactor, state} =
+      Executor.Async.collect_remaining_tasks_for_shutdown(reactor, state, state.undo_timeout)
+
+    maybe_release_pool(state)
+
     handle_undo(%{reactor | state: :failed, undo: []}, state, Enum.reverse(reactor.undo))
   end
 

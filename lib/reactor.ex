@@ -91,6 +91,16 @@ defmodule Reactor do
   @type halt_timeout_option :: {:halt_timeout, pos_integer() | :infinity}
 
   @typedoc """
+  How long to wait for in-flight asynchronous steps to complete when a step
+  fails, so their results can be harvested and undone during rollback.
+
+  Steps still running after this timeout are abandoned and cannot be undone.
+
+  Defaults to 5000ms.
+  """
+  @type undo_timeout_option :: {:undo_timeout, pos_integer() | :infinity}
+
+  @typedoc """
   When set to `false` forces the Reactor to run every step synchronously,
   regardless of the step configuration.
 
@@ -121,6 +131,7 @@ defmodule Reactor do
             | timeout_option
             | max_iterations_option
             | halt_timeout_option
+            | undo_timeout_option
             | async_option
             | concurrency_key_option
             | fully_reversible_option
@@ -166,6 +177,18 @@ defmodule Reactor do
       required: false,
       default: :infinity,
       doc: "The maximum number of times to allow the Reactor to loop"
+    ],
+    undo_timeout: [
+      type: {:or, [:pos_integer, {:literal, :infinity}]},
+      required: false,
+      default: 5000,
+      doc: "How long to wait for in-flight async steps before undoing a failed Reactor"
+    ],
+    halt_timeout: [
+      type: {:or, [:pos_integer, {:literal, :infinity}]},
+      required: false,
+      default: 5000,
+      doc: "How long to wait for in-flight async steps before halting a Reactor"
     ],
     async?: [
       type: :boolean,

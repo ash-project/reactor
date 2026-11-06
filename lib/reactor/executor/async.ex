@@ -363,16 +363,19 @@ defmodule Reactor.Executor.Async do
   When the Reactor needs to shut down for any reason, we need to await all the
   currently running asynchronous steps and delete any task vertices.
   """
-  @spec collect_remaining_tasks_for_shutdown(Reactor.t(), Executor.State.t()) ::
-          {Reactor.t(), Executor.State.t()}
-  def collect_remaining_tasks_for_shutdown(reactor, state)
+  @spec collect_remaining_tasks_for_shutdown(
+          Reactor.t(),
+          Executor.State.t(),
+          pos_integer() | :infinity
+        ) :: {Reactor.t(), Executor.State.t()}
+  def collect_remaining_tasks_for_shutdown(reactor, state, _timeout)
       when map_size(state.current_tasks) == 0 do
     {delete_all_task_vertices(reactor), state}
   end
 
-  def collect_remaining_tasks_for_shutdown(reactor, state) do
+  def collect_remaining_tasks_for_shutdown(reactor, state, timeout) do
     remaining_task_results =
-      get_normalised_task_results(state, timeout: state.halt_timeout, on_timeout: :ignore)
+      get_normalised_task_results(state, timeout: timeout, on_timeout: :ignore)
 
     release_concurrency_resources_to_pool(state.concurrency_key, length(remaining_task_results))
 
@@ -402,7 +405,7 @@ defmodule Reactor.Executor.Async do
           |> Enum.map_join("\n  * ", &inspect/1)
 
         """
-        Waited #{state.halt_timeout}ms for async steps to complete, however #{unfinished_task_count} are still running, will be abandoned and cannot be undone.
+        Waited #{timeout}ms for async steps to complete, however #{unfinished_task_count} are still running, will be abandoned and cannot be undone.
 
           * #{unfinished_steps}
         """
