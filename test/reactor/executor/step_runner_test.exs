@@ -304,4 +304,28 @@ defmodule Reactor.Executor.StepRunnerTest do
                undo(reactor, state, step, :marty, nil)
     end
   end
+
+  describe "process dictionary metadata" do
+    test "does not hold the reactor or its intermediate results" do
+      reactor =
+        Builder.new()
+        |> Builder.add_step!(
+          :big,
+          {Reactor.Step.AnonFn, run: fn _, _ -> {:ok, String.duplicate("x", 100_000)} end}
+        )
+        |> Builder.add_step!(
+          :inspect,
+          {Reactor.Step.AnonFn, run: fn _, _ -> {:ok, Process.get(:__reactor__)} end},
+          big: {:result, :big}
+        )
+        |> Builder.return!(:inspect)
+
+      assert {:ok, [metadata]} = Reactor.run(reactor, %{}, %{}, async?: false)
+
+      assert metadata |> Map.keys() |> Enum.sort() == [:concurrency_key, :pid, :run_id, :step]
+      assert metadata.step == :inspect
+      assert metadata.pid == self()
+      assert :erlang.external_size(metadata) < 1_000
+    end
+  end
 end

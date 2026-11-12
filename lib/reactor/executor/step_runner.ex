@@ -42,10 +42,12 @@ defmodule Reactor.Executor.StepRunner do
     with {:ok, arguments} <- get_step_arguments(reactor, step),
          {:ok, context} <- build_context(reactor, state, step, concurrency_key),
          {:ok, arguments} <- maybe_replace_arguments(arguments, context) do
+      # Keep this small: anything that copies the process dictionary (crash
+      # reports, `:observer`, `Process.info(pid, :dictionary)`) copies it too.
+      # Only `concurrency_key` is read, by `Reactor.Executor`.
       metadata = %{
-        current_step: step,
+        step: step.name,
         pid: self(),
-        reactor: reactor,
         run_id: state.run_id,
         concurrency_key: concurrency_key
       }
