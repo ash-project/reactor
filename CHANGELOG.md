@@ -12,6 +12,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v1.0.8](https://github.com/ash-project/reactor/compare/v1.0.7...v1.0.8) (2026-11-18)
+
+
+
+
+### Bug Fixes:
+
+* don't keep the reactor struct in the process dictionary while a step runs by Zach Daniel
+
+* executor: drain in-flight async steps on failure so they are undone (#352) by Arkadiusz Oleksy
+
 ## [v1.0.7](https://github.com/ash-project/reactor/compare/v1.0.6...v1.0.7) (2026-09-16)
 
 
