@@ -410,6 +410,84 @@ defmodule Reactor.ExecutorTest do
     end
   end
 
+  describe "undo order" do
+    defmodule RecordingUndoStep do
+      @moduledoc false
+      use Reactor.Step
+
+      def run(_arguments, context, opts) do
+        if sleep = Keyword.get(opts, :sleep), do: Process.sleep(sleep)
+
+        if Keyword.get(opts, :fail, false) do
+          {:error, :boom}
+        else
+          send(context.test_pid, {:ran, Keyword.fetch!(opts, :name)})
+          {:ok, Keyword.fetch!(opts, :name)}
+        end
+      end
+
+      def undo(name, _arguments, context, _opts) do
+        send(context.test_pid, {:undone, name})
+        :ok
+      end
+    end
+
+    defmodule ChainReactor do
+      @moduledoc false
+      use Reactor
+
+      step :first, {RecordingUndoStep, name: :first}
+
+      step :second, {RecordingUndoStep, name: :second} do
+        argument :first, result(:first)
+      end
+
+      step :third, {RecordingUndoStep, name: :third} do
+        argument :second, result(:second)
+      end
+
+      step :fail, {RecordingUndoStep, fail: true} do
+        argument :third, result(:third)
+      end
+    end
+
+    defmodule InFlightChainReactor do
+      @moduledoc false
+      use Reactor
+
+      step :first, {RecordingUndoStep, name: :first}
+
+      step :slow, {RecordingUndoStep, name: :slow, sleep: 200} do
+        argument :first, result(:first)
+      end
+
+      step :fail, {RecordingUndoStep, fail: true} do
+        argument :first, result(:first)
+      end
+    end
+
+    defp undone(acc \\ []) do
+      receive do
+        {:undone, name} -> undone([name | acc])
+      after
+        0 -> Enum.reverse(acc)
+      end
+    end
+
+    test "a failed reactor undoes the most recently completed step first" do
+      assert {:error, _} = Reactor.run(ChainReactor, %{}, %{test_pid: self()})
+
+      assert undone() == [:third, :second, :first]
+    end
+
+    test "a step still in flight at the failure is undone before the steps that finished earlier" do
+      assert {:error, _} = Reactor.run(InFlightChainReactor, %{}, %{test_pid: self()})
+
+      assert_received {:ran, :slow}
+      assert undone() == [:slow, :first]
+    end
+  end
+
   describe "undoing while an asynchronous step is in flight" do
     defmodule UndoInFlightReactor do
       @moduledoc false

@@ -278,7 +278,7 @@ defmodule Reactor.Executor do
 
     maybe_release_pool(state)
 
-    handle_undo(%{reactor | state: :failed, undo: []}, state, Enum.reverse(reactor.undo))
+    handle_undo(%{reactor | state: :failed, undo: []}, state, reactor.undo)
   end
 
   defp handle_undo(_reactor, state, []) when state.errors == [], do: :ok
