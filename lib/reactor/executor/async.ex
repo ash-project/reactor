@@ -284,7 +284,7 @@ defmodule Reactor.Executor.Async do
         {step, {:halt, value}} -> {step, value}
       end)
 
-    %{reactor | undo: Enum.concat(reactor.undo, undoable_successful_results)}
+    %{reactor | undo: Enum.concat(undoable_successful_results, reactor.undo)}
   end
 
   defp store_intermediate_results(reactor, completed_step_results)
