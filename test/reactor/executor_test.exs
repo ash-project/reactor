@@ -480,6 +480,31 @@ defmodule Reactor.ExecutorTest do
       assert undone() == [:third, :second, :first]
     end
 
+    defmodule SucceedingChainReactor do
+      @moduledoc false
+      use Reactor
+
+      step :first, {RecordingUndoStep, name: :first}
+
+      step :second, {RecordingUndoStep, name: :second} do
+        argument :first, result(:first)
+      end
+
+      step :third, {RecordingUndoStep, name: :third} do
+        argument :second, result(:second)
+      end
+    end
+
+    test "undoing a successful reactor undoes the most recently completed step first" do
+      assert {:ok, :third, reactor} =
+               Reactor.run(SucceedingChainReactor, %{}, %{test_pid: self()},
+                 fully_reversible?: true
+               )
+
+      assert :ok = Reactor.undo(reactor, %{test_pid: self()})
+      assert undone() == [:third, :second, :first]
+    end
+
     test "a step still in flight at the failure is undone before the steps that finished earlier" do
       assert {:error, _} = Reactor.run(InFlightChainReactor, %{}, %{test_pid: self()})
 
